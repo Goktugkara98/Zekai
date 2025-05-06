@@ -1,0 +1,114 @@
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: var(--gray-900);
+    color: var(--gray-100);
+}
+
+/* Sidebar Dark Mode */
+body.dark-mode #sidebar {
+    background-color: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+body.dark-mode .sidebar-header,
+body.dark-mode .sidebar-footer {
+    border-color: var(--gray-700);
+}
+
+body.dark-mode #ai-list .list-group-item {
+    color: var(--gray-300);
+}
+
+body.dark-mode #ai-list .list-group-item:hover:not(.active) {
+    background-color: var(--gray-700);
+    color: white;
+}
+
+body.dark-mode .ai-icon {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Main Content Dark Mode */
+body.dark-mode main {
+    background-color: var(--gray-800);
+}
+
+body.dark-mode .ai-panel {
+    background-color: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+body.dark-mode .panel-header {
+    border-color: var(--gray-700);
+    background-color: var(--gray-800);
+}
+
+body.dark-mode #control-bar {
+    background-color: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+/* Buttons Dark Mode */
+body.dark-mode .btn-control {
+    background-color: var(--gray-700);
+    border-color: var(--gray-600);
+    color: var(--gray-200);
+}
+
+body.dark-mode .btn-control:hover {
+    background-color: var(--gray-600);
+    color: white;
+}
+
+body.dark-mode .btn-icon {
+    background-color: var(--gray-700);
+    color: var(--gray-300);
+}
+
+body.dark-mode .btn-icon:hover {
+    background-color: var(--gray-600);
+    color: white;
+}
+
+/* Panels Dark Mode */
+body.dark-mode .panel-header .btn {
+    background-color: var(--gray-700);
+    color: var(--gray-300);
+}
+
+body.dark-mode .panel-header .btn:hover {
+    background-color: var(--gray-600);
+    color: white;
+}
+
+body.dark-mode .panel-body {
+    background-color: var(--gray-800);
+}
+
+body.dark-mode .panel-input-area {
+    background-color: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+/* Messages Dark Mode */
+body.dark-mode .ai-message {
+    background-color: var(--gray-700);
+    color: var(--gray-200);
+}
+
+/* Forms Dark Mode */
+body.dark-mode .form-control {
+    background-color: var(--gray-700);
+    border-color: var(--gray-600);
+    color: var(--gray-200);
+}
+
+body.dark-mode .form-control::placeholder {
+    color: var(--gray-400);
+}
+
+body.dark-mode .input-group-text {
+    background-color: var(--gray-700);
+    border-color: var(--gray-600);
+    color: var(--gray-400);
+}

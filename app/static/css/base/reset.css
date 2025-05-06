@@ -1,0 +1,40 @@
+/* Base Reset & Global Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--light);
+    color: var(--gray-800);
+    overflow: hidden;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    font-weight: var(--font-weight-semibold);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--primary-dark);
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Focus styles for accessibility */
+:focus {
+    outline: 2px solid var(--primary-light);
+    outline-offset: 2px;
+}

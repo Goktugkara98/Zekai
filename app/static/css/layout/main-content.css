@@ -1,0 +1,81 @@
+/* Main Content Area */
+main {
+    background-color: rgba(245, 247, 250, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+#panel-area {
+    padding: 1.5rem;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+/* Welcome Screen */
+.welcome-icon {
+    font-size: 3.5rem;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(62, 99, 221, 0.85), rgba(82, 116, 229, 0.85));
+    color: white;
+    border-radius: 30px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px rgba(62, 99, 221, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Control Bar */
+#control-bar {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 1.5rem;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    position: relative;
+    z-index: 10;
+}
+
+.layout-controls {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 2px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Background gradient for main area */
+body {
+    background: linear-gradient(135deg, #f5f7fa, #e4e8f0);
+    background-attachment: fixed;
+}
+
+/* Dark mode adjustments */
+body.dark-mode {
+    background: linear-gradient(135deg, #1a1f2c, #121620);
+    background-attachment: fixed;
+}
+
+body.dark-mode main {
+    background-color: rgba(25, 30, 40, 0.3);
+}
+
+body.dark-mode #control-bar {
+    background-color: rgba(20, 25, 35, 0.5);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .layout-controls {
+    background-color: rgba(30, 35, 45, 0.5);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
