@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zekai - Çoklu Yapay Zeka Arayüzü</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3 class="mb-0">Zekai</h3>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="mb-4">
+                    <h5 class="mb-3">Yapay Zeka Seçimi</h5>
+                    <div class="ai-option active">
+                        <i class="bi bi-robot"></i>
+                        <div class="ai-details">
+                            <div class="ai-name">ChatGPT</div>
+                            <div class="ai-provider">OpenAI</div>
+                        </div>
+                    </div>
+                    <div class="ai-option">
+                        <i class="bi bi-robot"></i>
+                        <div class="ai-details">
+                            <div class="ai-name">Claude</div>
+                            <div class="ai-provider">Anthropic</div>
+                        </div>
+                    </div>
+                    <div class="ai-option">
+                        <i class="bi bi-robot"></i>
+                        <div class="ai-details">
+                            <div class="ai-name">Gemini</div>
+                            <div class="ai-provider">Google</div>
+                        </div>
+                    </div>
+                    <div class="ai-option">
+                        <i class="bi bi-robot"></i>
+                        <div class="ai-details">
+                            <div class="ai-name">Llama</div>
+                            <div class="ai-provider">Meta</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-light btn-sm mt-3 w-100">
+                        <i class="bi bi-plus-circle"></i> Yeni Yapay Zeka Ekle
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="mb-3">Ayarlar</h5>
+                    <div class="mb-3">
+                        <label for="temperature" class="form-label">Sıcaklık</label>
+                        <input type="range" class="form-range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                        <div class="d-flex justify-content-between">
+                            <small>0</small>
+                            <small>0.5</small>
+                            <small>1</small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maxTokens" class="form-label">Maksimum Token</label>
+                        <select class="form-select form-select-sm" id="maxTokens">
+                            <option value="256">256</option>
+                            <option value="512">512</option>
+                            <option value="1024" selected>1024</option>
+                            <option value="2048">2048</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="model" class="form-label">Model</label>
+                        <select class="form-select form-select-sm" id="model">
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gpt-3.5" selected>GPT-3.5</option>
+                            <option value="claude-3">Claude 3</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button class="btn btn-outline-light btn-sm w-100 mb-2">
+                    <i class="bi bi-gear"></i> Gelişmiş Ayarlar
+                </button>
+                <button class="btn btn-outline-light btn-sm w-100">
+                    <i class="bi bi-question-circle"></i> Yardım
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="main-header">
+                <div class="d-flex align-items-center">
+                    <button class="toggle-sidebar me-3">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h4 class="mb-0">Çoklu Yapay Zeka Arayüzü</h4>
+                </div>
+                
+                <div class="layout-controls">
+                    <button class="active" data-layout="1" title="Tek Ekran">
+                        <i class="bi bi-grid-1x1"></i>
+                    </button>
+                    <button data-layout="2" title="İki Ekran">
+                        <i class="bi bi-grid-1x2"></i>
+                    </button>
+                    <button data-layout="3" title="Üç Ekran">
+                        <i class="bi bi-grid-3x3"></i>
+                    </button>
+                    <button data-layout="4" title="Dört Ekran">
+                        <i class="bi bi-grid-2x2"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="main-body">
+                <!-- Chat Windows Container -->
+                <div class="chat-container" id="chatContainer" style="grid-template-columns: 1fr;">
+                    <!-- Chat Window 1 -->
+                    <div class="chat-window active">
+                        <div class="chat-header">
+                            <div class="ai-icon">
+                                <i class="bi bi-robot"></i> ChatGPT
+                            </div>
+                            <div class="actions">
+                                <button class="tooltip">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                    <span class="tooltiptext">Yenile</span>
+                                </button>
+                                <button class="tooltip">
+                                    <i class="bi bi-x-lg"></i>
+                                    <span class="tooltiptext">Kapat</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chat-messages">
+                            <div class="message ai">
+                                <div class="message-content">
+                                    Merhaba! Size nasıl yardımcı olabilirim?
+                                </div>
+                                <div class="message-meta">
+                                    <span>ChatGPT • Şimdi</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input">
+                            <div class="input-group">
+                                <input type="text" placeholder="Mesajınızı yazın...">
+                                <button>
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Split Screen Indicator -->
+                        <div class="split-indicator">
+                            <div class="current-layout">1</div>
+                            <div class="layout-options">
+                                <div class="layout-option active" data-layout="1">1</div>
+                                <div class="layout-option" data-layout="2">2</div>
+                                <div class="layout-option" data-layout="3">3</div>
+                                <div class="layout-option" data-layout="4">4</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
