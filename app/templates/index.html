@@ -44,62 +44,26 @@
             <div class="sidebar-section">
                 <h6 class="sidebar-heading px-3 py-2 mb-1">AI Categories</h6>
                 <div id="aiCategoriesAccordion">
-                    <!-- General AI Category -->
+                    {% for category in ai_categories %}
                     <div class="sidebar-category-item">
                         <div class="sidebar-category-header d-flex justify-content-between align-items-center px-3 py-2"
-                             data-bs-toggle="collapse" data-bs-target="#collapseGeneralAI" aria-expanded="false" aria-controls="collapseGeneralAI"
+                             data-bs-toggle="collapse" data-bs-target="#collapse{{ category.name|replace(' ', '') }}" aria-expanded="false" aria-controls="collapse{{ category.name|replace(' ', '') }}"
                              style="cursor: pointer;">
-                            <span><i class="bi bi-robot me-2"></i>General AI</span>
+                            <span><i class="bi {{ category.icon }} me-2"></i>{{ category.name }}</span>
                             <i class="bi bi-chevron-down category-chevron"></i>
                         </div>
-                        <div class="collapse" id="collapseGeneralAI" data-bs-parent="#aiCategoriesAccordion">
+                        <div class="collapse" id="collapse{{ category.name|replace(' ', '') }}" data-bs-parent="#aiCategoriesAccordion">
                             <ul class="list-group list-group-flush ps-3">
-                                <li class="list-group-item list-group-item-action d-flex align-items-center ai-model-selector-item" data-ai-index="0">
-                                    <span class="ai-icon me-2"><i class="bi bi-cpu"></i></span>
-                                    <span class="ai-name">GPT-4 Turbo</span>
+                                {% for model in category.models %}
+                                <li class="list-group-item list-group-item-action d-flex align-items-center ai-model-selector-item" data-ai-index="{{ model.data_ai_index }}">
+                                    <span class="ai-icon me-2"><i class="bi {{ model.icon }}"></i></span>
+                                    <span class="ai-name">{{ model.name }}</span>
                                 </li>
-                                <!-- Buraya gelecekte başka genel AI modelleri eklenebilir -->
+                                {% endfor %}
                             </ul>
                         </div>
                     </div>
-
-                    <!-- Translation AI Category -->
-                    <div class="sidebar-category-item">
-                        <div class="sidebar-category-header d-flex justify-content-between align-items-center px-3 py-2"
-                             data-bs-toggle="collapse" data-bs-target="#collapseTranslationAI" aria-expanded="false" aria-controls="collapseTranslationAI"
-                             style="cursor: pointer;">
-                            <span><i class="bi bi-translate me-2"></i>Translation</span>
-                            <i class="bi bi-chevron-down category-chevron"></i>
-                        </div>
-                        <div class="collapse" id="collapseTranslationAI" data-bs-parent="#aiCategoriesAccordion">
-                            <ul class="list-group list-group-flush ps-3">
-                                <li class="list-group-item list-group-item-action d-flex align-items-center ai-model-selector-item" data-ai-index="1">
-                                    <span class="ai-icon me-2"><i class="bi bi-translate"></i></span>
-                                    <span class="ai-name">Translation AI</span>
-                                </li>
-                                <!-- Buraya gelecekte başka çeviri AI modelleri eklenebilir -->
-                            </ul>
-                        </div>
-                    </div>
-
-                    <!-- Image Generation Category -->
-                    <div class="sidebar-category-item">
-                        <div class="sidebar-category-header d-flex justify-content-between align-items-center px-3 py-2"
-                             data-bs-toggle="collapse" data-bs-target="#collapseImageAI" aria-expanded="false" aria-controls="collapseImageAI"
-                             style="cursor: pointer;">
-                            <span><i class="bi bi-brush me-2"></i>Image Generation</span>
-                            <i class="bi bi-chevron-down category-chevron"></i>
-                        </div>
-                        <div class="collapse" id="collapseImageAI" data-bs-parent="#aiCategoriesAccordion">
-                            <ul class="list-group list-group-flush ps-3">
-                                <li class="list-group-item list-group-item-action d-flex align-items-center ai-model-selector-item" data-ai-index="2">
-                                    <span class="ai-icon me-2"><i class="bi bi-brush"></i></span>
-                                    <span class="ai-name">Image Generator</span>
-                                </li>
-                                <!-- Buraya gelecekte başka resim AI modelleri eklenebilir -->
-                            </ul>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
@@ -189,6 +153,40 @@
         </main>
     </div>
 </div>
+<script>
+  window.state = window.state || {}; // Ensure window.state exists
+
+  const aiCategoriesJsonString = '{{ ai_categories|tojson|safe }}'; // Output as string
+  let parsedAiCategories = [];
+  try {
+    parsedAiCategories = JSON.parse(aiCategoriesJsonString);
+  } catch (e) {
+    console.error("Error parsing AI categories JSON:", e, "JSON string:", aiCategoriesJsonString);
+    parsedAiCategories = []; // Fallback to empty
+  }
+
+  window.state.aiTypes = [];
+  if (Array.isArray(parsedAiCategories)) {
+    parsedAiCategories.forEach(category => {
+      if (category && Array.isArray(category.models)) {
+        category.models.forEach(model => {
+          window.state.aiTypes.push({
+            name: model.name,
+            icon: model.icon,
+            id: model.data_ai_index
+            // defaultPrompt: "You are " + model.name
+          });
+        });
+      }
+    });
+  }
+  
+  window.state.allAiCategories = parsedAiCategories;
+
+  console.log('index.html - window.state.aiTypes:', JSON.stringify(window.state.aiTypes, null, 2));
+  console.log('index.html - window.state.allAiCategories:', JSON.stringify(window.state.allAiCategories, null, 2));
+</script>
+
 <!-- Bootstrap JS & dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <!-- SortableJS for drag-and-drop -->

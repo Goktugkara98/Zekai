@@ -27,5 +27,7 @@ const state = {
     panelCount: 0,
     currentLayout: 1,
     isDarkMode: false,
-    aiTypes: aiTypes
+    // Use aiTypes from index.html if available, otherwise use static fallback
+    aiTypes: typeof window !== 'undefined' && window.state && window.state.aiTypes && window.state.aiTypes.length > 0 ? window.state.aiTypes : aiTypes
 };
+console.log('config.js - state.aiTypes after init:', JSON.stringify(state.aiTypes, null, 2));

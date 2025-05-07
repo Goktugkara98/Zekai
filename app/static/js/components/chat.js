@@ -29,24 +29,21 @@ const ChatManager = (function() {
     const state = {
         chats: [],
         chatHistory: [], // EKLENDİ
-        maxChats: 6, // Updated to support up to 6 chats
-        aiTypes: [
-            { id: 0, name: 'GPT-4 Turbo', icon: 'bi bi-cpu' },
-            { id: 1, name: 'Translation AI', icon: 'bi bi-translate' },
-            { id: 2, name: 'Image Generator', icon: 'bi bi-brush' }
-        ]
+        maxChats: 6 // Updated to support up to 6 chats
+        // aiTypes removed from here, ChatManager will use window.state.aiTypes
     };
 
-    // Initialize state from global state if exists
+    // Initialize ChatManager's specific parts of window.state,
+    // and ensure aiTypes is at least an empty array if not already defined.
     if (window.state) {
-        window.state.chats = state.chats;
-        window.state.chatHistory = state.chatHistory; // EKLENDİ
-        window.state.aiTypes = state.aiTypes;
+        if (!window.state.chats) window.state.chats = state.chats; // Initialize if not present
+        if (!window.state.chatHistory) window.state.chatHistory = state.chatHistory; // Initialize if not present
+        if (!window.state.aiTypes) window.state.aiTypes = []; // Ensure aiTypes exists
     } else {
         window.state = { 
             chats: state.chats,
             chatHistory: state.chatHistory, // EKLENDİ
-            aiTypes: state.aiTypes
+            aiTypes: [] // Initialize as empty, expecting it to be populated by index.html
         };
     }
 
@@ -90,11 +87,10 @@ const ChatManager = (function() {
     function createChatElement(chatData) {
         log('debug', 'Creating chat element', chatData);
         
-        // Get AI type info
-        const aiType = state.aiTypes[chatData.aiType] || { 
-            name: `AI ${chatData.aiType}`, 
-            icon: 'bi bi-cpu' 
-        };
+        // Get AI type info using model ID
+        const aiModel = window.state.aiTypes.find(m => m.id === chatData.aiModelId) || 
+                        (window.state.aiTypes && window.state.aiTypes.length > 0 ? window.state.aiTypes[0] : null) || // Fallback to first model
+                        { name: `Unknown AI (ID: ${chatData.aiModelId})`, icon: 'bi bi-question-circle' }; // Ultimate fallback
         
         const chatWindow = document.createElement('div');
         chatWindow.className = 'chat-window';
@@ -109,8 +105,8 @@ const ChatManager = (function() {
         chatWindow.innerHTML = `
             <div class="chat-header">
                 <div class="chat-title ${modelSelectionClass}" title="${modelSelectionTitle}">
-                    <i class="${aiType.icon}"></i>
-                    <span>${aiType.name} (ID: ${chatData.id.slice(-4)})</span>
+                    <i class="${aiModel.icon}"></i>
+                    <span>${aiModel.name} (ID: ${chatData.id.slice(-4)})</span>
                     ${!isModelLocked ? '<i class="bi bi-chevron-down model-selector-icon"></i>' : 
                       '<i class="bi bi-lock-fill model-locked-icon"></i>'}
                 </div>
@@ -126,7 +122,7 @@ const ChatManager = (function() {
             <div class="chat-messages">
                 ${chatData.messages && chatData.messages.length > 0 ? 
                     chatData.messages.map(msg => createMessageHTML(msg)).join('') : 
-                    createWelcomeMessageHTML(aiType.name)
+                    createWelcomeMessageHTML(aiModel.name)
                 }
             </div>
             <div class="chat-input-container">
@@ -297,7 +293,7 @@ const ChatManager = (function() {
         elements.activeChatsDropdownTrigger.classList.remove('disabled');
 
         state.chats.forEach(chatData => {
-            const aiType = state.aiTypes[chatData.aiType] || { name: `AI ${chatData.aiType}`, icon: 'bi bi-cpu' };
+            const aiModel = window.state.aiTypes.find(m => m.id === chatData.aiModelId) || { name: `AI (${chatData.aiModelId ? chatData.aiModelId.slice(-4) : 'Unknown'})`, icon: 'bi bi-cpu' };
             const listItem = document.createElement('li');
             listItem.className = 'list-group-item list-group-item-action active-chat-item d-flex align-items-center justify-content-between';
             listItem.setAttribute('data-chat-id', chatData.id);
@@ -315,8 +311,8 @@ const ChatManager = (function() {
 
             let chatNameHTML = `
                 <span class="d-flex align-items-center">
-                    <i class="${aiType.icon} me-2"></i>
-                    <span>${aiType.name} (ID: ${chatData.id.slice(-4)})</span>
+                    <i class="${aiModel.icon} me-2"></i>
+                    <span>${aiModel.name} (ID: ${chatData.id.slice(-4)})</span>
                 </span>`;
 
             if (chatData.isMinimized) {
@@ -576,42 +572,85 @@ const ChatManager = (function() {
         }
     }
 
+
     // --- CHAT ACTIONS ---
     /**
      * Add a new chat
-     * @param {number} aiType - AI type index
-     * @returns {string} - New chat ID
+     * @param {string} [aiModelId] - The string ID of the AI model to use (from window.state.aiTypes). If undefined, defaults to the first available AI.
+     * @returns {string|null} - New chat ID, or null if chat creation failed.
      */
-    function addChat(aiType = 0) {
-        log('action', 'Adding new chat', aiType);
-        
-        if (state.chats.length >= state.maxChats) {
-            log('warn', 'Maximum number of chats reached');
-            alert(`Maximum of ${state.maxChats} chats allowed. Please close one first.`);
+    function addChat(aiModelId) {
+        log('action', 'Attempting to add new chat. Requested AI Model ID:', aiModelId);
+
+        if (!elements.chatContainer) {
+            log('error', 'Chat container not found. Cannot add chat.');
+            ModalManager.showAlert('Error: Chat container not found.');
             return null;
         }
+
+        if (state.chats.length >= state.maxChats) {
+            log('warn', `Max chats reached (${state.maxChats}). Cannot add new chat.`);
+            ModalManager.showAlert(`Maximum of ${state.maxChats} chat panels reached. Please close one first.`);
+            return null;
+        }
+
+        // Determine the AI model ID to use
+        let finalAiModelId = aiModelId;
+        if (!finalAiModelId) {
+            if (window.state && window.state.aiTypes && window.state.aiTypes.length > 0) {
+                finalAiModelId = window.state.aiTypes[0].id; // Default to the ID of the first AI in the list
+                log('info', 'No AI Model ID provided, defaulting to first in list:', finalAiModelId);
+            } else {
+                log('error', 'addChat: No AI Model ID provided and no default AI available from window.state.aiTypes.');
+                ModalManager.showAlert('Cannot create chat: No AI models available or AI models not loaded yet.');
+                return null; // Cannot create chat without an AI model
+            }
+        } else {
+            // Verify the provided aiModelId exists
+            const modelExists = window.state.aiTypes.some(m => m.id === finalAiModelId);
+            if (!modelExists) {
+                log('warn', `addChat: Provided AI Model ID "${finalAiModelId}" does not exist in window.state.aiTypes. Defaulting to first AI.`);
+                if (window.state && window.state.aiTypes && window.state.aiTypes.length > 0) {
+                    finalAiModelId = window.state.aiTypes[0].id;
+                } else {
+                    log('error', 'addChat: Provided AI Model ID was invalid and no fallback AI available.');
+                    ModalManager.showAlert('Cannot create chat: Specified AI model is invalid and no fallback available.');
+                    return null;
+                }
+            }
+        }
         
-        const chatId = `chat-${Date.now()}`;
-        state.chats.push({
-            id: chatId,
-            aiType: aiType,
+        const newChat = {
+            id: `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            aiModelId: finalAiModelId, // Use the resolved string ID
             messages: [],
             createdAt: Date.now(),
             lastActivity: Date.now(),
-            isMinimized: false // Add isMinimized state
-        });
+            isMinimized: false,
+            inputHistory: [], // For up/down arrow message recall
+            historyIndex: -1   // For up/down arrow message recall
+        };
+
+        state.chats.push(newChat);
+        log('info', 'New chat added:', JSON.parse(JSON.stringify(newChat)));
         
-        renderChats();
-        renderActiveChatsDropdown(); // Renamed
+        renderChats(); // This function should call createChatElement internally
+        updateWelcomeScreen(); // To hide it if this is the first chat
+        renderActiveChatsDropdown(); // To update the list of active chats
+        // saveChatsToHistory(); // Usually only save if there's interaction or on close
 
-        // Automatically open the active chats dropdown
-        const dropdownMenu = elements.activeChatsDropdownMenu;
-        if (dropdownMenu && !dropdownMenu.classList.contains('show')) {
-            const dropdownInstance = new bootstrap.Collapse(dropdownMenu);
-            dropdownInstance.show();
+        // Focus the input of the new chat if it's visible
+        const newChatElement = elements.chatContainer.querySelector(`[data-chat-id="${newChat.id}"]`);
+        if (newChatElement) {
+            const inputField = newChatElement.querySelector('.chat-input');
+            if (inputField) {
+                // Ensure panel is not minimized or hidden before focusing
+                if (newChatElement.offsetParent !== null) { // Basic check for visibility
+                   inputField.focus();
+                }
+            }
         }
-
-        return chatId;
+        return newChat.id;
     }
 
     /**
@@ -741,6 +780,7 @@ const ChatManager = (function() {
         }
     }
 
+
     /**
      * Send a message in a chat
      * @param {string} chatId - Chat ID
@@ -750,9 +790,11 @@ const ChatManager = (function() {
         log('action', 'Sending message', chatId, text);
         
         const chat = state.chats.find(c => c.id === chatId);
-        if (!chat) return;
+        if (!chat) {
+            log('error', `sendMessage: Chat not found for ID ${chatId}`);
+            return;
+        }
         
-        // Add user message
         const userMessage = {
             isUser: true,
             text: text,
@@ -761,68 +803,68 @@ const ChatManager = (function() {
         chat.messages.push(userMessage);
         chat.lastActivity = Date.now();
         
-        // Get AI type info for the response
-        const aiType = state.aiTypes[chat.aiType] || { name: `AI ${chat.aiType}`, icon: 'bi bi-cpu' };
+        // Get AI model info using model ID from the chat object
+        const aiModel = window.state.aiTypes.find(m => m.id === chat.aiModelId);
+        const currentAiModelName = aiModel ? aiModel.name : 'AI'; // Use actual model name or a default
+
+        const isFirstMessage = chat.messages.length === 1; 
         
-        // Check if this is the first message in the chat
-        const isFirstMessage = chat.messages.length === 1; // We just added the user message, so length is 1
-        
-        // Update chat window with new message
         const chatElement = document.querySelector(`.chat-window[data-chat-id="${chatId}"]`);
         if (chatElement) {
             const messagesContainer = chatElement.querySelector('.chat-messages');
             if (messagesContainer) {
                 const messageElement = document.createElement('div');
-                messageElement.innerHTML = createMessageHTML(userMessage);
+                // User message display doesn't need AI name or isFirstAIMessage flag
+                messageElement.innerHTML = createMessageHTML(userMessage); 
                 messagesContainer.appendChild(messageElement.firstElementChild);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 
-                // Update chat title to show locked state if this is the first message
                 if (isFirstMessage) {
                     const chatTitle = chatElement.querySelector('.chat-title');
                     if (chatTitle) {
                         chatTitle.classList.remove('model-changeable');
                         chatTitle.classList.add('model-locked');
                         chatTitle.title = 'Model locked - conversation already started';
-                        
-                        // Replace chevron with lock icon
                         const selectorIcon = chatTitle.querySelector('.model-selector-icon');
                         if (selectorIcon) {
                             const lockIcon = document.createElement('i');
                             lockIcon.className = 'bi bi-lock-fill model-locked-icon';
                             chatTitle.replaceChild(lockIcon, selectorIcon);
                         }
-                        
-                        // Remove click handler
                         chatTitle.onclick = null;
                     }
                 }
             }
         }
         
-        // Simulate AI response (replace with actual API call)
+        // Simulate AI response
         setTimeout(() => {
-            const aiResponse = getAIResponse(text, chat.aiType);
+            if (!aiModel) { 
+                log('warn', `sendMessage: Skipping AI response for chat ${chatId} as AI model (ID: ${chat.aiModelId}) was not resolved from window.state.aiTypes.`);
+                return;
+            }
+
+            // Pass the string aiModelId to getAIResponse
+            const aiResponseText = getAIResponse(text, chat.aiModelId); 
             const aiMessage = {
                 isUser: false,
-                text: aiResponse,
+                text: aiResponseText,
                 timestamp: Date.now()
             };
             chat.messages.push(aiMessage);
             chat.lastActivity = Date.now();
             
-            // Update chat window with AI response
             if (chatElement) {
                 const messagesContainer = chatElement.querySelector('.chat-messages');
                 if (messagesContainer) {
                     const messageElement = document.createElement('div');
-                    // Pass isFirstAIMessage=true for the first AI response
-                    messageElement.innerHTML = createMessageHTML(aiMessage, isFirstMessage, aiType.name);
+                    // Pass currentAiModelName for the first AI message, and isFirstMessage flag
+                    messageElement.innerHTML = createMessageHTML(aiMessage, isFirstMessage, currentAiModelName); 
                     messagesContainer.appendChild(messageElement.firstElementChild);
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
             }
-            renderActiveChatsDropdown(); // Renamed
+            renderActiveChatsDropdown();
         }, 1000);
     }
 
@@ -865,91 +907,108 @@ const ChatManager = (function() {
     /**
      * Get a simulated AI response
      * @param {string} userMessage - User message
-     * @param {number} aiType - AI type index
+     * @param {string} aiModelId - The string ID of the AI model
      * @returns {string} - AI response
      */
-    function getAIResponse(userMessage, aiType) {
-        // This is a placeholder. In a real app, you would call your AI API here.
-        const responses = {
-            0: [ // GPT-4 Turbo
-                "I understand what you're asking. Let me think about that...",
-                "That's an interesting question. Here's what I know about it...",
-                "Based on my knowledge, I can tell you that...",
-                "I'd be happy to help with that. Here's some information..."
+    function getAIResponse(userMessage, aiModelId) { // Parameter changed to aiModelId
+        log('debug', `getAIResponse called for userMessage: "${userMessage}", aiModelId: "${aiModelId}"`);
+
+        let modelIndex = 0; 
+        if (window.state && window.state.aiTypes && Array.isArray(window.state.aiTypes)) {
+            const foundIndex = window.state.aiTypes.findIndex(m => m.id === aiModelId);
+            if (foundIndex !== -1) {
+                modelIndex = foundIndex;
+            } else {
+                log('warn', `getAIResponse: aiModelId "${aiModelId}" not found in window.state.aiTypes. Defaulting to index 0 for responses.`);
+            }
+        } else {
+            log('warn', `getAIResponse: window.state.aiTypes is not available or not an array. Defaulting to index 0 for responses.`);
+        }
+
+        const responses = { 
+            0: [ // Example: Corresponds to the first model in window.state.aiTypes
+                "I understand what you're asking. Let me ponder that for a moment...",
+                "That's a fascinating query! Here is my perspective...",
+                "Based on my current information, I would suggest...",
+                "Allow me to shed some light on that. Here's what I found..."
             ],
-            1: [ // Translation AI
-                "Here's the translation you requested...",
-                "I've translated that for you. The result is...",
-                "In the target language, that would be..."
+            1: [ // Example: Corresponds to the second model
+                "Translation complete: ... (simulated)",
+                "I've processed your translation request, and here's the result...",
+                "In the specified language, that would be approximately: ..."
             ],
-            2: [ // Image Generator
-                "I've created an image based on your description. [Image would appear here]",
-                "Here's a visual representation of what you described. [Image would appear here]",
-                "I've generated this image for you. [Image would appear here]"
+            2: [ // Example: Corresponds to the third model
+                "Generating image based on your prompt... [Simulated Image Placeholder]",
+                "Here is a visual representation of your words: [Simulated Image Placeholder]",
+                "Image created: [Simulated Image Placeholder]"
             ]
+            // IMPORTANT: Add more entries here if you have more than 3 AI models in your database,
+            // or ensure the fallback logic handles it gracefully.
         };
         
-        const aiResponses = responses[aiType] || responses[0];
-        return aiResponses[Math.floor(Math.random() * aiResponses.length)];
+        const aiModelSpecificResponses = responses[modelIndex] || responses[0]; // Fallback to 0 if index is out of bounds
+        if (!aiModelSpecificResponses) { 
+            log('error', `getAIResponse: No responses found for modelIndex ${modelIndex} or default. Returning generic response.`);
+            return "I'm currently unable to provide a specific response for this model.";
+        }
+        return aiModelSpecificResponses[Math.floor(Math.random() * aiModelSpecificResponses.length)];
     }
 
-    /**
-     * Show the model selection dropdown
-     * @param {string} chatId - Chat ID
-     * @param {HTMLElement} titleElement - The chat title element that was clicked
-     */
     function showModelDropdown(chatId, titleElement) {
         log('action', 'Showing model dropdown', chatId);
         
-        // Remove any existing dropdowns
         document.querySelectorAll('.model-dropdown').forEach(dropdown => {
-            dropdown.parentNode.removeChild(dropdown);
+            if (dropdown.parentNode) {
+                dropdown.parentNode.removeChild(dropdown);
+            }
         });
         
         const chat = state.chats.find(c => c.id === chatId);
-        if (!chat) return;
-        
-        // Create dropdown element
+        if (!chat) {
+            log('error', `showModelDropdown: Chat not found for ID: ${chatId}`);
+            return;
+        }
+        if (!window.state || !window.state.aiTypes || window.state.aiTypes.length === 0) {
+            log('error', 'showModelDropdown: window.state.aiTypes is not available.');
+            ModalManager.showAlert('AI Models not loaded. Cannot change model.');
+            return;
+        }
+
         const dropdown = document.createElement('div');
         dropdown.className = 'model-dropdown';
         
-        // Create options for each AI type
-        const options = state.aiTypes.map((type, index) => {
-            const isSelected = index === chat.aiType;
+        const options = window.state.aiTypes.map(model => {
+            const isSelected = model.id === chat.aiModelId;
             return `
-                <div class="model-option ${isSelected ? 'selected' : ''}" data-type="${index}">
-                    <i class="${type.icon}"></i>
-                    <span>${type.name}</span>
+                <div class="model-option ${isSelected ? 'selected' : ''}" data-model-id="${model.id}">
+                    <i class="${model.icon || 'bi bi-cpu'}"></i>
+                    <span>${model.name || 'Unknown Model'}</span>
                     ${isSelected ? '<i class="bi bi-check-lg ms-auto"></i>' : ''}
                 </div>
             `;
         }).join('');
         
         dropdown.innerHTML = options;
-        
-        // Add dropdown to the DOM
-        elements.chatContainer.appendChild(dropdown); // Append to chatContainer
+        elements.chatContainer.appendChild(dropdown);
 
-        // Position the dropdown absolutely relative to the titleElement
         const titleRect = titleElement.getBoundingClientRect();
         const containerRect = elements.chatContainer.getBoundingClientRect();
 
-        dropdown.style.position = 'absolute'; // Ensure position is absolute
+        dropdown.style.position = 'absolute';
         dropdown.style.top = `${titleRect.bottom - containerRect.top + elements.chatContainer.scrollTop}px`;
         dropdown.style.left = `${titleRect.left - containerRect.left + elements.chatContainer.scrollLeft}px`;
-        // width and z-index are handled by CSS
         
-        // Show dropdown with animation
         setTimeout(() => {
             dropdown.classList.add('show');
         }, 10);
         
-        // Add click handlers to options
         dropdown.querySelectorAll('.model-option').forEach(option => {
             option.onclick = (e) => {
                 e.stopPropagation();
-                const typeIndex = parseInt(option.getAttribute('data-type'));
-                changeAIModel(chatId, typeIndex);
+                const newModelId = option.getAttribute('data-model-id');
+                if (newModelId) {
+                    changeAIModel(chatId, newModelId);
+                }
                 dropdown.classList.remove('show');
                 setTimeout(() => {
                     if (dropdown.parentNode) {
@@ -959,7 +1018,6 @@ const ChatManager = (function() {
             };
         });
         
-        // Close dropdown when clicking outside
         const closeDropdown = (e) => {
             if (!dropdown.contains(e.target) && e.target !== titleElement) {
                 dropdown.classList.remove('show');
@@ -972,61 +1030,69 @@ const ChatManager = (function() {
             }
         };
         
-        document.addEventListener('click', closeDropdown);
+        document.addEventListener('click', closeDropdown, { once: true }); // Use once for cleaner removal
     }
-    
+
     /**
      * Change the AI model for a chat
      * @param {string} chatId - Chat ID
-     * @param {number} newTypeIndex - Index of the new AI type
+     * @param {string} newAiModelId - ID of the new AI model
      */
-    function changeAIModel(chatId, newTypeIndex) {
-        log('action', 'Changing AI model', chatId, newTypeIndex);
+    function changeAIModel(chatId, newAiModelId) {
+        log('action', 'Changing AI model for chat:', chatId, 'to new ID:', newAiModelId);
         
         const chat = state.chats.find(c => c.id === chatId);
-        if (!chat) return;
+        if (!chat) {
+            log('error', `changeAIModel: Chat not found for ID: ${chatId}`);
+            return;
+        }
         
-        // Check if chat has messages (model should be locked)
         if (chat.messages && chat.messages.some(msg => msg.isUser)) {
             log('warn', 'Cannot change model: chat already has messages', chatId);
-            alert('Cannot change AI model: conversation has already started.');
+            ModalManager.showAlert('Cannot change AI model: conversation has already started.');
             return;
         }
         
-        // Validate new type index
-        if (isNaN(newTypeIndex) || newTypeIndex < 0 || newTypeIndex >= state.aiTypes.length) {
-            log('error', 'Invalid AI type index', newTypeIndex);
+        if (!window.state || !window.state.aiTypes || window.state.aiTypes.length === 0) {
+            log('error', 'changeAIModel: window.state.aiTypes is not available.');
+            ModalManager.showAlert('AI Models not loaded. Cannot change model.');
+            return;
+        }
+
+        const newModel = window.state.aiTypes.find(m => m.id === newAiModelId);
+        if (!newModel) {
+            log('error', 'Invalid new AI Model ID:', newAiModelId);
+            ModalManager.showAlert('Invalid AI Model selected.');
             return;
         }
         
-        // Update the chat's AI type
-        chat.aiType = newTypeIndex;
+        chat.aiModelId = newAiModelId; // Update the chat's AI model ID
+        log('info', `Chat ${chatId} AI model ID updated to: ${chat.aiModelId}`);
         
-        // Re-render the chat window
         const chatElement = document.querySelector(`.chat-window[data-chat-id="${chatId}"]`);
         if (chatElement) {
-            const aiType = state.aiTypes[chat.aiType];
-            
             // Update chat title
-            const chatTitle = chatElement.querySelector('.chat-title');
-            if (chatTitle) {
-                const iconElement = chatTitle.querySelector('i:first-child');
-                const nameElement = chatTitle.querySelector('span');
+            const chatTitleElement = chatElement.querySelector('.chat-title');
+            if (chatTitleElement) {
+                const iconElement = chatTitleElement.querySelector('i:first-child');
+                const nameElement = chatTitleElement.querySelector('span');
                 
-                if (iconElement) iconElement.className = aiType.icon;
-                if (nameElement) nameElement.textContent = `${aiType.name} (ID: ${chat.id.slice(-4)})`;
+                if (iconElement) iconElement.className = newModel.icon || 'bi bi-cpu';
+                if (nameElement) nameElement.textContent = `${newModel.name || 'Unknown Model'} (ID: ${chat.id.slice(-4)})`;
             }
             
             // Update welcome message if no messages yet
             const messagesContainer = chatElement.querySelector('.chat-messages');
             if (messagesContainer && (!chat.messages || chat.messages.length === 0)) {
-                messagesContainer.innerHTML = createWelcomeMessageHTML(aiType.name);
+                messagesContainer.innerHTML = createWelcomeMessageHTML(newModel.name || 'Selected AI');
             }
+            log('debug', 'Chat element updated for new AI model', newModel);
         } else {
-            // If chat element not found, re-render all chats
-            renderChats();
+            log('warn', `Chat element for ${chatId} not found for UI update after model change. Re-rendering all.`);
+            renderChats(); // Fallback if specific element isn't found
         }
-        renderActiveChatsDropdown(); // Added to update dropdown after model change
+        renderActiveChatsDropdown();
+        // Consider saving state here if necessary: saveChatsToHistory(); or similar
     }
 
     // Layout is now automatically determined based on number of chats
@@ -1048,16 +1114,16 @@ const ChatManager = (function() {
         const aiModelSelectorItems = document.querySelectorAll('.ai-model-selector-item');
         aiModelSelectorItems.forEach(item => {
             item.addEventListener('click', function(event) {
-                event.preventDefault(); // Prevent default action of list-group-item-action
-                const aiIndex = parseInt(this.dataset.aiIndex, 10);
-                if (!isNaN(aiIndex)) {
-                    ChatManager.addChat(aiIndex);
+                event.preventDefault(); 
+                const modelId = this.dataset.aiIndex; // Get the string ID
+                if (modelId) { // Check if modelId is not null or empty
+                    ChatManager.addChat(modelId); // Pass the string ID
                     
                     // Manage 'active' class
                     aiModelSelectorItems.forEach(i => i.classList.remove('active'));
                     this.classList.add('active');
                 } else {
-                    log('error', 'Invalid AI index selected from sidebar.', this.dataset.aiIndex);
+                    log('error', 'Invalid AI model ID selected from sidebar.', this.dataset.aiIndex);
                 }
             });
         });
