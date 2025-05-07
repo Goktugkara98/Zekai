@@ -1,4 +1,15 @@
-/* Responsive Styles */
+/*
+RESPONSIVE & UTILITY STYLES
+--------------------------------------------------
+TABLE OF CONTENTS:
+--------------------------------------------------
+1.0 RESPONSIVE BREAKPOINTS
+    1.1 Tablet & Below (max-width: 991px)
+    1.2 Mobile & Below (max-width: 767px)
+2.0 MOBILE MENU TOGGLE
+    2.1 Mobile Menu Toggle (.mobile-menu-toggle)
+--------------------------------------------------
+*/
 @media (max-width: 991px) {
     :root {
         --sidebar-width: var(--sidebar-collapsed-width);

@@ -1,5 +1,31 @@
+/*
+CSS CUSTOM PROPERTIES (VARIABLES)
+--------------------------------------------------
+TABLE OF CONTENTS:
+--------------------------------------------------
+1.0 COLOR PALETTE
+    1.1 Primary & Accent Colors
+    1.2 Grayscale
+2.0 LAYOUT & SPACING
+    2.1 Sidebar Dimensions
+3.0 UI ELEMENTS
+    3.1 Border Radius
+    3.2 Box Shadows
+4.0 TYPOGRAPHY
+    4.1 Font Weights
+5.0 ANIMATIONS & TRANSITIONS
+    5.1 Transitions
+--------------------------------------------------
+*/
+
 :root {
-    /* Colors */
+
+    /* ==================================================
+       1.0 COLOR PALETTE
+       ================================================== */
+
+    /* 1.1 Primary & Accent Colors
+       -------------------------------------------------- */
     --primary: #3E63DD;
     --primary-light: #5D7DF5;
     --primary-dark: #2F4FB0;
@@ -11,7 +37,8 @@
     --light: #F8FAFC;
     --dark: #0F172A;
     
-    /* Grays */
+    /* 1.2 Grayscale
+       -------------------------------------------------- */
     --gray-50: #F8FAFC;
     --gray-100: #F1F5F9;
     --gray-200: #E2E8F0;
@@ -23,29 +50,51 @@
     --gray-800: #1E293B;
     --gray-900: #0F172A;
     
-    /* Layout */
+    /* ==================================================
+       2.0 LAYOUT & SPACING
+       ================================================== */
+
+    /* 2.1 Sidebar Dimensions
+       -------------------------------------------------- */
     --sidebar-width: 280px;
     --sidebar-collapsed-width: 70px;
     
-    /* Borders */
+    /* ==================================================
+       3.0 UI ELEMENTS
+       ================================================== */
+
+    /* 3.1 Border Radius
+       -------------------------------------------------- */
     --border-radius-sm: 0.25rem;
     --border-radius: 0.5rem;
     --border-radius-lg: 0.75rem;
     --border-radius-xl: 1rem;
     
-    /* Shadows */
+    /* 3.2 Box Shadows
+       -------------------------------------------------- */
     --box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     --box-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --box-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    
-    /* Animations */
-    --transition: all 0.2s ease-in-out;
-    --transition-slow: all 0.3s ease-in-out;
-    
-    /* Typography */
+
+    /* ==================================================
+       4.0 TYPOGRAPHY
+       ================================================== */
+
+    /* 4.1 Font Weights
+       -------------------------------------------------- */
+
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
+    
+    /* ==================================================
+       5.0 ANIMATIONS & TRANSITIONS
+       ================================================== */
+
+    /* 5.1 Transitions
+       -------------------------------------------------- */
+    --transition: all 0.2s ease-in-out;
+    --transition-slow: all 0.3s ease-in-out;
 }

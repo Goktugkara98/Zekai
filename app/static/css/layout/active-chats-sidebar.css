@@ -1,0 +1,54 @@
+/*
+ACTIVE CHATS SIDEBAR STYLES
+--------------------------------------------------
+TABLE OF CONTENTS:
+--------------------------------------------------
+1.0 ACTIVE CHATS DROPDOWN
+    1.1 Dropdown Item (.list-group-item)
+    1.2 Dropdown Item Hover
+    1.3 Started Chat Item (.active-chat-item--started)
+    1.4 Rendered Inactive Chat Item (.active-chat-item--rendered-inactive)
+2.0 ICONS & CONTROLS
+    2.1 Chevron Icon Rotation
+--------------------------------------------------
+*/
+#active-chats-dropdown-menu .list-group-item {
+    font-size: 0.85rem; /* Slightly smaller font for dropdown items */
+    color: var(--text-color);
+    background-color: transparent; /* Make sure it inherits sidebar background */
+    border: none; /* Remove default list-group borders */
+    padding-left: 0.5rem; /* Adjust padding as needed */
+    padding-right: 0.5rem;
+    cursor: pointer;
+    border-radius: var(--bs-border-radius); /* Use Bootstrap's border radius */
+}
+
+#active-chats-dropdown-menu .list-group-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Style for chats that have started (messages exist) */
+.active-chat-item--started {
+    color: var(--text-color) !important; /* Ensure it's black or main text color */
+    font-weight: 600; /* Bold for started chats */
+    /* Add a border, e.g., left border or full border */
+    /* border-left: 3px solid var(--primary);  Example with primary color */
+    border: 1px solid var(--text-color); /* Black border */
+    background-color: rgba(0,0,0, 0.03); /* Slightly different background */
+}
+
+/* Style for chats rendered on screen but not active (no messages) */
+.active-chat-item--rendered-inactive {
+    color: var(--text-muted) !important; /* Gray text */
+    font-style: italic;
+}
+
+
+/* Chevron icon rotation */
+#active-chats-dropdown-trigger[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+#active-chats-dropdown-trigger .bi-chevron-down {
+    transition: transform 0.3s ease;
+}
+

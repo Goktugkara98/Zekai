@@ -11,16 +11,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap" rel="stylesheet">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/base/variables.css">
     <link rel="stylesheet" href="/static/css/base/reset.css">
     <link rel="stylesheet" href="/static/css/layout/sidebar.css">
     <link rel="stylesheet" href="/static/css/layout/main-content.css">
+    <link rel="stylesheet" href="/static/css/layout/active-chats-sidebar.css">
     <link rel="stylesheet" href="/static/css/components/buttons.css">
-    <link rel="stylesheet" href="/static/css/components/panels.css">
+    <link rel="stylesheet" href="/static/css/components/chat.css">
     <link rel="stylesheet" href="/static/css/components/messages.css">
     <link rel="stylesheet" href="/static/css/utils/responsive.css">
     <link rel="stylesheet" href="/static/css/themes/dark-mode.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 <div class="container-fluid p-0">
@@ -36,27 +40,6 @@
                     <input type="text" class="form-control" placeholder="Search AI models...">
                 </div>
             </div>
-            <!-- Active Chats Section -->
-            <div id="active-chats-sidebar" class="d-flex flex-column">
-                <div class="sidebar-header d-flex justify-content-between align-items-center p-3 border-bottom">
-                    <h5 class="mb-0">Active Conversations</h5>
-                </div>
-                <div class="search-container p-2 border-bottom">
-                    <input type="text" placeholder="Search conversations..." class="form-control form-control-sm">
-                </div>
-                <ul id="active-chats-list" class="list-unstyled flex-grow-1 overflow-auto mb-0">
-                    <!-- Active chats will be dynamically added here -->
-                    <li class="empty-list-message text-muted small px-2 py-3 text-center">
-                        No active chats yet. Start a conversation or minimize a panel.
-                    </li>
-                </ul>
-                <div class="sidebar-header d-flex align-items-center p-3 border-bottom mt-2">
-                    <h6 class="mb-0">Geçmiş Sohbetler</h6>
-                </div>
-                <ul id="past-chats-list" class="list-unstyled overflow-auto mb-0" style="max-height: 200px;">
-                    <!-- Past chat items will be added here -->
-                </ul>
-            </div>
             <!-- AI Models Section -->
             <div class="sidebar-section">
                 <h6 class="sidebar-heading px-3 py-2 mb-1">AI Models</h6>
@@ -65,14 +48,6 @@
                     <li class="list-group-item list-group-item-action active d-flex align-items-center">
                         <span class="ai-icon me-2"><i class="bi bi-cpu"></i></span>
                         <span class="ai-name">GPT-4 Turbo</span>
-                    </li>
-                    <li class="list-group-item list-group-item-action d-flex align-items-center">
-                        <span class="ai-icon me-2"><i class="bi bi-eye"></i></span>
-                        <span class="ai-name">Vision Model</span>
-                    </li>
-                    <li class="list-group-item list-group-item-action d-flex align-items-center">
-                        <span class="ai-icon me-2"><i class="bi bi-mic"></i></span>
-                        <span class="ai-name">Speech Model</span>
                     </li>
                     <li class="list-group-item list-group-item-action d-flex align-items-center">
                         <span class="ai-icon me-2"><i class="bi bi-translate"></i></span>
@@ -84,13 +59,21 @@
                     </li>
                 </ul>
             </div>
+
+            <!-- NEW Active Chats Dropdown Section -->
+            <div class="sidebar-section">
+                <div id="active-chats-dropdown-trigger" class="sidebar-heading d-flex justify-content-between align-items-center px-3 py-2 mb-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#active-chats-dropdown-menu" aria-expanded="false" aria-controls="active-chats-dropdown-menu">
+                    <span>Active Chats</span>
+                    <i class="bi bi-chevron-down"></i> <!-- Icon to indicate dropdown -->
+                </div>
+                <div id="active-chats-dropdown-menu" class="collapse">
+                    <ul id="active-chats-list" class="list-group list-group-flush ps-2">
+                        <!-- Active chat items will be dynamically inserted here by JavaScript -->
+                    </ul>
+                </div>
+            </div>
+
             <div class="mt-auto sidebar-footer py-3 px-3">
-                <button class="btn btn-add-ai w-100 mb-3" id="add-ai-btn">
-                    <div class="d-flex align-items-center justify-content-center">
-                        <i class="bi bi-plus-circle-fill me-2"></i>
-                        <span>Add AI Model</span>
-                    </div>
-                </button>
                 <div class="d-flex justify-content-between">
                     <button class="btn btn-icon" id="settings-btn" title="Settings"><i class="bi bi-gear"></i></button>
                     <button class="btn btn-icon" id="help-btn" title="Help"><i class="bi bi-question-circle"></i></button>
@@ -98,62 +81,41 @@
                 </div>
             </div>
         </nav>
-        <!-- Main Content -->
+
+        <!-- Main Content Area -->
         <main class="flex-grow-1 d-flex flex-column">
-            <div id="panel-area" class="flex-grow-1 d-flex flex-wrap align-items-stretch justify-content-center p-4">
-                <!-- Welcome message or dynamic panels will be injected here by JS -->
-                <div id="welcome-message" class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center">
-                    <div class="welcome-icon mb-4">
-                        <i class="bi bi-robot"></i>
-                    </div>
-                    <h1 class="display-5 mb-3 fw-bold">Zekai</h1>
-                    <p class="lead mb-4">Add AI modules to get started. Manage and interact with multiple AI models in one place.</p>
-                    <button class="btn btn-add-ai btn-lg px-4 py-2" id="welcome-add-btn">
+            <!-- Chat Area Container -->
+            <div id="chat-container" class="flex-grow-1 d-flex flex-wrap">
+                <!-- Chat windows will be dynamically inserted here -->
+                <div id="welcome-screen" class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                    <h1 class="display-5 mb-3 fw-bold Zekai">Zek<span class="AI">ai</span></h1>
+                    <p class="lead mb-4">Your AI assistant platform. Start a conversation to begin.</p>
+                    <button class="btn btn-primary btn-lg px-4 py-2" id="welcome-new-chat-btn">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-plus-circle me-2"></i>
-                            <span>Add Your First AI</span>
+                            <span>Start New Chat</span>
                         </div>
                     </button>
                 </div>
             </div>
+            
             <!-- Control Bar -->
             <div id="control-bar" class="d-flex align-items-center px-4 py-3">
                 <div class="d-flex align-items-center control-buttons">
-                    <button class="btn btn-control me-2" id="add-panel-btn" title="Add Panel">
+                    <button class="btn btn-primary me-2" id="new-chat-btn" title="New Chat">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-grid-3x3-gap-fill me-2"></i>
-                            <span>Add Panel</span>
+                            <i class="bi bi-plus-circle me-2"></i>
+                            <span>New Chat</span>
                         </div>
                     </button>
-                    <button class="btn btn-control me-2" id="remove-panel-btn" title="Remove Panel">
+                    <button class="btn btn-outline-secondary me-2" id="clear-chats-btn" title="Clear All">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-trash me-2"></i>
-                            <span>Remove</span>
-                        </div>
-                    </button>
-                    <button class="btn btn-control-primary me-2" id="send-all-btn" title="Send to All Panels">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-send-fill me-2"></i>
-                            <span>Send to All</span>
+                            <span>Clear All</span>
                         </div>
                     </button>
                 </div>
-                <div class="ms-auto">
-                    <div class="btn-group layout-controls" role="group" aria-label="Panel Layouts">
-                        <button class="btn btn-layout layout-btn" data-layout="1" title="Single Panel">
-                            <i class="bi bi-square-fill"></i>
-                        </button>
-                        <button class="btn btn-layout layout-btn" data-layout="2" title="Two Panels">
-                            <i class="bi bi-layout-split"></i>
-                        </button>
-                        <button class="btn btn-layout layout-btn" data-layout="6" title="Six Panels">
-                            <i class="bi bi-grid-3x2-gap-fill"></i>
-                        </button>
-                        <button class="btn btn-layout layout-btn" data-layout="custom" title="Custom Layout">
-                            <i class="bi bi-grid-3x3-gap-fill"></i>
-                        </button>
-                    </div>
-                </div>
+                <!-- Layout controls removed - layout will be managed dynamically -->
             </div>
         </main>
     </div>
@@ -170,7 +132,7 @@
 <script src="/static/js/utils/responsive.js"></script>
 <script src="/static/js/components/theme.js"></script>
 <script src="/static/js/components/messages.js"></script>
-<script src="/static/js/components/panels.js"></script>
+<script src="/static/js/components/chat.js"></script>
 <script src="/static/js/handlers/sidebar.js"></script>
 <script src="/static/js/main.js"></script>
 </body>

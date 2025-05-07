@@ -1,171 +1,57 @@
-/* Button Styles */
+/*
+BUTTON STYLES
+--------------------------------------------------
+TABLE OF CONTENTS:
+--------------------------------------------------
+1.0 GENERAL BUTTON RESET/BASE (.btn)
+    1.1 Base Styling
+2.0 ICON BUTTONS (.btn-icon)
+    2.1 Default Styling
+    2.2 Default Hover State
+--------------------------------------------------
 
-/* Standard Buttons */
+/* ==================================================
+   1.0 GENERAL BUTTON RESET/BASE (.btn)
+   ================================================== */
+
+/* 1.1 Base Styling
+   Applies to all elements with the .btn class or specific button classes
+   that should inherit these base styles.
+   -------------------------------------------------- */
 .btn {
     transition: var(--transition);
     font-weight: var(--font-weight-medium);
     letter-spacing: 0.01em;
 }
 
-/* Icon Buttons */
+/* ==================================================
+   2.0 ICON BUTTONS (.btn-icon)
+   ================================================== */
+
+/* 2.1 Light Mode / Default Styling
+   -------------------------------------------------- */
 .btn-icon {
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: 10px; 
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.1); 
     color: var(--gray-600);
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.2); 
     transition: var(--transition);
-    font-size: 1.125rem;
+    font-size: 1.125rem; 
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); 
 }
 
+/* 2.2 Light Mode / Default Hover State
+   -------------------------------------------------- */
 .btn-icon:hover {
     background-color: rgba(255, 255, 255, 0.2);
     color: var(--primary);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08); 
     transform: translateY(-2px);
-}
-
-/* Add AI Button */
-.btn-add-ai {
-    background-color: var(--primary);
-    color: white;
-    border: none;
-    border-radius: var(--border-radius);
-    padding: 0.75rem 1rem;
-    font-weight: var(--font-weight-medium);
-    font-size: 0.875rem;
-    transition: var(--transition);
-    box-shadow: 0 4px 10px rgba(62, 99, 221, 0.25);
-    letter-spacing: 0.01em;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.btn-add-ai:hover {
-    background-color: rgba(62, 99, 221, 0.95);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(62, 99, 221, 0.3);
-}
-
-/* Control Buttons */
-.btn-control {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--gray-700);
-    border-radius: var(--border-radius);
-    padding: 0.625rem 1rem;
-    font-weight: var(--font-weight-medium);
-    transition: var(--transition);
-    font-size: 0.875rem;
-    letter-spacing: 0.01em;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.btn-control:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: var(--gray-900);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08);
-}
-
-.btn-control-primary {
-    background: linear-gradient(135deg, rgba(62, 99, 221, 0.85), rgba(41, 73, 182, 0.85));
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--border-radius);
-    padding: 0.625rem 1rem;
-    font-weight: var(--font-weight-medium);
-    transition: var(--transition);
-    font-size: 0.875rem;
-    letter-spacing: 0.01em;
-    box-shadow: 0 4px 10px rgba(62, 99, 221, 0.25);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.btn-control-primary:hover {
-    background: linear-gradient(135deg, rgba(82, 116, 229, 0.9), rgba(62, 99, 221, 0.9));
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(62, 99, 221, 0.3);
-}
-
-/* Layout Buttons */
-.btn-layout {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--gray-600);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.5rem;
-    font-weight: var(--font-weight-medium);
-    transition: var(--transition);
-    min-width: 40px;
-    min-height: 40px;
-    font-size: 0.875rem;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-layout i {
-    font-size: 1rem;
-}
-
-.btn-layout:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: var(--gray-900);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
-}
-
-.btn-layout.active {
-    background-color: var(--primary);
-    color: white;
-    box-shadow: 0 4px 8px rgba(62, 99, 221, 0.25);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Dark mode adjustments for frosted glass */
-body.dark-mode .btn-icon,
-body.dark-mode .btn-control {
-    background-color: rgba(30, 30, 30, 0.5);
-    border-color: rgba(255, 255, 255, 0.05);
-    color: var(--gray-300);
-}
-
-body.dark-mode .btn-icon:hover,
-body.dark-mode .btn-control:hover {
-    background-color: rgba(40, 40, 40, 0.7);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: white;
-}
-
-body.dark-mode .btn-layout {
-    background-color: rgba(30, 30, 30, 0.5);
-    border-color: rgba(255, 255, 255, 0.05);
-    color: var(--gray-400);
-}
-
-body.dark-mode .btn-layout:hover {
-    background-color: rgba(40, 40, 40, 0.7);
-    color: white;
-}
-
-body.dark-mode .btn-layout.active {
-    background-color: var(--primary);
 }

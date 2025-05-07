@@ -1,4 +1,31 @@
-/* Base Reset & Global Styles */
+/*
+BASE RESET & GLOBAL STYLES
+--------------------------------------------------
+TABLE OF CONTENTS:
+--------------------------------------------------
+1.0 RESET STYLES
+    1.1 Box Sizing
+    1.2 Basic Element Resets (Body, Headings)
+2.0 GLOBAL ELEMENT STYLES
+    2.1 Links (<a>)
+    2.2 Images (<img>)
+3.0 ACCESSIBILITY
+    3.1 Focus Styles
+--------------------------------------------------
+*/
+
+/* ==================================================
+   1.0 RESET STYLES
+   ================================================== */
+
+/* 1.1 Box Sizing
+   -------------------------------------------------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* 1.2 Basic Element Resets (Body, Headings)
+   -------------------------------------------------- */
 body {
     font-family: 'Inter', sans-serif;
     background-color: var(--light);
@@ -9,15 +36,17 @@ body {
     letter-spacing: 0.01em;
 }
 
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
 h1, h2, h3, h4, h5, h6 {
     margin-top: 0;
     font-weight: var(--font-weight-semibold);
 }
 
+/* ==================================================
+   2.0 GLOBAL ELEMENT STYLES
+   ================================================== */
+
+/* 2.1 Links (<a>)
+   -------------------------------------------------- */
 a {
     color: var(--primary);
     text-decoration: none;
@@ -28,12 +57,20 @@ a:hover {
     color: var(--primary-dark);
 }
 
+/* 2.2 Images (<img>)
+   -------------------------------------------------- */
 img {
     max-width: 100%;
     height: auto;
+    display: block;
 }
 
-/* Focus styles for accessibility */
+/* ==================================================
+   3.0 ACCESSIBILITY
+   ================================================== */
+
+/* 3.1 Focus Styles
+   -------------------------------------------------- */
 :focus {
     outline: 2px solid var(--primary-light);
     outline-offset: 2px;
