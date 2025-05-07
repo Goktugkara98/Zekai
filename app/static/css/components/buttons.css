@@ -50,8 +50,79 @@ TABLE OF CONTENTS:
 /* 2.2 Light Mode / Default Hover State
    -------------------------------------------------- */
 .btn-icon:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.2); 
     color: var(--primary);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08); 
+    border-color: var(--primary);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08); 
     transform: translateY(-2px);
+}
+
+/* ==================================================
+   3.0 CONTROL BAR ICON BUTTONS (.btn-icon-control)
+   ================================================== */
+
+.btn-icon-control {
+    width: 40px; /* Biraz daha büyük olabilir */
+    height: 40px;
+    border-radius: 12px; /* Daha yumuşak köşeler */
+    background-color: var(--gray-100); /* Açık gri arka plan */
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300); /* Hafif bir kenarlık */
+    font-size: 1.1rem; /* İkon boyutu biraz daha büyük */
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Hafif bir gölge */
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: inline-flex; /* İkonu ortalamak için flex */
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon-control:hover {
+    background-color: var(--gray-200);
+    color: var(--primary); /* Hover'da ana renk */
+    border-color: var(--gray-400);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.07);
+}
+
+.btn-icon-control:active {
+    background-color: var(--gray-300);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Dark mode */
+body.dark-mode .btn-icon-control {
+    background-color: var(--gray-750, #2d3748); /* Koyu tema için uygun bir arka plan, fallback ile */
+    color: var(--gray-300);
+    border-color: var(--gray-650, #4a5568);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+body.dark-mode .btn-icon-control:hover {
+    background-color: var(--gray-700, #1a202c);
+    color: var(--primary-light, var(--primary)); /* Koyu temada hover için ana rengin açığı, fallback ile */
+    border-color: var(--gray-600, #2d3748);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+body.dark-mode .btn-icon-control:active {
+    background-color: var(--gray-650, #4a5568);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+/* Control Bar Broadcast Input Styles */
+#control-bar #broadcast-message-input {
+    /* İsteğe bağlı olarak input yüksekliğini butonlarla eşleştirebilirsiniz */
+    /* height: 40px; */
+    border-radius: 10px; /* Butonlarla benzer yuvarlaklık */
+    /* Temel Bootstrap form-control stillerini korur, ancak gerekirse özelleştirilebilir */
+}
+
+body.dark-mode #control-bar #broadcast-message-input {
+    background-color: var(--gray-700, #1a202c);
+    color: var(--gray-200, #e2e8f0);
+    border-color: var(--gray-600, #2d3748);
+}
+
+body.dark-mode #control-bar #broadcast-message-input::placeholder {
+    color: var(--gray-500, #a0aec0);
 }

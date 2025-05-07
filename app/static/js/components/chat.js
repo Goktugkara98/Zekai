@@ -28,6 +28,7 @@ const ChatManager = (function() {
     // Private state
     const state = {
         chats: [],
+        chatHistory: [], // EKLENDİ
         maxChats: 6, // Updated to support up to 6 chats
         aiTypes: [
             { id: 0, name: 'GPT-4 Turbo', icon: 'bi bi-cpu' },
@@ -39,10 +40,12 @@ const ChatManager = (function() {
     // Initialize state from global state if exists
     if (window.state) {
         window.state.chats = state.chats;
+        window.state.chatHistory = state.chatHistory; // EKLENDİ
         window.state.aiTypes = state.aiTypes;
     } else {
         window.state = { 
             chats: state.chats,
+            chatHistory: state.chatHistory, // EKLENDİ
             aiTypes: state.aiTypes
         };
     }
@@ -62,7 +65,12 @@ const ChatManager = (function() {
             clearChatsBtn: document.getElementById('clear-chats-btn'),
             activeChatsDropdownTrigger: document.getElementById('active-chats-dropdown-trigger'),
             activeChatsDropdownMenu: document.getElementById('active-chats-dropdown-menu'),
-            activeChatsList: document.getElementById('active-chats-list')
+            activeChatsList: document.getElementById('active-chats-list'),
+            broadcastMessageInput: document.getElementById('broadcast-message-input'), // Eklendi
+            sendBroadcastBtn: document.getElementById('send-broadcast-btn'),       // Eklendi
+            chatHistoryTrigger: document.getElementById('chat-history-trigger'),
+            chatHistoryMenu: document.getElementById('chat-history-menu'),
+            chatHistoryList: document.getElementById('chat-history-list'),
         };
 
         if (!elements.chatContainer) {
@@ -102,11 +110,14 @@ const ChatManager = (function() {
             <div class="chat-header">
                 <div class="chat-title ${modelSelectionClass}" title="${modelSelectionTitle}">
                     <i class="${aiType.icon}"></i>
-                    <span>${aiType.name}</span>
+                    <span>${aiType.name} (ID: ${chatData.id.slice(-4)})</span>
                     ${!isModelLocked ? '<i class="bi bi-chevron-down model-selector-icon"></i>' : 
                       '<i class="bi bi-lock-fill model-locked-icon"></i>'}
                 </div>
                 <div class="chat-controls">
+                    <button class="chat-control-btn chat-minimize-btn" title="Minimize Chat">
+                        <i class="bi bi-dash-lg"></i>
+                    </button>
                     <button class="chat-control-btn chat-close-btn" title="Close Chat">
                         <i class="bi bi-x"></i>
                     </button>
@@ -203,7 +214,24 @@ const ChatManager = (function() {
         
         // Determine layout based on number of chats
         let layoutClass;
-        switch (state.chats.length) {
+        const activeChats = state.chats.filter(chat => !chat.isMinimized);
+
+        // Show welcome screen if no active (non-minimized) chats
+        if (activeChats.length === 0 && state.chats.length > 0) { // All chats are minimized
+            // Optionally, show a message indicating all chats are minimized
+            // For now, just show the welcome screen as if there are no chats.
+            // Or, if you want a different screen, create and append it here.
+            elements.chatContainer.appendChild(elements.welcomeScreen);
+            // Update layout class to default or remove specific layout classes
+            elements.chatContainer.className = 'flex-grow-1 d-flex flex-wrap'; 
+            return;
+        } else if (state.chats.length === 0) { // No chats at all
+            elements.chatContainer.appendChild(elements.welcomeScreen);
+            elements.chatContainer.className = 'flex-grow-1 d-flex flex-wrap'; 
+            return;
+        }
+
+        switch (activeChats.length) {
             case 1:
                 layoutClass = 'layout-1'; // 1 chat: full width
                 break;
@@ -231,7 +259,7 @@ const ChatManager = (function() {
         elements.chatContainer.className = `flex-grow-1 d-flex flex-wrap ${layoutClass}`;
         
         // Render each chat
-        state.chats.forEach(chatData => {
+        activeChats.forEach(chatData => {
             const chatElement = createChatElement(chatData);
             elements.chatContainer.appendChild(chatElement);
             setupChatControls(chatElement);
@@ -285,14 +313,134 @@ const ChatManager = (function() {
                 }
             }
 
-            listItem.innerHTML = `
+            let chatNameHTML = `
                 <span class="d-flex align-items-center">
                     <i class="${aiType.icon} me-2"></i>
-                    <span>${aiType.name}</span>
-                </span>
-            `;
-            // TODO: Add click listener to focus/switch to this chat window
+                    <span>${aiType.name} (ID: ${chatData.id.slice(-4)})</span>
+                </span>`;
+
+            if (chatData.isMinimized) {
+                listItem.classList.add('active-chat-item--minimized');
+                listItem.innerHTML = chatNameHTML + '<span class="ms-auto"><i class="bi bi-window-plus" title="Restore Chat"></i></span>';
+                listItem.onclick = (e) => {
+                    e.stopPropagation(); 
+                    const chatToRestore = state.chats.find(c => c.id === chatData.id);
+                    if (chatToRestore) {
+                        chatToRestore.isMinimized = false;
+                        renderChats();
+                        renderActiveChatsDropdown();
+                    }
+                };
+            } else {
+                listItem.innerHTML = chatNameHTML;
+                listItem.onclick = () => {
+                    log('action', `Active chat item clicked: ${chatData.id}. Highlighting chat window.`);
+                    
+                    // Highlight the chat window
+                    const chatWindow = document.querySelector(`.chat-window[data-chat-id="${chatData.id}"]`);
+                    if (chatWindow) {
+                        chatWindow.classList.add('chat-window--highlighted');
+                        setTimeout(() => {
+                            chatWindow.classList.remove('chat-window--highlighted');
+                        }, 2000); // Highlight for 2 seconds
+                    }
+                    
+                    // Do not close the dropdown
+                    // const dropdownInstance = bootstrap.Collapse.getInstance(elements.activeChatsDropdownMenu);
+                    // if (dropdownInstance) {
+                    //     dropdownInstance.hide();
+                    // }
+                };
+            }
+
             elements.activeChatsList.appendChild(listItem);
+        });
+    }
+
+    /**
+     * Render the chat history list in the sidebar
+     */
+    function renderChatHistory() {
+        if (!elements.chatHistoryList || !elements.chatHistoryTrigger || !elements.chatHistoryMenu) {
+            log('warn', 'Chat history elements not found in DOM.');
+            return;
+        }
+
+        elements.chatHistoryList.innerHTML = ''; // Clear current list
+
+        if (state.chatHistory.length === 0) {
+            elements.chatHistoryTrigger.classList.add('disabled');
+            elements.chatHistoryMenu.classList.remove('show'); 
+            const noHistoryLi = document.createElement('li');
+            noHistoryLi.className = 'list-group-item text-muted';
+            noHistoryLi.textContent = 'No chat history';
+            noHistoryLi.style.paddingLeft = '1rem';
+            elements.chatHistoryList.appendChild(noHistoryLi);
+            elements.chatHistoryTrigger.setAttribute('aria-expanded', 'false');
+            return;
+        }
+
+        elements.chatHistoryTrigger.classList.remove('disabled');
+
+        state.chatHistory.forEach(chat => {
+            const aiType = state.aiTypes.find(ai => ai.id === chat.aiType) || { name: 'Unknown AI', icon: 'bi bi-archive' };
+            const listItem = document.createElement('li');
+            // Aktif sohbetlerle aynı temel sınıfı kullan, gerekirse ek özel sınıflar eklenebilir
+            listItem.className = 'list-group-item list-group-item-action active-chat-item d-flex justify-content-between align-items-center';
+            listItem.setAttribute('data-chat-id', chat.id);
+            listItem.style.paddingLeft = '1rem'; // Aktif sohbetlerdeki gibi padding
+            listItem.style.paddingRight = '1rem'; // Aktif sohbetlerdeki gibi padding
+
+            // İsim ve simge için aktif sohbetlerdeki gibi bir container span
+            const nameContainerSpan = document.createElement('span');
+            nameContainerSpan.className = 'd-flex align-items-center';
+            // Uzun isimlerin butonu itmesini engellemek için stil
+            nameContainerSpan.style.overflow = 'hidden';
+            nameContainerSpan.style.textOverflow = 'ellipsis';
+            nameContainerSpan.style.whiteSpace = 'nowrap';
+            nameContainerSpan.style.flexGrow = '1'; // Alanı doldurması için
+            nameContainerSpan.style.marginRight = '0.5rem'; // Butondan önce boşluk
+
+            const iconElement = document.createElement('i');
+            iconElement.className = `${aiType.icon} me-2`;
+            
+            const nameSpanElement = document.createElement('span');
+            let historyItemText = aiType.name;
+            if (chat.closedTimestamp) {
+                const date = new Date(chat.closedTimestamp);
+                // Tarihi daha kısa formatta göster: GG/AA/YY
+                const dateString = date.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: '2-digit' });
+                historyItemText += ` (${dateString})`;
+            }
+            nameSpanElement.textContent = historyItemText;
+            nameSpanElement.title = historyItemText; // Tam metin için tooltip
+
+            nameContainerSpan.appendChild(iconElement);
+            nameContainerSpan.appendChild(nameSpanElement);
+            
+            listItem.appendChild(nameContainerSpan);
+
+            // Geri yükleme butonu (sağda kalacak)
+            const restoreButton = document.createElement('button');
+            restoreButton.className = 'btn btn-sm btn-icon chat-history-restore-btn flex-shrink-0'; 
+            restoreButton.title = 'Restore Chat';
+            restoreButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+            restoreButton.onclick = function(event) {
+                event.stopPropagation();
+                log('action', 'Restore chat from history clicked (not implemented yet)', chat.id);
+                alert('Restoring chat from history is not yet implemented.');
+                // TODO: Implement restoreChatFromHistory(chat.id);
+            };
+            listItem.appendChild(restoreButton);
+
+            // Geçmiş öğesine tıklandığında (işlevsellik daha sonra eklenecek)
+            listItem.onclick = function() {
+                log('action', 'Chat history item clicked', chat.id);
+                alert(`Displaying history for chat ${chat.id} is not yet implemented. Messages: ${JSON.stringify(chat.messages)}`);
+                // TODO: Implement logic to display chat history messages
+            };
+
+            elements.chatHistoryList.appendChild(listItem);
         });
     }
 
@@ -315,10 +463,35 @@ const ChatManager = (function() {
             closeBtn.onclick = (e) => {
                 e.stopPropagation();
                 log('action', 'Close chat button clicked', chatId);
-                removeChat(chatId);
+                const chatData = state.chats.find(c => c.id === chatId);
+
+                if (chatData && chatData.messages && chatData.messages.length > 0) {
+                    // Sohbet aktif, mesajları var, onay iste
+                    if (confirm("Bu sohbeti kapatmak istediğinizden emin misiniz?")) {
+                        removeChat(chatId);
+                    }
+                } else {
+                    // Sohbet aktif değil veya hiç mesaj yok, direkt kapat
+                    removeChat(chatId);
+                }
             };
         }
-        
+
+        // Minimize button (Updated version)
+        const minimizeBtn = chatElement.querySelector('.chat-minimize-btn');
+        if (minimizeBtn) {
+            minimizeBtn.onclick = (e) => {
+                e.stopPropagation();
+                log('action', 'Minimize chat button clicked', chatId);
+                const chat = state.chats.find(c => c.id === chatId);
+                if (chat) {
+                    chat.isMinimized = true;
+                    renderChats();
+                    renderActiveChatsDropdown();
+                }
+            };
+        }
+
         // Model selection via chat title
         const chatTitle = chatElement.querySelector('.chat-title');
         if (chatTitle && chatTitle.classList.contains('model-changeable')) {
@@ -376,8 +549,31 @@ const ChatManager = (function() {
         // Clear all chats button
         elements.clearChatsBtn.onclick = () => {
             log('action', 'Clear all chats button clicked');
-            clearAllChats();
+            const chatsToRemovePreview = state.chats.filter(chat => !chat.messages || !chat.messages.some(msg => msg.isUser));
+            
+            if (chatsToRemovePreview.length > 0) {
+                if (confirm(`Are you sure you want to close ${chatsToRemovePreview.length} unused chat(s)? Chats with ongoing conversations will not be affected.`)) {
+                    clearAllChats(); 
+                }
+            } else {
+                alert('There are no unused chats to clear. All active chats have ongoing conversations or there are no chats.');
+            }
         };
+
+        // Broadcast Message Handlers
+        if (elements.sendBroadcastBtn && elements.broadcastMessageInput) {
+            elements.sendBroadcastBtn.addEventListener('click', () => {
+                log('action', 'Send broadcast button clicked');
+                sendBroadcastMessage();
+            });
+
+            elements.broadcastMessageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    log('action', 'Enter key pressed in broadcast input');
+                    sendBroadcastMessage();
+                }
+            });
+        }
     }
 
     // --- CHAT ACTIONS ---
@@ -401,7 +597,8 @@ const ChatManager = (function() {
             aiType: aiType,
             messages: [],
             createdAt: Date.now(),
-            lastActivity: Date.now()
+            lastActivity: Date.now(),
+            isMinimized: false // Add isMinimized state
         });
         
         renderChats();
@@ -422,28 +619,125 @@ const ChatManager = (function() {
      * @param {string} chatId - Chat ID to remove
      */
     function removeChat(chatId) {
-        log('action', 'Removing chat', chatId);
-        
-        const index = state.chats.findIndex(chat => chat.id === chatId);
-        if (index !== -1) {
-            state.chats.splice(index, 1);
-            renderChats();
-            renderActiveChatsDropdown(); // Renamed
+        log('action', 'Attempting to remove chat', chatId);
+        // data-chat-id özelliğini kullanarak doğru pencereyi seç
+        const chatWindow = document.querySelector(`.chat-window[data-chat-id="${chatId}"]`);
+
+        if (chatWindow) {
+            chatWindow.classList.add('closing'); // Kapanış animasyonunu başlat
+
+            // Animasyonun bitmesini dinle
+            // Define the handler function to be able to remove it specifically
+            const handleAnimationEnd = () => {
+                // Olay dinleyicisini kaldır ki birden fazla kez tetiklenmesin
+                // chatWindow.removeEventListener('animationend', handleAnimationEnd); // {once: true} handles this
+
+                // Animasyon bittikten sonra state güncellemesi ve DOM'dan tam kaldırma
+                const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+                if (chatIndex !== -1) {
+                    const chatToRemove = state.chats[chatIndex];
+                    const hasUserMessages = chatToRemove.messages && chatToRemove.messages.some(msg => msg.isUser);
+
+                    if (hasUserMessages) {
+                        log('info', `Chat ${chatId} has user messages. Moving to history.`);
+                        chatToRemove.closedTimestamp = Date.now(); 
+                        // Ensure chatHistory is initialized
+                        if (!Array.isArray(state.chatHistory)) {
+                            state.chatHistory = [];
+                        }
+                        state.chatHistory.unshift(chatToRemove); 
+                    } else {
+                        log('info', `Chat ${chatId} has no user messages. Removing without adding to history.`);
+                    }
+                    state.chats.splice(chatIndex, 1);
+
+                    if (chatWindow.parentNode) {
+                        chatWindow.parentNode.removeChild(chatWindow);
+                    }
+                    
+                    renderChats(); // Kalan pencerelerin düzenini güncelle
+                    renderActiveChatsDropdown();
+                    if (typeof renderChatHistory === 'function') {
+                        renderChatHistory(); 
+                    }
+                } else {
+                    log('warn', `Chat ${chatId} not found in active chats for state removal after animation.`);
+                    if (chatWindow.parentNode) {
+                        chatWindow.parentNode.removeChild(chatWindow);
+                    }
+                }
+            };
+
+            chatWindow.addEventListener('animationend', handleAnimationEnd, { once: true });
+
+            // Güvenlik önlemi: Eğer animationend olayı bir sebepten tetiklenmezse
+            setTimeout(() => {
+                if (chatWindow.parentNode && chatWindow.classList.contains('closing')) {
+                    log('warn', `Animationend for ${chatId} timed out. Forcing removal.`);
+                    // chatWindow.removeEventListener('animationend', handleAnimationEnd); // Not strictly needed if already fired due to {once: true}
+                    
+                    const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+                    if (chatIndex !== -1) {
+                         state.chats.splice(chatIndex, 1); 
+                    }
+                    chatWindow.parentNode.removeChild(chatWindow);
+                    renderChats(); 
+                    renderActiveChatsDropdown();
+                    if (typeof renderChatHistory === 'function') {
+                        renderChatHistory();
+                    }
+                }
+            }, 700); // Animasyon süresinden biraz daha uzun (CSS: 0.35s -> 350ms)
+
+        } else {
+            log('warn', `Chat window element for ${chatId} not found for closing animation. Removing directly.`);
+            const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
+            if (chatIndex !== -1) {
+                const chatToRemove = state.chats[chatIndex];
+                const hasUserMessages = chatToRemove.messages && chatToRemove.messages.some(msg => msg.isUser);
+                if (hasUserMessages) {
+                    chatToRemove.closedTimestamp = Date.now();
+                    if (!Array.isArray(state.chatHistory)) { state.chatHistory = []; }
+                    state.chatHistory.unshift(chatToRemove);
+                }
+                state.chats.splice(chatIndex, 1);
+                renderChats();
+                renderActiveChatsDropdown();
+                if (typeof renderChatHistory === 'function') {
+                    renderChatHistory();
+                }
+            }
         }
     }
 
     /**
-     * Clear all chats
+     * Clear unused chats (chats where no user message has been sent).
+     * This function is called after user confirmation.
      */
     function clearAllChats() {
-        log('action', 'Clearing all chats');
-        
-        if (state.chats.length === 0) return;
-        
-        if (confirm('Are you sure you want to clear all chats?')) {
-            state.chats = [];
+        log('action', 'Clearing unused chats');
+
+        const initialChatCount = state.chats.length;
+        if (initialChatCount === 0) {
+            log('info', 'No chats to clear.');
+            return; // Erken çıkış, onclick içinde zaten kontrol ediliyor ama yine de iyi bir pratik.
+        }
+
+        // Kullanıcı mesajı olan sohbetleri koru, olmayanları filtrele (kaldır)
+        state.chats = state.chats.filter(chat => {
+            const hasUserMessage = chat.messages && chat.messages.some(msg => msg.isUser);
+            return hasUserMessage; // Kullanıcı mesajı olanları tutar
+        });
+
+        const chatsRemovedCount = initialChatCount - state.chats.length;
+
+        if (chatsRemovedCount > 0) {
+            log('info', `${chatsRemovedCount} unused chat(s) removed.`);
             renderChats();
-            renderActiveChatsDropdown(); // Renamed
+            renderActiveChatsDropdown();
+        } else {
+            log('info', 'No unused chats were found to remove (all chats have conversations).');
+            // Kullanıcıya zaten onclick içinde bir alert gösteriliyor, bu yüzden burada ek bir alert'e gerek yok.
         }
     }
 
@@ -531,6 +825,42 @@ const ChatManager = (function() {
             renderActiveChatsDropdown(); // Renamed
         }, 1000);
     }
+
+    // --- BROADCAST MESSAGE FUNCTIONALITY ---
+    /**
+     * Sends the broadcast message to all active (non-minimized) chats.
+     */
+    function sendBroadcastMessage() {
+        if (!elements.broadcastMessageInput) {
+            log('warn', 'Broadcast message input not found.');
+            return;
+        }
+        const messageText = elements.broadcastMessageInput.value.trim();
+
+        if (messageText === '') {
+            log('info', 'Broadcast message is empty, not sending.');
+            return;
+        }
+
+        log('action', `Attempting to broadcast message: "${messageText}"`);
+
+        const activeChats = state.chats.filter(chat => !chat.isMinimized);
+
+        if (activeChats.length === 0) {
+            log('info', 'No active (non-minimized) chats to broadcast to.');
+            alert('There are no active chats to send a message to. Create a new chat or restore a minimized one.');
+            return;
+        }
+
+        activeChats.forEach(chat => {
+            log('debug', `Sending broadcast message to chat ID: ${chat.id}`);
+            sendMessage(chat.id, messageText); 
+        });
+
+        elements.broadcastMessageInput.value = ''; 
+        log('info', 'Broadcast message sent and input cleared.');
+    }
+    // --- END BROADCAST MESSAGE FUNCTIONALITY ---
 
     /**
      * Get a simulated AI response
@@ -684,7 +1014,7 @@ const ChatManager = (function() {
                 const nameElement = chatTitle.querySelector('span');
                 
                 if (iconElement) iconElement.className = aiType.icon;
-                if (nameElement) nameElement.textContent = aiType.name;
+                if (nameElement) nameElement.textContent = `${aiType.name} (ID: ${chat.id.slice(-4)})`;
             }
             
             // Update welcome message if no messages yet
@@ -713,8 +1043,28 @@ const ChatManager = (function() {
         }
         
         setupGlobalHandlers();
-        renderChats();
+
+        // NEW: Add event listeners to AI Model selector items
+        const aiModelSelectorItems = document.querySelectorAll('.ai-model-selector-item');
+        aiModelSelectorItems.forEach(item => {
+            item.addEventListener('click', function(event) {
+                event.preventDefault(); // Prevent default action of list-group-item-action
+                const aiIndex = parseInt(this.dataset.aiIndex, 10);
+                if (!isNaN(aiIndex)) {
+                    ChatManager.addChat(aiIndex);
+                    
+                    // Manage 'active' class
+                    aiModelSelectorItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                } else {
+                    log('error', 'Invalid AI index selected from sidebar.', this.dataset.aiIndex);
+                }
+            });
+        });
         
+        renderChats(); 
+        renderActiveChatsDropdown();
+        renderChatHistory();
         log('info', 'ChatManager initialized successfully');
     }
 
@@ -725,20 +1075,40 @@ const ChatManager = (function() {
         removeChat,
         clearAllChats,
         sendMessage,
+        sendBroadcastMessage,
         changeAIModel
     };
 })();
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Add chat.css to the document if not already included
-    if (!document.querySelector('link[href*="chat.css"]')) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/static/css/components/chat.css';
-        document.head.appendChild(link);
-    }
-    
-    // Initialize ChatManager
     ChatManager.init();
+    
+    // Make sure welcome screen button is interactive if it exists
+    const welcomeNewChatBtn = document.getElementById('welcome-new-chat-btn');
+    if (welcomeNewChatBtn) {
+        welcomeNewChatBtn.addEventListener('click', () => ChatManager.addChat());
+    }
+
+    // NEW: AI Category Accordion Chevron Management
+    const aiCategoriesAccordion = document.getElementById('aiCategoriesAccordion');
+    if (aiCategoriesAccordion) {
+        const collapseElements = aiCategoriesAccordion.querySelectorAll('.collapse');
+        collapseElements.forEach(collapseEl => {
+            const header = collapseEl.previousElementSibling; // Find the category header
+            const chevron = header ? header.querySelector('.category-chevron') : null;
+
+            if (chevron) {
+                collapseEl.addEventListener('show.bs.collapse', function () {
+                    chevron.classList.remove('bi-chevron-down');
+                    chevron.classList.add('bi-chevron-up');
+                });
+
+                collapseEl.addEventListener('hide.bs.collapse', function () {
+                    chevron.classList.remove('bi-chevron-up');
+                    chevron.classList.add('bi-chevron-down');
+                });
+            }
+        });
+    }
 });
