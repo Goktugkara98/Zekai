@@ -1,13 +1,38 @@
 /**
- * Dynamic styles utility
+ * ZekAI Dynamic Styles Module
+ * ========================
+ * @description Dynamic CSS styles generation and management
+ * @version 1.0.0
+ * @author ZekAI Team
+ * 
+ * TABLE OF CONTENTS
+ * ================
+ * 1. Style Management
+ *    1.1 Dynamic CSS Injection
+ */
+
+//=============================================================================
+// 1. STYLE MANAGEMENT
+//=============================================================================
+
+/**
+ * 1.1 Dynamic CSS Injection
+ * ----------------------
  */
 
 /**
- * Add dynamic CSS styles to the page
+ * Adds dynamic CSS styles to the document head
+ * Includes styles for panels, messages, animations, and responsive design
+ * 
+ * @returns {void}
  */
 function addDynamicStyles() {
-    // Add CSS for animations and dynamic styles that need to be added after page load
+    // Create CSS for dynamic components and animations
     const dynamicCSS = `
+        /**
+         * Panel Animations and Transitions
+         * ------------------------------
+         */
         .ai-panel {
             opacity: 0;
             transform: translateY(20px);

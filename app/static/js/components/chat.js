@@ -1,11 +1,63 @@
 /**
- * Chat Component Module
- * Manages AI chat windows, layouts, and interactions
+ * ZekAI Chat Component Module
+ * ===========================
+ * @description Manages AI chat windows, layouts, and user interactions
+ * @version 1.0.0
+ * @author ZekAI Team
+ * 
+ * TABLE OF CONTENTS
+ * ================
+ * 1. Core System
+ *    1.1 Logging System
+ *    1.2 State Management
+ *    1.3 DOM Elements
+ *    1.4 Initialization
+ * 
+ * 2. UI Components
+ *    2.1 Chat Element Factories
+ *    2.2 Message HTML Generators
+ * 
+ * 3. Rendering Functions
+ *    3.1 Chat Windows
+ *    3.2 Active Chats Dropdown
+ *    3.3 Chat History
+ * 
+ * 4. Event Handlers
+ *    4.1 Chat Controls
+ *    4.2 Global Handlers
+ * 
+ * 5. Chat Operations
+ *    5.1 Chat Management (Add/Remove/Clear)
+ *    5.2 Messaging System
+ *    5.3 Broadcast Messages
+ * 
+ * 6. AI Model Management
+ *    6.1 Response Generation
+ *    6.2 Model Selection
+ * 
+ * 7. Public API
+ *    7.1 Exposed Methods
+ *    7.2 DOM Ready Handlers
  */
 
-// --- LOGGING SYSTEM ---
+//=============================================================================
+// 1. CORE SYSTEM
+//=============================================================================
+
+/**
+ * 1.1 Logging System
+ * ------------------
+ * Provides debug, info, action, warn, and error level logging
+ */
 window.DEBUG_LOG = true; // Set to false to silence logs
 const LOG_LEVELS = ['debug', 'info', 'action', 'warn', 'error'];
+
+/**
+ * Logs a message with timestamp and color-coding based on level
+ * @param {string} level - Log level (debug|info|action|warn|error)
+ * @param {string} msg - Message to log
+ * @param {...any} args - Additional arguments to log
+ */
 function log(level, msg, ...args) {
     if (!window.DEBUG_LOG) return;
     if (!LOG_LEVELS.includes(level)) level = 'info';
@@ -22,49 +74,66 @@ function log(level, msg, ...args) {
 }
 
 /**
- * ChatManager - Handles all chat operations
+ * ChatManager - Main module that handles all chat operations
+ * @namespace ChatManager
  */
 const ChatManager = (function() {
-    // Private state
+    /**
+     * 1.2 State Management
+     * ------------------
+     * Private state for managing chats, history, and configuration
+     */
     const state = {
-        chats: [],
-        chatHistory: [], // EKLENDİ
-        maxChats: 6 // Updated to support up to 6 chats
-        // aiTypes removed from here, ChatManager will use window.state.aiTypes
+        chats: [],         // Active chat windows
+        chatHistory: [],   // Closed chats with messages
+        maxChats: 6        // Maximum number of concurrent chat windows
     };
 
-    // Initialize ChatManager's specific parts of window.state,
-    // and ensure aiTypes is at least an empty array if not already defined.
+    // Initialize global state or use existing
     if (window.state) {
-        if (!window.state.chats) window.state.chats = state.chats; // Initialize if not present
-        if (!window.state.chatHistory) window.state.chatHistory = state.chatHistory; // Initialize if not present
-        if (!window.state.aiTypes) window.state.aiTypes = []; // Ensure aiTypes exists
+        if (!window.state.chats) window.state.chats = state.chats;
+        if (!window.state.chatHistory) window.state.chatHistory = state.chatHistory;
+        if (!window.state.aiTypes) window.state.aiTypes = [];
     } else {
         window.state = { 
             chats: state.chats,
-            chatHistory: state.chatHistory, // EKLENDİ
-            aiTypes: [] // Initialize as empty, expecting it to be populated by index.html
+            chatHistory: state.chatHistory,
+            aiTypes: [] // Will be populated by index.html
         };
     }
 
-    // --- DOM ELEMENTS ---
+    /**
+     * 1.3 DOM Elements
+     * ---------------
+     * References to important DOM elements
+     */
     let elements = {};
 
     /**
-     * Initialize DOM element references
+     * Initializes all required DOM element references
+     * @returns {boolean} True if all critical elements found, false otherwise
      */
     function initElements() {
         elements = {
+            // Main container
             chatContainer: document.getElementById('chat-container'),
             welcomeScreen: document.getElementById('welcome-screen'),
+            
+            // Control buttons
             welcomeNewChatBtn: document.getElementById('welcome-new-chat-btn'),
             newChatBtn: document.getElementById('new-chat-btn'),
             clearChatsBtn: document.getElementById('clear-chats-btn'),
+            
+            // Active chats dropdown
             activeChatsDropdownTrigger: document.getElementById('active-chats-dropdown-trigger'),
             activeChatsDropdownMenu: document.getElementById('active-chats-dropdown-menu'),
             activeChatsList: document.getElementById('active-chats-list'),
-            broadcastMessageInput: document.getElementById('broadcast-message-input'), // Eklendi
-            sendBroadcastBtn: document.getElementById('send-broadcast-btn'),       // Eklendi
+            
+            // Broadcast functionality
+            broadcastMessageInput: document.getElementById('broadcast-message-input'),
+            sendBroadcastBtn: document.getElementById('send-broadcast-btn'),
+            
+            // Chat history
             chatHistoryTrigger: document.getElementById('chat-history-trigger'),
             chatHistoryMenu: document.getElementById('chat-history-menu'),
             chatHistoryList: document.getElementById('chat-history-list'),
@@ -78,11 +147,19 @@ const ChatManager = (function() {
         return true;
     }
 
-    // --- CHAT ELEMENT FACTORIES ---
+    //=============================================================================
+    // 2. UI COMPONENTS
+    //=============================================================================
+
     /**
-     * Create a new chat window element
-     * @param {Object} chatData - Chat data object
-     * @returns {HTMLElement} - Chat window element
+     * 2.1 Chat Element Factories
+     * -------------------------
+     */
+    
+    /**
+     * Creates a new chat window DOM element
+     * @param {Object} chatData - Chat data object with id, aiModelId, messages
+     * @returns {HTMLElement} Complete chat window element ready to be added to DOM
      */
     function createChatElement(chatData) {
         log('debug', 'Creating chat element', chatData);
@@ -139,11 +216,16 @@ const ChatManager = (function() {
     }
 
     /**
-     * Create HTML for a chat message
-     * @param {Object} message - Message data object
+     * 2.2 Message HTML Generators
+     * -------------------------
+     */
+    
+    /**
+     * Creates HTML markup for a single chat message
+     * @param {Object} message - Message data with isUser, text, timestamp properties
      * @param {boolean} isFirstAIMessage - Whether this is the first AI message in the conversation
      * @param {string} aiName - Name of the AI model (only used for first AI message)
-     * @returns {string} - Message HTML
+     * @returns {string} HTML markup for the message
      */
     function createMessageHTML(message, isFirstAIMessage = false, aiName = '') {
         const messageClass = message.isUser ? 'user-message' : 'ai-message';
@@ -166,9 +248,9 @@ const ChatManager = (function() {
     }
 
     /**
-     * Create HTML for the welcome message
-     * @param {string} aiName - Name of the AI
-     * @returns {string} - Welcome message HTML
+     * Creates HTML markup for the welcome message shown when a chat is first opened
+     * @param {string} aiName - Name of the AI model
+     * @returns {string} HTML markup for the welcome message
      */
     function createWelcomeMessageHTML(aiName) {
         return `
@@ -182,9 +264,18 @@ const ChatManager = (function() {
         `;
     }
 
-    // --- RENDER FUNCTIONS ---
+    //=============================================================================
+    // 3. RENDERING FUNCTIONS
+    //=============================================================================
+
     /**
-     * Render all chat windows
+     * 3.1 Chat Windows
+     * --------------
+     */
+    
+    /**
+     * Renders all active chat windows and manages layout based on count
+     * Handles welcome screen visibility and chat window arrangement
      */
     function renderChats() {
         log('debug', 'Rendering chats. Current state:', JSON.parse(JSON.stringify(state.chats)));
@@ -263,11 +354,14 @@ const ChatManager = (function() {
         renderActiveChatsDropdown(); // Renamed
     }
 
-    // Layout is now determined automatically based on number of chats
-
-    // --- ACTIVE CHATS DROPDOWN ---
     /**
-     * Render the active chats dropdown
+     * 3.2 Active Chats Dropdown
+     * ----------------------
+     */
+    
+    /**
+     * Renders the active chats dropdown in the sidebar
+     * Shows all active chats with options to highlight or restore minimized chats
      */
     function renderActiveChatsDropdown() {
         if (!elements.activeChatsList || !elements.activeChatsDropdownMenu || !elements.activeChatsDropdownTrigger) {
@@ -354,7 +448,13 @@ const ChatManager = (function() {
     }
 
     /**
-     * Render the chat history list in the sidebar
+     * 3.3 Chat History
+     * -------------
+     */
+    
+    /**
+     * Renders the chat history list in the sidebar
+     * Shows closed chats that can be restored or viewed
      */
     function renderChatHistory() {
         if (!elements.chatHistoryList || !elements.chatHistoryTrigger || !elements.chatHistoryMenu) {
@@ -440,10 +540,19 @@ const ChatManager = (function() {
         });
     }
 
-    // --- EVENT HANDLERS ---
+    //=============================================================================
+    // 4. EVENT HANDLERS
+    //=============================================================================
+
     /**
-     * Set up event handlers for a chat window
-     * @param {HTMLElement} chatElement - Chat window element
+     * 4.1 Chat Controls
+     * --------------
+     */
+    
+    /**
+     * Sets up event handlers for buttons and inputs in a chat window
+     * Handles close, minimize, model selection, and message sending
+     * @param {HTMLElement} chatElement - Chat window DOM element
      */
     function setupChatControls(chatElement) {
         if (!chatElement) {
@@ -522,7 +631,13 @@ const ChatManager = (function() {
     }
 
     /**
-     * Set up global event handlers
+     * 4.2 Global Handlers
+     * ----------------
+     */
+    
+    /**
+     * Sets up global event handlers for buttons and controls
+     * Handles new chat, clear chats, and broadcast message functionality
      */
     function setupGlobalHandlers() {
         if (!elements.welcomeNewChatBtn || !elements.newChatBtn || !elements.clearChatsBtn) {
@@ -573,11 +688,19 @@ const ChatManager = (function() {
     }
 
 
-    // --- CHAT ACTIONS ---
+    //=============================================================================
+    // 5. CHAT OPERATIONS
+    //=============================================================================
+
     /**
-     * Add a new chat
-     * @param {string} [aiModelId] - The string ID of the AI model to use (from window.state.aiTypes). If undefined, defaults to the first available AI.
-     * @returns {string|null} - New chat ID, or null if chat creation failed.
+     * 5.1 Chat Management
+     * ----------------
+     */
+    
+    /**
+     * Creates and adds a new chat window
+     * @param {string} [aiModelId] - Optional AI model ID to use (defaults to first available)
+     * @returns {string|null} New chat ID if successful, null if failed
      */
     function addChat(aiModelId) {
         log('action', 'Attempting to add new chat. Requested AI Model ID:', aiModelId);
@@ -654,8 +777,9 @@ const ChatManager = (function() {
     }
 
     /**
-     * Remove a chat
-     * @param {string} chatId - Chat ID to remove
+     * Removes a chat window with animation
+     * If chat has user messages, it's moved to history before removal
+     * @param {string} chatId - ID of chat to remove
      */
     function removeChat(chatId) {
         log('action', 'Attempting to remove chat', chatId);
@@ -750,8 +874,8 @@ const ChatManager = (function() {
     }
 
     /**
-     * Clear unused chats (chats where no user message has been sent).
-     * This function is called after user confirmation.
+     * Clears all unused chats (chats with no user messages)
+     * Called after user confirmation from the UI
      */
     function clearAllChats() {
         log('action', 'Clearing unused chats');
@@ -782,9 +906,15 @@ const ChatManager = (function() {
 
 
     /**
-     * Send a message in a chat
-     * @param {string} chatId - Chat ID
-     * @param {string} text - Message text
+     * 5.2 Messaging System
+     * -----------------
+     */
+    
+    /**
+     * Sends a user message to a specific chat and simulates AI response
+     * Updates UI and locks model selection after first message
+     * @param {string} chatId - Target chat ID
+     * @param {string} text - Message text content
      */
     function sendMessage(chatId, text) {
         log('action', 'Sending message', chatId, text);
@@ -868,9 +998,14 @@ const ChatManager = (function() {
         }, 1000);
     }
 
-    // --- BROADCAST MESSAGE FUNCTIONALITY ---
     /**
-     * Sends the broadcast message to all active (non-minimized) chats.
+     * 5.3 Broadcast Messages
+     * -------------------
+     */
+    
+    /**
+     * Sends the same message to all active (non-minimized) chats
+     * Used for broadcasting announcements or instructions
      */
     function sendBroadcastMessage() {
         if (!elements.broadcastMessageInput) {
@@ -902,15 +1037,22 @@ const ChatManager = (function() {
         elements.broadcastMessageInput.value = ''; 
         log('info', 'Broadcast message sent and input cleared.');
     }
-    // --- END BROADCAST MESSAGE FUNCTIONALITY ---
+    //=============================================================================
+    // 6. AI MODEL MANAGEMENT
+    //=============================================================================
 
     /**
-     * Get a simulated AI response
-     * @param {string} userMessage - User message
-     * @param {string} aiModelId - The string ID of the AI model
-     * @returns {string} - AI response
+     * 6.1 Response Generation
+     * --------------------
      */
-    function getAIResponse(userMessage, aiModelId) { // Parameter changed to aiModelId
+    
+    /**
+     * Generates a simulated AI response based on user message and AI model
+     * @param {string} userMessage - The user's message text
+     * @param {string} aiModelId - ID of the AI model to use for response
+     * @returns {string} Simulated AI response text
+     */
+    function getAIResponse(userMessage, aiModelId) {
         log('debug', `getAIResponse called for userMessage: "${userMessage}", aiModelId: "${aiModelId}"`);
 
         let modelIndex = 0; 
@@ -954,6 +1096,16 @@ const ChatManager = (function() {
         return aiModelSpecificResponses[Math.floor(Math.random() * aiModelSpecificResponses.length)];
     }
 
+    /**
+     * 6.2 Model Selection
+     * ----------------
+     */
+    
+    /**
+     * Shows the AI model selection dropdown for a chat
+     * @param {string} chatId - Target chat ID
+     * @param {HTMLElement} titleElement - Chat title element to position dropdown near
+     */
     function showModelDropdown(chatId, titleElement) {
         log('action', 'Showing model dropdown', chatId);
         
@@ -1034,9 +1186,10 @@ const ChatManager = (function() {
     }
 
     /**
-     * Change the AI model for a chat
-     * @param {string} chatId - Chat ID
-     * @param {string} newAiModelId - ID of the new AI model
+     * Changes the AI model for a chat (only if no messages yet)
+     * Updates UI elements to reflect the new model
+     * @param {string} chatId - Target chat ID
+     * @param {string} newAiModelId - ID of the new AI model to use
      */
     function changeAIModel(chatId, newAiModelId) {
         log('action', 'Changing AI model for chat:', chatId, 'to new ID:', newAiModelId);
@@ -1095,10 +1248,18 @@ const ChatManager = (function() {
         // Consider saving state here if necessary: saveChatsToHistory(); or similar
     }
 
-    // Layout is now automatically determined based on number of chats
+    //=============================================================================
+    // 7. PUBLIC API
+    //=============================================================================
 
     /**
-     * Initialize the chat manager
+     * 7.1 Exposed Methods
+     * ----------------
+     */
+    
+    /**
+     * Initializes the chat manager system
+     * Sets up DOM elements, event handlers, and renders initial state
      */
     function init() {
         log('info', 'Initializing ChatManager');
@@ -1134,34 +1295,40 @@ const ChatManager = (function() {
         log('info', 'ChatManager initialized successfully');
     }
 
-    // --- PUBLIC API ---
+    // Return public API methods
     return {
-        init,
-        addChat,
-        removeChat,
-        clearAllChats,
-        sendMessage,
-        sendBroadcastMessage,
-        changeAIModel
+        init,              // Initialize the chat system
+        addChat,           // Create a new chat window
+        removeChat,        // Remove a chat window
+        clearAllChats,     // Clear unused chats
+        sendMessage,       // Send a message in a chat
+        sendBroadcastMessage, // Send to all chats
+        changeAIModel      // Change AI model for a chat
     };
 })();
 
-// Initialize when DOM is loaded
+/**
+ * 7.2 DOM Ready Handlers
+ * -------------------
+ */
 document.addEventListener('DOMContentLoaded', () => {
     ChatManager.init();
     
-    // Make sure welcome screen button is interactive if it exists
+    // Initialize the chat manager
+    ChatManager.init();
+    
+    // Set up welcome screen new chat button
     const welcomeNewChatBtn = document.getElementById('welcome-new-chat-btn');
     if (welcomeNewChatBtn) {
         welcomeNewChatBtn.addEventListener('click', () => ChatManager.addChat());
     }
 
-    // NEW: AI Category Accordion Chevron Management
+    // Set up AI category accordion chevron animations
     const aiCategoriesAccordion = document.getElementById('aiCategoriesAccordion');
     if (aiCategoriesAccordion) {
         const collapseElements = aiCategoriesAccordion.querySelectorAll('.collapse');
         collapseElements.forEach(collapseEl => {
-            const header = collapseEl.previousElementSibling; // Find the category header
+            const header = collapseEl.previousElementSibling;
             const chevron = header ? header.querySelector('.category-chevron') : null;
 
             if (chevron) {

@@ -1,15 +1,67 @@
-// --- Main Application Entry Point ---
+/**
+ * ZekAI Main Application Module
+ * ==========================
+ * @description Main entry point and initialization for the ZekAI application
+ * @version 1.0.0
+ * @author ZekAI Team
+ * 
+ * TABLE OF CONTENTS
+ * ================
+ * 1. Global Configuration
+ *    1.1 State and Settings
+ * 
+ * 2. Core Initialization
+ *    2.1 DOM Elements
+ *    2.2 Event Listeners
+ *    2.3 Application Bootstrap
+ */
 
-// Global state and elements (can be extended)
-window.state = window.state || {}; // Ensure state object exists
-window.elements = {}; // To be populated on DOMContentLoaded
-window.config = window.config || { 
-    maxChats: 4,
-    defaultLayout: 1
-}; // Default configuration
+//=============================================================================
+// 1. GLOBAL CONFIGURATION
+//=============================================================================
 
 /**
- * Populates the window.elements object with frequently used DOM elements.
+ * 1.1 State and Settings
+ * -------------------
+ * Global application state and configuration
+ */
+
+// Initialize global state if it doesn't exist
+window.state = window.state || {
+    isDarkMode: false,
+    chats: [],
+    activeChat: null
+};
+
+// DOM element references (populated on DOMContentLoaded)
+window.elements = {};
+
+// Default configuration settings
+window.config = window.config || { 
+    // Maximum number of concurrent chats
+    maxChats: 4,
+    
+    // Default layout configuration (1-6)
+    defaultLayout: 1,
+    
+    // Debug mode for additional console logging
+    debug: false
+};
+
+//=============================================================================
+// 2. CORE INITIALIZATION
+//=============================================================================
+
+/**
+ * 2.1 DOM Elements
+ * -------------
+ */
+
+/**
+ * Populates the window.elements object with frequently used DOM elements
+ * Caches elements for better performance and easier access
+ * 
+ * @returns {void}
  */
 function populateDOMElements() {
     console.log('[main.js] Populating DOM elements...');
@@ -39,8 +91,15 @@ function populateDOMElements() {
 }
 
 /**
- * Sets up global event listeners for the application.
- * (e.g., for buttons outside the dynamic panel area)
+ * 2.2 Event Listeners
+ * ----------------
+ */
+
+/**
+ * Sets up global event listeners for the application
+ * Handles events for buttons and controls outside the dynamic panel area
+ * 
+ * @returns {void}
  */
 function setupGlobalEventListeners() {
     console.log('[main.js] Setting up global event listeners...');
@@ -55,14 +114,26 @@ function setupGlobalEventListeners() {
 }
 
 /**
- * Placeholder for setupPanelEventListeners function
+ * Sets up event listeners for panel-specific elements
+ * Currently a placeholder for future implementation
+ * 
+ * @returns {void}
+ * @todo Implement actual panel event listeners
  */
 function setupPanelEventListeners() {
     console.log('[main.js] setupPanelEventListeners is a placeholder and does not perform any actions.');
 }
 
 /**
- * Initialize the application
+ * 2.3 Application Bootstrap
+ * ---------------------
+ */
+
+/**
+ * Initializes the application and all its components
+ * Main entry point that coordinates the startup sequence
+ * 
+ * @returns {void}
  */
 function init() {
     console.log('[main.js] Initializing application...');
@@ -118,5 +189,11 @@ function init() {
     console.log('[main.js] Application initialization sequence finished.');
 }
 
-// Run initialization when DOM is fully loaded
+/**
+ * Start the application when DOM is fully loaded
+ * This ensures all HTML elements are available before JavaScript runs
+ */
 document.addEventListener('DOMContentLoaded', init);
+
+// Log application version on startup
+console.log('ZekAI Application v1.0.0 initialized');
