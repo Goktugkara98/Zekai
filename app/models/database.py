@@ -39,7 +39,7 @@ def fetch_ai_categories_from_db():
 
             # Fetch models for the current category
             cursor.execute("""
-                SELECT name, icon, data_ai_index 
+                SELECT name, icon, data_ai_index, api_url 
                 FROM ai_models 
                 WHERE category_id = %s 
                 ORDER BY id
@@ -50,7 +50,8 @@ def fetch_ai_categories_from_db():
                 category_dict["models"].append({
                     "name": model["name"],
                     "icon": model["icon"],
-                    "data_ai_index": model["data_ai_index"]
+                    "data_ai_index": model["data_ai_index"],
+                    "api_url": model["api_url"]
                 })
             categories_data.append(category_dict)
             
@@ -66,25 +67,15 @@ def fetch_ai_categories_from_db():
 
 def initialize_database():
     try:
-        # Connect to the MySQL server (without specifying a database initially to check/create it)
-        # However, for simplicity in this step, we'll assume the database 'zekai' exists
-        # and we're just ensuring tables are created.
-        # A more robust solution would create the database if it doesn't exist.
         conn = mysql.connector.connect(
             host=DB_CONFIG['host'],
             user=DB_CONFIG['user'],
-            password=DB_CONFIG['password']
-            # database=DB_CONFIG['database'] # Connect without specific DB first to create it
+            password=DB_CONFIG['password'],
+            database=DB_CONFIG['database']
         )
+
         cursor = conn.cursor(dictionary=True)
         
-        # Create database if it doesn't exist
-        # cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_CONFIG['database']}")
-        # print(f"Database {DB_CONFIG['database']} ensured.")
-        # conn.database = DB_CONFIG['database'] # Switch to the database
-        
-        # For now, let's assume the database 'zekai' is created and we connect directly.
-        # If you face issues with 'zekai' DB not existing, uncomment above and adjust.
         cursor.execute(f"USE {DB_CONFIG['database']}")
 
         # SQL to create ai_categories table
@@ -106,11 +97,19 @@ def initialize_database():
             name VARCHAR(255) NOT NULL,
             icon VARCHAR(255),
             data_ai_index VARCHAR(50) UNIQUE NOT NULL,
+            api_url VARCHAR(255) NOT NULL,
             FOREIGN KEY (category_id) REFERENCES ai_categories(id) ON DELETE CASCADE
         );
         """
         cursor.execute(create_models_table_sql)
         print("Table 'ai_models' ensured.")
+        try:
+            print("DEBUG: Describing ai_models table schema after creation...")
+            cursor.execute("DESCRIBE ai_models;")
+            schema = cursor.fetchall()
+            print(f"DEBUG: Schema for ai_models: {schema}")
+        except Exception as e:
+            print(f"DEBUG: Error describing ai_models: {e}")
 
         # --- Add default/initial data ---
         # General AI Category
@@ -133,10 +132,12 @@ def initialize_database():
             gemini_model_name = "Gemini 2.0 Flash"
             gemini_model_icon = "bi-gem"
             gemini_model_data_ai_index = "5"
+            gemini_model_api_url = "AIzaSyACRnbM9cr02QfaPqUOUQH-Mr2ySBcuBo4"
+            print(f"DEBUG: Attempting to insert into ai_models. Category ID: {general_ai_category_id}, Name: {gemini_model_name}, Icon: {gemini_model_icon}, Index: {gemini_model_data_ai_index}, API URL: {gemini_model_api_url}")
             cursor.execute("""
-                INSERT IGNORE INTO ai_models (category_id, name, icon, data_ai_index) 
-                VALUES (%s, %s, %s, %s)
-            """, (general_ai_category_id, gemini_model_name, gemini_model_icon, gemini_model_data_ai_index))
+                INSERT IGNORE INTO ai_models (category_id, name, icon, data_ai_index, api_url) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (general_ai_category_id, gemini_model_name, gemini_model_icon, gemini_model_data_ai_index, gemini_model_api_url))
             conn.commit() # Commit after insert
             print(f"Ensured model: {gemini_model_name} under {general_ai_category_name}")
         else:

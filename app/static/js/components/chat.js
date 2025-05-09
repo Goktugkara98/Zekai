@@ -911,20 +911,21 @@ const ChatManager = (function() {
      */
     
     /**
-     * Sends a user message to a specific chat and simulates AI response
-     * Updates UI and locks model selection after first message
+     * Sends a user message to a specific chat, communicates with the backend for AI response,
+     * updates UI, and locks model selection after the first user message.
      * @param {string} chatId - Target chat ID
      * @param {string} text - Message text content
      */
-    function sendMessage(chatId, text) {
+    async function sendMessage(chatId, text) {
         log('action', 'Sending message', chatId, text);
-        
+
         const chat = state.chats.find(c => c.id === chatId);
         if (!chat) {
             log('error', `sendMessage: Chat not found for ID ${chatId}`);
             return;
         }
-        
+
+        // 1. Kullanıcı mesajını state'e ve UI'a ekle
         const userMessage = {
             isUser: true,
             text: text,
@@ -932,24 +933,23 @@ const ChatManager = (function() {
         };
         chat.messages.push(userMessage);
         chat.lastActivity = Date.now();
-        
-        // Get AI model info using model ID from the chat object
-        const aiModel = window.state.aiTypes.find(m => m.id === chat.aiModelId);
-        const currentAiModelName = aiModel ? aiModel.name : 'AI'; // Use actual model name or a default
 
-        const isFirstMessage = chat.messages.length === 1; 
-        
+        // Kullanıcının ilk mesajı olup olmadığını kontrol et (model kilitleme vb. için)
+        // Bu kontrol, kullanıcı mesajı eklendikten sonra yapılmalı.
+        const isUsersFirstMessageInChat = chat.messages.filter(m => m.isUser).length === 1;
+
         const chatElement = document.querySelector(`.chat-window[data-chat-id="${chatId}"]`);
         if (chatElement) {
             const messagesContainer = chatElement.querySelector('.chat-messages');
             if (messagesContainer) {
                 const messageElement = document.createElement('div');
-                // User message display doesn't need AI name or isFirstAIMessage flag
-                messageElement.innerHTML = createMessageHTML(userMessage); 
+                // Kullanıcı mesajı için isFirstAIMessage her zaman false, aiName gereksiz
+                messageElement.innerHTML = createMessageHTML(userMessage, false, '');
                 messagesContainer.appendChild(messageElement.firstElementChild);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                
-                if (isFirstMessage) {
+
+                // Eğer bu kullanıcının ilk mesajıysa, model seçimi UI'ını kilitle
+                if (isUsersFirstMessageInChat) {
                     const chatTitle = chatElement.querySelector('.chat-title');
                     if (chatTitle) {
                         chatTitle.classList.remove('model-changeable');
@@ -961,41 +961,109 @@ const ChatManager = (function() {
                             lockIcon.className = 'bi bi-lock-fill model-locked-icon';
                             chatTitle.replaceChild(lockIcon, selectorIcon);
                         }
-                        chatTitle.onclick = null;
+                        chatTitle.onclick = null; // Model değiştirme olayını kaldır
                     }
                 }
             }
         }
-        
-        // Simulate AI response
-        setTimeout(() => {
-            if (!aiModel) { 
-                log('warn', `sendMessage: Skipping AI response for chat ${chatId} as AI model (ID: ${chat.aiModelId}) was not resolved from window.state.aiTypes.`);
-                return;
+
+        // 2. AI yanıtı için backend'e istek gönder
+        try {
+            // Yükleniyor... göstergesi eklenebilir (opsiyonel)
+            // Örnek: showLoadingIndicator(chatId);
+
+            // Konuşma geçmişini (yeni mesaj dahil) API formatına dönüştür
+            const fullConversationForAPI = chat.messages
+                .filter(msg => msg.text && typeof msg.text === 'string' && msg.text.trim() !== '') // Sadece geçerli metin içeren mesajları al
+                .map(msg => ({
+                    role: msg.isUser ? 'user' : 'model',
+                    parts: [{ text: msg.text.trim() }]
+                }));
+
+            const response = await fetch('/api/chat/send', { // Backend route'unuzu buraya yazın
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Gerekirse ek başlıklar (örn: CSRF token, Authorization)
+                },
+                body: JSON.stringify({
+                    chatId: chatId,
+                    message: text, // En son kullanıcı mesajı (loglama/doğrulama veya Gemini olmayan modeller için ana mesaj olarak kullanılabilir)
+                    aiModelId: chat.aiModelId,
+                    history: fullConversationForAPI, // Gemini için tam konuşma içeriği
+                    // Backend'in ihtiyaç duyabileceği diğer bilgiler (örn: kullanıcı ID'si)
+                }),
+            });
+
+            // Yükleniyor... göstergesi kaldırılabilir (opsiyonel)
+            // Örnek: hideLoadingIndicator(chatId);
+
+            if (!response.ok) {
+                let errorText = `Error: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorText = errorData.error || errorText;
+                } catch (e) {
+                    // JSON parse hatası olursa response.text() kullanılabilir
+                    errorText = await response.text() || errorText;
+                }
+                log('error', `Error from1 backend: ${errorText}`);
+                throw new Error(errorText); // Hata durumunda catch bloğuna yönlendir
             }
 
-            // Pass the string aiModelId to getAIResponse
-            const aiResponseText = getAIResponse(text, chat.aiModelId); 
+            const data = await response.json();
+            const aiResponseText = data.aiResponse; // Backend'in { "aiResponse": "..." } döndürdüğünü varsayalım
+
+            // 3. AI yanıtını state'e ve UI'a ekle
+            const aiModelForResponse = window.state.aiTypes.find(m => m.id === chat.aiModelId);
+            const currentAiNameForResponse = aiModelForResponse ? aiModelForResponse.name : 'AI';
+
+            // Bu AI yanıtının sohbetteki ilk AI mesajı olup olmadığını kontrol et
+            const isFirstAIMessageInChat = chat.messages.filter(m => !m.isUser).length === 0;
+
             const aiMessage = {
                 isUser: false,
                 text: aiResponseText,
                 timestamp: Date.now()
             };
-            chat.messages.push(aiMessage);
+            chat.messages.push(aiMessage); // State'e AI mesajını ekle
             chat.lastActivity = Date.now();
-            
+
             if (chatElement) {
                 const messagesContainer = chatElement.querySelector('.chat-messages');
                 if (messagesContainer) {
                     const messageElement = document.createElement('div');
-                    // Pass currentAiModelName for the first AI message, and isFirstMessage flag
-                    messageElement.innerHTML = createMessageHTML(aiMessage, isFirstMessage, currentAiModelName); 
+                    messageElement.innerHTML = createMessageHTML(aiMessage, isFirstAIMessageInChat, currentAiNameForResponse);
                     messagesContainer.appendChild(messageElement.firstElementChild);
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
             }
+
+        } catch (error) {
+            log('error', 'Failed to send message or get AI response:', error);
+            // Kullanıcıya hata mesajı göster
+            const aiErrorMessage = {
+                isUser: false,
+                text: `Sorry, I couldn\'t get a response. ${error.message || ''}`,
+                timestamp: Date.now()
+            };
+            // Hata mesajını state'e ve UI'a ekle
+            chat.messages.push(aiErrorMessage);
+            chat.lastActivity = Date.now();
+            if (chatElement) {
+                const messagesContainer = chatElement.querySelector('.chat-messages');
+                if (messagesContainer) {
+                    const messageElement = document.createElement('div');
+                    // Hata mesajı için AI adı vb. gerekmeyebilir veya genel bir ad kullanılabilir
+                    messageElement.innerHTML = createMessageHTML(aiErrorMessage, false, "System");
+                    messagesContainer.appendChild(messageElement.firstElementChild);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }
+        } finally {
+            // Her durumda aktif sohbetler dropdown'ını güncelle
             renderActiveChatsDropdown();
-        }, 1000);
+        }
     }
 
     /**
@@ -1312,16 +1380,12 @@ const ChatManager = (function() {
  * -------------------
  */
 document.addEventListener('DOMContentLoaded', () => {
-    ChatManager.init();
     
     // Initialize the chat manager
     ChatManager.init();
     
     // Set up welcome screen new chat button
     const welcomeNewChatBtn = document.getElementById('welcome-new-chat-btn');
-    if (welcomeNewChatBtn) {
-        welcomeNewChatBtn.addEventListener('click', () => ChatManager.addChat());
-    }
 
     // Set up AI category accordion chevron animations
     const aiCategoriesAccordion = document.getElementById('aiCategoriesAccordion');
