@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
 import requests # requests importu eklendi
-from models.database import fetch_ai_categories_from_db
-from services.ai_model_service import get_ai_model_api_details # Yeni servis importu
+from services.ai_model_service import get_ai_model_api_details, fetch_ai_categories_from_db # Birleşik import
 
 main_bp = Blueprint('main_bp', __name__)
 
@@ -49,7 +48,7 @@ def handle_chat_message():
 
             gemini_api_key = model_details.get('api_url')
             # GERÇEK GEMINI API URL'i
-            actual_gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_api_key}"
+            actual_gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-exp-03-25:generateContent?key={gemini_api_key}"
             
             # Gemini API payload'unu oluştur
             if conversation_history:

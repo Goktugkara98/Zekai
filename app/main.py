@@ -1,6 +1,16 @@
+import sys
+import os
+
+# Projenin kök dizinini (app klasörünün ebeveyni olan Zekai klasörü) sys.path'e ekle.
+# Bu, app/main.py'den bir üst dizin.
+# Böylece 'from app.models import ...' gibi importlar çalışır.
+PACKAGE_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if PACKAGE_PARENT not in sys.path:
+    sys.path.insert(0, PACKAGE_PARENT)
+
 from flask import Flask
-from models.database import initialize_database
-from routes.main_routes import main_bp
+from app.models.database import initialize_database # app. öneki eklendi
+from app.routes.main_routes import main_bp # app. öneki eklendi
 
 app = Flask(__name__)
 

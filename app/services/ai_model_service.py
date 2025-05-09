@@ -1,5 +1,6 @@
 import mysql.connector
-from models.database import get_db_connection # Veritabanı bağlantı fonksiyonunu import ediyoruz
+from app.models.database import get_db_connection # Veritabanı bağlantı fonksiyonunu import ediyoruz
+import mysql.connector # fetch_ai_categories_from_db için eklendi
 
 def get_ai_model_api_details(data_ai_index):
     conn = get_db_connection()
@@ -34,3 +35,52 @@ def get_ai_model_api_details(data_ai_index):
 
 # Gelecekte buraya AI modelleriyle ilgili başka servis fonksiyonları da eklenebilir.
 # Örneğin, tüm modelleri listeleme, model ekleme/güncelleme vb.
+
+
+def fetch_ai_categories_from_db():
+    conn = get_db_connection()
+    if not conn:
+        return [] # Return empty list if connection failed
+
+    cursor = conn.cursor(dictionary=True)
+    categories_data = []
+
+    try:
+        # Fetch all categories
+        cursor.execute("SELECT id, name, icon FROM ai_categories ORDER BY id")
+        categories = cursor.fetchall()
+
+        for category in categories:
+            category_dict = {
+                "name": category["name"],
+                "icon": category["icon"],
+                "models": []
+            }
+
+            # Fetch models for the current category
+            cursor.execute("""
+                SELECT name, icon, data_ai_index, api_url 
+                FROM ai_models 
+                WHERE category_id = %s 
+                ORDER BY id
+            """, (category["id"],))
+            models = cursor.fetchall()
+
+            for model in models:
+                category_dict["models"].append({
+                    "name": model["name"],
+                    "icon": model["icon"],
+                    "data_ai_index": model["data_ai_index"],
+                    "api_url": model["api_url"]
+                })
+            categories_data.append(category_dict)
+            
+    except mysql.connector.Error as err:
+        print(f"Service Layer: Error fetching AI categories from MySQL: {err}") # Log mesajı güncellendi
+        # Handle error appropriately
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
+            
+    return categories_data
