@@ -198,7 +198,7 @@ const ChatManager = (function() {
             </div>
             <div class="chat-messages">
                 ${chatData.messages && chatData.messages.length > 0 ? 
-                    chatData.messages.map(msg => createMessageHTML(msg)).join('') : 
+                    chatData.messages.map(msg => createMessageHTML(msg, !msg.isUser, aiModel.name)).join('') : 
                     createWelcomeMessageHTML(aiModel.name)
                 }
             </div>
@@ -233,7 +233,7 @@ const ChatManager = (function() {
         
         // For the first AI message, include the model name
         let messageContent = message.text;
-        if (!message.isUser && isFirstAIMessage && aiName) {
+        if (!message.isUser && aiName) { // `isFirstAIMessage` kontrolü kaldırıldı
             messageContent = `<div class="ai-model-indicator"><i class="bi bi-robot"></i> ${aiName}</div>${messageContent}`;
         }
         
@@ -968,13 +968,49 @@ const ChatManager = (function() {
         }
 
         // 2. AI yanıtı için backend'e istek gönder
+
+        // ---------- Yükleniyor Göstergesi Ekle ----------
+        let loadingElement = null;
+        const aiModelForLoading = window.state.aiTypes.find(m => m.id === chat.aiModelId);
+        const currentAiNameForLoading = aiModelForLoading ? aiModelForLoading.name : 'AI';
+        const isFirstAIMessageForLoading = chat.messages.filter(m => !m.isUser).length === 0;
+
+        if (chatElement) {
+            const messagesContainer = chatElement.querySelector('.chat-messages');
+            if (messagesContainer) {
+                // Geçici yükleniyor mesajı için HTML oluştur
+                const loadingMessageHTML = createMessageHTML(
+                    { isUser: false, text: '' }, // Metin boş
+                    isFirstAIMessageForLoading,
+                    currentAiNameForLoading
+                );
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = loadingMessageHTML;
+                loadingElement = tempDiv.firstElementChild;
+
+                if(loadingElement) {
+                    loadingElement.classList.add('loading-dots'); // CSS sınıfını ekle
+                    // Noktaları ekle
+                    const messageContent = loadingElement.querySelector('.message-content');
+                    if (messageContent) {
+                        const dotsSpan = document.createElement('span');
+                        dotsSpan.className = 'dots';
+                        dotsSpan.innerHTML = '<span></span><span></span><span></span>';
+                        messageContent.appendChild(dotsSpan);
+                    }
+                    messagesContainer.appendChild(loadingElement);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }
+        }
+        // ---------- Yükleniyor Göstergesi Eklendi ----------
+
         try {
-            // Yükleniyor... göstergesi eklenebilir (opsiyonel)
-            // Örnek: showLoadingIndicator(chatId);
+            // Yükleniyor... göstergesi EKLENDİ, eski yorumlar kaldırıldı
 
             // Konuşma geçmişini (yeni mesaj dahil) API formatına dönüştür
             const fullConversationForAPI = chat.messages
-                .filter(msg => msg.text && typeof msg.text === 'string' && msg.text.trim() !== '') // Sadece geçerli metin içeren mesajları al
+                .filter(msg => msg.isUser || (msg.text && typeof msg.text === 'string' && msg.text.trim() !== ''))
                 .map(msg => ({
                     role: msg.isUser ? 'user' : 'model',
                     parts: [{ text: msg.text.trim() }]
@@ -995,8 +1031,7 @@ const ChatManager = (function() {
                 }),
             });
 
-            // Yükleniyor... göstergesi kaldırılabilir (opsiyonel)
-            // Örnek: hideLoadingIndicator(chatId);
+            // Yükleniyor... göstergesi kaldırılacak (aşağıda)
 
             if (!response.ok) {
                 let errorText = `Error: ${response.status}`;
@@ -1007,62 +1042,101 @@ const ChatManager = (function() {
                     // JSON parse hatası olursa response.text() kullanılabilir
                     errorText = await response.text() || errorText;
                 }
-                log('error', `Error from1 backend: ${errorText}`);
+                log('error', `Error from backend: ${errorText}`); // "from1" düzeltildi
                 throw new Error(errorText); // Hata durumunda catch bloğuna yönlendir
             }
 
             const data = await response.json();
-            const aiResponseText = data.aiResponse; // Backend'in { "aiResponse": "..." } döndürdüğünü varsayalım
+            const aiResponseText = data.response; // Backend'in { "response": "..." } döndürdüğünü varsayalım
 
-            // 3. AI yanıtını state'e ve UI'a ekle
-            const aiModelForResponse = window.state.aiTypes.find(m => m.id === chat.aiModelId);
-            const currentAiNameForResponse = aiModelForResponse ? aiModelForResponse.name : 'AI';
+            // ---------- Yükleniyor Göstergesini Kaldır ve Yanıtı Ekle ----------
+            if (loadingElement && loadingElement.parentNode) {
+                // Gerçek AI mesajı için HTML oluştur
+                const aiMessage = {
+                    isUser: false,
+                    text: aiResponseText,
+                    timestamp: Date.now()
+                };
+                chat.messages.push(aiMessage); // State'e AI mesajını ekle
+                chat.lastActivity = Date.now();
 
-            // Bu AI yanıtının sohbetteki ilk AI mesajı olup olmadığını kontrol et
-            const isFirstAIMessageInChat = chat.messages.filter(m => !m.isUser).length === 0;
+                const finalMessageHTML = createMessageHTML(
+                    aiMessage,
+                    isFirstAIMessageForLoading, // Yüklenirken belirlenen değeri kullan
+                    currentAiNameForLoading // Yüklenirken belirlenen adı kullan
+                );
+                const finalTempDiv = document.createElement('div');
+                finalTempDiv.innerHTML = finalMessageHTML;
+                const finalMessageElement = finalTempDiv.firstElementChild;
 
-            const aiMessage = {
-                isUser: false,
-                text: aiResponseText,
-                timestamp: Date.now()
-            };
-            chat.messages.push(aiMessage); // State'e AI mesajını ekle
-            chat.lastActivity = Date.now();
+                // Yükleniyor elementini gerçek mesajla değiştir
+                loadingElement.parentNode.replaceChild(finalMessageElement, loadingElement);
 
-            if (chatElement) {
-                const messagesContainer = chatElement.querySelector('.chat-messages');
-                if (messagesContainer) {
-                    const messageElement = document.createElement('div');
-                    messageElement.innerHTML = createMessageHTML(aiMessage, isFirstAIMessageInChat, currentAiNameForResponse);
-                    messagesContainer.appendChild(messageElement.firstElementChild);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                // Scroll işlemini tekrar yap (içerik değiştiği için)
+                const messagesContainer = finalMessageElement.closest('.chat-messages');
+                if(messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            } else {
+                // Yükleniyor elemanı bulunamazsa, eski yöntemle ekle (fallback)
+                log('warn', 'Loading element not found, adding AI response directly.');
+                const aiMessage = {
+                    isUser: false,
+                    text: aiResponseText,
+                    timestamp: Date.now()
+                };
+                chat.messages.push(aiMessage);
+                chat.lastActivity = Date.now();
+
+                if (chatElement) {
+                    const messagesContainer = chatElement.querySelector('.chat-messages');
+                    if (messagesContainer) {
+                        const messageElement = document.createElement('div');
+                        messageElement.innerHTML = createMessageHTML(aiMessage, isFirstAIMessageForLoading, currentAiNameForLoading);
+                        messagesContainer.appendChild(messageElement.firstElementChild);
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
                 }
             }
+            // ---------- Yanıt Eklendi ----------
 
         } catch (error) {
             log('error', 'Failed to send message or get AI response:', error);
-            // Kullanıcıya hata mesajı göster
-            const aiErrorMessage = {
-                isUser: false,
-                text: `Sorry, I couldn\'t get a response. ${error.message || ''}`,
-                timestamp: Date.now()
-            };
-            // Hata mesajını state'e ve UI'a ekle
-            chat.messages.push(aiErrorMessage);
-            chat.lastActivity = Date.now();
-            if (chatElement) {
-                const messagesContainer = chatElement.querySelector('.chat-messages');
-                if (messagesContainer) {
-                    const messageElement = document.createElement('div');
-                    // Hata mesajı için AI adı vb. gerekmeyebilir veya genel bir ad kullanılabilir
-                    messageElement.innerHTML = createMessageHTML(aiErrorMessage, false, "System");
-                    messagesContainer.appendChild(messageElement.firstElementChild);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }
+
+            // ---------- Yükleniyor Göstergesini Kaldır ve Hata Mesajını Ekle ----------
+            if (loadingElement && loadingElement.parentNode) {
+                const aiErrorMessage = {
+                    isUser: false,
+                    text: `Sorry, I couldn\'t get a response. ${error.message || ''}`,
+                    timestamp: Date.now(),
+                    isError: true // Hata olduğunu belirtmek için (isteğe bağlı)
+                };
+                // Hata mesajını state'e eklemeyi düşünebilirsiniz, ancak UI'da gösterilmesi yeterli olabilir.
+                // chat.messages.push(aiErrorMessage); 
+                // chat.lastActivity = Date.now();
+
+                const errorMessageHTML = createMessageHTML(aiErrorMessage, false, "System");
+                const errorTempDiv = document.createElement('div');
+                errorTempDiv.innerHTML = errorMessageHTML;
+                const errorMessageElement = errorTempDiv.firstElementChild;
+                if(errorMessageElement) errorMessageElement.classList.add('error-message'); // Özel stil için (isteğe bağlı)
+
+                // Yükleniyor elementini hata mesajıyla değiştir
+                loadingElement.parentNode.replaceChild(errorMessageElement, loadingElement);
+
+                // Scroll işlemini tekrar yap
+                const messagesContainer = errorMessageElement.closest('.chat-messages');
+                if(messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            } else {
+                // Yükleniyor elemanı bulunamazsa, hatayı logla (UI'da başka türlü gösterilebilir)
+                log('error', 'Could not display error message in UI, loading element missing.');
             }
+            // ---------- Hata Mesajı Eklendi ----------
+
         } finally {
             // Her durumda aktif sohbetler dropdown'ını güncelle
             renderActiveChatsDropdown();
+            // FINALLY bloğunda artık scroll veya gösterge kaldırma işlemine gerek yok, try/catch içinde halledildi.
         }
     }
 

@@ -1,15 +1,22 @@
-from google import genai
-from google.genai import types
+from openai import OpenAI
 
-client = genai.Client(api_key="AIzaSyACRnbM9cr02QfaPqUOUQH-Mr2ySBcuBo4")
-
-response = client.models.generate_content(
-    model='gemini-1.5-flash',
-    contents="Who won the US open this year?",
-    config=types.GenerateContentConfig(
-        tools=[types.Tool(
-            google_search_retrieval=types.GoogleSearchRetrieval()
-        )]
-    )
+client = OpenAI(
+  base_url="https://openrouter.ai/api/v1",
+  api_key="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",
 )
-print(response)
+
+completion = client.chat.completions.create(
+  extra_headers={
+    "HTTP-Referer": "https://openrouter.ai",
+    "X-Title": "OpenRouter",
+  },
+  extra_body={},
+  model="nousresearch/deephermes-3-mistral-24b-preview:free",
+  messages=[
+    {
+      "role": "user",
+      "content": "Hello, this is a test message"
+    }
+  ]
+)
+print(completion.choices[0].message.content)
