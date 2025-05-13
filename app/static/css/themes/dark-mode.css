@@ -77,13 +77,70 @@ body.dark-mode {
    -------------------------------------------------- */
 /* 2.1.1 General */
 body.dark-mode #sidebar {
-    background-color: var(--gray-800);
-    border-color: var(--gray-700);
+    background-color: var(--gray-900);
+    border-color: var(--gray-800);
 }
 
 body.dark-mode .sidebar-header,
 body.dark-mode .sidebar-footer {
+    border-color: var(--gray-800);
+}
+
+body.dark-mode .sidebar-search .input-group-text,
+body.dark-mode .sidebar-search .form-control {
+    background-color: var(--gray-800);
     border-color: var(--gray-700);
+    color: var(--gray-300);
+}
+
+body.dark-mode .sidebar-search .form-control::placeholder {
+    color: var(--gray-500);
+}
+
+body.dark-mode .sidebar-section {
+    background: none;
+}
+
+body.dark-mode .sidebar-heading {
+    color: var(--gray-400);
+    background-color: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+body.dark-mode .sidebar-heading[data-bs-toggle="collapse"] {
+    background-color: var(--gray-800);
+    border-color: var(--gray-700);
+    color: var(--gray-100);
+}
+
+body.dark-mode #aiCategoriesAccordion .sidebar-category-header {
+    background-color: var(--gray-800);
+    color: var(--gray-200);
+    border-color: var(--gray-700);
+}
+
+body.dark-mode #aiCategoriesAccordion .sidebar-category-header:hover {
+    background-color: var(--gray-700);
+    color: var(--primary-light);
+}
+
+body.dark-mode #aiCategoriesAccordion .collapse .list-group-item,
+body.dark-mode .sidebar-category-item .list-group-item {
+    background-color: var(--gray-900);
+    color: var(--gray-300);
+    border-color: var(--gray-800);
+}
+
+body.dark-mode #aiCategoriesAccordion .collapse .list-group-item:hover,
+body.dark-mode .sidebar-category-item .list-group-item:hover {
+    background-color: var(--gray-800);
+    color: var(--primary-light);
+}
+
+body.dark-mode .ai-icon {
+    background: linear-gradient(135deg, rgba(62, 99, 221, 0.4), rgba(41, 73, 182, 0.4));
+    border-color: var(--primary-dark);
+    color: var(--gray-100);
 }
 
 /* 2.1.2 AI List */
@@ -147,14 +204,14 @@ body.dark-mode .panel-input-area {
 /* 3.2 Buttons
    -------------------------------------------------- */
 body.dark-mode .btn-icon,
-body.dark-mode .btn-control {
+body.dark-mode .btn-icon-control {
     background-color: rgba(30, 30, 30, 0.5); 
     border-color: rgba(255, 255, 255, 0.05); 
     color: var(--gray-300);
 }
 
 body.dark-mode .btn-icon:hover,
-body.dark-mode .btn-control:hover {
+body.dark-mode .btn-icon-control:hover {
     background-color: rgba(40, 40, 40, 0.7);
     border-color: rgba(255, 255, 255, 0.1);
     color: white;
@@ -236,9 +293,11 @@ body.dark-mode .chat-window {
 
 /* 4.3.1 Chat Header (.chat-header) */
 body.dark-mode .chat-header {
-    background-color: rgba(30, 35, 45, 0.9);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background-color: var(--surface-dark, #19253b);
+    border-bottom: 1px solid var(--border-dark, #232a3a);
+    color: var(--gray-100);
 }
+
 
 /* 4.3.2 Chat Title Icon (.chat-title i:first-child) */
 body.dark-mode .chat-title i:first-child {
@@ -306,7 +365,6 @@ body.dark-mode .messages-container::-webkit-scrollbar-track {
 
 /* 4.5.2 User Message (.user-message .message-content) */
 body.dark-mode .user-message .message-content {
-    background-color: var(--primary-dark);
     color: white;
 }
 
@@ -326,19 +384,25 @@ body.dark-mode .ai-model-indicator {
    -------------------------------------------------- */
 /* 4.6.1 Message Input Container (.chat-input-container) */
 body.dark-mode .chat-input-container {
-    background-color: rgba(30, 35, 45, 0.9);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background-color: var(--surface-dark, #19253b);
+    border-top: 1px solid var(--border-dark, #232a3a);
+    color: var(--gray-100);
 }
+body.dark-mode .chat-input {
+    color: var(--gray-100);
+}
+
 
 /* 4.6.2 Message Input Group (.chat-input-group) */
 body.dark-mode .chat-input-group {
-    background-color: var(--surface-dark);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background-color: var(--gray-800);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.10);
 }
 
 body.dark-mode .chat-input-group:focus-within {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.18);
 }
+
 
 /* 4.6.3 Message Input Field (.message-input) */
 body.dark-mode .message-input {
@@ -353,8 +417,9 @@ body.dark-mode .message-input::placeholder {
 
 body.dark-mode .message-input:focus {
     border-color: var(--primary-dark);
-    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.3);
+    box-shadow: 0 0 0 0.2rem rgba(62,99,221,0.15); /* Use --primary in rgba if available */
 }
+
 
 /* 4.6.4 Chat Send Button (.chat-send-btn) */
 body.dark-mode .chat-send-btn {

@@ -4,12 +4,12 @@ ACTIVE CHATS SIDEBAR STYLES
 TABLE OF CONTENTS:
 --------------------------------------------------
 1.0 ACTIVE CHATS DROPDOWN
-    1.1 Dropdown Item (.list-group-item)
-    1.2 Dropdown Item Hover
+    1.1 Dropdown Item (#active-chats-dropdown-menu .list-group-item)
+    1.2 Dropdown Item Hover (#active-chats-dropdown-menu .list-group-item:hover)
     1.3 Started Chat Item (.active-chat-item--started)
     1.4 Rendered Inactive Chat Item (.active-chat-item--rendered-inactive)
 2.0 ICONS & CONTROLS
-    2.1 Chevron Icon Rotation
+    2.1 Chevron Icon Rotation (chevron icon, rotation classes)
 --------------------------------------------------
 */
 #active-chats-dropdown-menu .list-group-item {

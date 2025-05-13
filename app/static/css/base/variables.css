@@ -4,17 +4,17 @@ CSS CUSTOM PROPERTIES (VARIABLES)
 TABLE OF CONTENTS:
 --------------------------------------------------
 1.0 COLOR PALETTE
-    1.1 Primary & Accent Colors
-    1.2 Grayscale
+    1.1 Primary & Accent Colors (--primary, --primary-light, --primary-dark, --secondary, --success, --danger, --warning, --info, --light, --dark)
+    1.2 Grayscale (--gray-50 ... --gray-900)
 2.0 LAYOUT & SPACING
-    2.1 Sidebar Dimensions
+    2.1 Sidebar Dimensions (--sidebar-width, --sidebar-collapsed-width)
 3.0 UI ELEMENTS
-    3.1 Border Radius
-    3.2 Box Shadows
+    3.1 Border Radius (--border-radius-sm, --border-radius, --border-radius-lg, --border-radius-xl)
+    3.2 Box Shadows (--box-shadow, --box-shadow-md, --box-shadow-lg, --box-shadow-xl)
 4.0 TYPOGRAPHY
-    4.1 Font Weights
+    4.1 Font Weights (--font-weight-normal, --font-weight-medium, --font-weight-semibold, --font-weight-bold)
 5.0 ANIMATIONS & TRANSITIONS
-    5.1 Transitions
+    5.1 Transitions (--transition, --transition-slow)
 --------------------------------------------------
 */
 

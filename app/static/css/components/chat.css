@@ -6,25 +6,45 @@ TABLE OF CONTENTS:
 1.0 CHAT CONTAINER
     1.1 Chat Container (#chat-container)
     1.2 Welcome Screen (#welcome-screen)
+    1.3 Zekai Branding (.Zekai, .AI)
 2.0 CHAT WINDOW
     2.1 Chat Window (.chat-window)
-    2.2 Chat Header (.chat-header, .chat-title, .chat-title i)
-    2.3 Chat Controls (.chat-controls, .chat-control-btn, .chat-close-btn)
-3.0 MODEL SELECTOR
-    3.1 Changeable Model (.model-changeable, .model-selector-icon)
-    3.2 Locked Model (.model-locked, .model-locked-icon)
-    3.3 Model Dropdown (.model-dropdown, .model-option)
-4.0 CHAT MESSAGES
-    4.1 Chat Messages Area (.chat-messages)
-    4.2 User Message (.user-message)
-    4.3 AI Message (.ai-message)
-    4.4 AI Model Indicator (.ai-model-indicator)
-5.0 CHAT INPUT
-    5.1 Chat Input Container (.chat-input-container)
-    5.2 Chat Input Group (.chat-input-group)
-    5.3 Message Input (.message-input)
-    5.4 Chat Send Button (.chat-send-btn)
-6.0 SIDEBAR PROFILE
+    2.2 Highlighted State (.chat-window--highlighted)
+    2.3 Minimized State (.chat-window.minimized)
+3.0 CHAT HEADER & CONTROLS
+    3.1 Chat Header (.chat-header)
+    3.2 Chat Title (.chat-title)
+    3.3 Header Icon (.chat-title i)
+    3.4 Chat Controls (.chat-controls, .chat-control-btn, .chat-close-btn)
+4.0 MODEL SELECTOR
+    4.1 Changeable Model (.model-changeable, .model-selector-icon)
+    4.2 Locked Model (.model-locked, .model-locked-icon)
+    4.3 Model Dropdown (.model-dropdown, .model-option)
+5.0 CHAT MESSAGES
+    5.1 Chat Messages Area (.chat-messages)
+    5.2 Message Bubbles (.message, .user-message, .ai-message)
+    5.3 Message Content (.message-content)
+    5.4 AI Model Indicator (.ai-model-indicator)
+    5.5 Message Time (.message-time)
+6.0 CHAT INPUT
+    6.1 Chat Input Container (.chat-input-container)
+    6.2 Chat Input Group (.chat-input-group)
+    6.3 Message Input (.chat-input)
+    6.4 Chat Send Button (.chat-send-btn)
+7.0 CONTROL BAR
+    7.1 Control Bar (#control-bar)
+8.0 LAYOUT VARIATIONS
+    8.1 Single Chat Layout (.layout-1)
+    8.2 Two Chats (.layout-2)
+    8.3 Three Chats (.layout-3)
+    8.4 Four Chats (.layout-4)
+    8.5 Five Chats (.layout-5)
+    8.6 Six Chats (.layout-6)
+9.0 RESPONSIVE ADJUSTMENTS
+    9.1 Tablet & Mobile (@media max-width: 992px, 768px)
+10.0 ANIMATIONS
+    10.1 Fade In (fadeIn)
+    10.2 Slide In/Out (slideInEnhanced, slideOutSymmetrical)
 --------------------------------------------------
 */
 
@@ -472,86 +492,4 @@ TABLE OF CONTENTS:
 .chat-window.closing {
     animation: slideOutSymmetrical 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards; /* Süre güncellendi, keyframe adı değişti */
     pointer-events: none; 
-}
-
-/* Sidebar Profile Section */
-.sidebar .profile-section {
-    border-top: 1px solid var(--bs-border-color-translucent); /* Hafif bir ayırıcı çizgi */
-    padding-top: 1rem; /* Üst boşluk */
-    transition: background-color 0.2s ease-in-out; /* Hover için yumuşak geçiş */
-}
-
-.sidebar .profile-section:hover {
-    background-color: rgba(var(--bs-emphasis-color-rgb), 0.05); /* Hover'da hafif arka plan */
-}
-
-.sidebar .profile-section .profile-info small {
-    cursor: pointer; /* "View Profile" tıklanabilir gibi görünsün */
-    color: var(--bs-primary) !important; /* Temayla uyumlu link rengi */
-}
-
-.sidebar .profile-section .profile-info small:hover {
-    text-decoration: underline;
-}
-
-.sidebar .profile-section .btn-icon { /* Çıkış butonu için stil */
-    color: var(--bs-secondary-color);
-}
-
-.sidebar .profile-section .btn-icon:hover {
-    color: var(--bs-danger); /* Hover'da çıkışa uygun bir renk */
-}
-
-/* Sidebar AI Categories Accordion Styles */
-#aiCategoriesAccordion .sidebar-category-item {
-    border-bottom: 1px solid var(--bs-border-color-translucent); /* Kategoriler arası ince çizgi */
-}
-
-#aiCategoriesAccordion .sidebar-category-item:last-child {
-    border-bottom: none;
-}
-
-#aiCategoriesAccordion .sidebar-category-header {
-    transition: background-color 0.15s ease-in-out;
-    font-weight: 500; /* Kategori başlığı biraz daha kalın */
-}
-
-#aiCategoriesAccordion .sidebar-category-header:hover {
-    background-color: rgba(var(--bs-emphasis-color-rgb), 0.07); /* Hover'da hafif arka plan */
-}
-
-#aiCategoriesAccordion .sidebar-category-header[aria-expanded="true"] {
-    background-color: rgba(var(--bs-primary-rgb), 0.1); /* Açık kategori başlığı için farklı arka plan */
-    color: var(--bs-primary);
-}
-
-#aiCategoriesAccordion .sidebar-category-header .category-chevron {
-    transition: transform 0.2s ease-in-out; 
-}
-
-/* Akordeon içindeki model listesi */
-#aiCategoriesAccordion .collapse .list-group-item {
-    background-color: rgba(var(--bs-emphasis-color-rgb), 0.03); /* Alt menü için çok hafif farklı arka plan */
-    border-top: 1px solid var(--bs-border-color-translucent);
-    padding-left: 2.5rem; /* Kategori başlığına göre daha içeriden başlasın */
-}
-#aiCategoriesAccordion .collapse .list-group-item:first-child {
-    border-top: none; /* İlk öğenin üst çizgisi olmasın */
-}
-
-
-#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item:hover {
-    background-color: rgba(var(--bs-emphasis-color-rgb), 0.1);
-}
-
-/* Tıklanarak sohbeti açılan aktif modelin stili (zaten JS ekliyor 'active' class'ını) */
-#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active {
-    background-color: var(--bs-primary);
-    color: var(--bs-white);
-    border-color: var(--bs-primary);
-}
-
-#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-icon i,
-#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-name {
-    color: var(--bs-white) !important; /* Aktif olduğunda ikon ve isim rengi */
 }

@@ -165,11 +165,21 @@ function init() {
     // Setup global event listeners
     setupGlobalEventListeners(); 
 
+    // Setup panel event listeners
+    setupPanelEventListeners();
+    
     // Setup sidebar handlers
     if (typeof setupSidebarHandlers === 'function') {
         setupSidebarHandlers();
     } else {
         console.warn('[main.js] setupSidebarHandlers function not found.');
+    }
+
+    // Setup collapsible sidebar sections
+    if (typeof setupCollapsibleSections === 'function') {
+        setupCollapsibleSections();
+    } else {
+        console.warn('[main.js] setupCollapsibleSections function not found.');
     }
 
     // Initialize responsive features

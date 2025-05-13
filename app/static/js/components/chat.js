@@ -758,7 +758,7 @@ const ChatManager = (function() {
         log('info', 'New chat added:', JSON.parse(JSON.stringify(newChat)));
         
         renderChats(); // This function should call createChatElement internally
-        updateWelcomeScreen(); // To hide it if this is the first chat
+         // To hide it if this is the first chat
         renderActiveChatsDropdown(); // To update the list of active chats
         // saveChatsToHistory(); // Usually only save if there's interaction or on close
 
@@ -1448,6 +1448,9 @@ const ChatManager = (function() {
         changeAIModel      // Change AI model for a chat
     };
 })();
+
+// Make ChatManager available globally
+window.ChatManager = ChatManager;
 
 /**
  * 7.2 DOM Ready Handlers

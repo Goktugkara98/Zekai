@@ -1,14 +1,14 @@
 # =============================================================================
 # AI Model Service Module
 # =============================================================================
-# Contents:
+# İçindekiler:
 # 1. Imports
-# 2. AI Model Management
-#    2.1. Model Details Retrieval
-#    2.2. Category and Model Listing
-# 3. Future Expansion Areas
-#    3.1. Model Administration
-#    3.2. API Integration
+# 2. AI Model Yönetimi
+#    2.1. Model Detayları Getirme
+#    2.2. Kategori ve Model Listeleme
+# 3. Yardımcı Fonksiyonlar
+#    3.1. Model Ekleme
+#    3.2. Tüm Modelleri Getirme
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -18,26 +18,16 @@ from app.models.database import AIModelRepository
 from typing import Dict, List, Optional, Any
 
 # -----------------------------------------------------------------------------
-# 2. AI Model Management
+# 2. AI Model Yönetimi
 # -----------------------------------------------------------------------------
-# 2.1. Model Details Retrieval
+# 2.1. Model Detayları Getirme
 def get_ai_model_api_details(data_ai_index: str) -> Optional[Dict[str, Any]]:
-    """
-    Retrieves API details for a specific AI model by its data_ai_index.
-    
-    Args:
-        data_ai_index: The unique identifier for the AI model
-        
-    Returns:
-        Dictionary containing model details or None if not found
-    """
+    """Belirli bir AI modelinin API detaylarını data_ai_index ile getirir."""
     try:
-        print(f"Service Layer: Fetching AI model details for data_ai_index: {data_ai_index}")
         ai_repo = AIModelRepository()
         model = ai_repo.get_ai_model_by_data_ai_index(data_ai_index)
         
         if not model:
-            print(f"Service Layer: No model found for data_ai_index: {data_ai_index}")
             return None
             
         # Format the response to match the expected structure
@@ -51,21 +41,14 @@ def get_ai_model_api_details(data_ai_index: str) -> Optional[Dict[str, Any]]:
             "response_path": model["response_path"]
         }
         
-        print(f"Service Layer: Found model details: {model_details}")
         return model_details
         
-    except Exception as err:
-        print(f"Service Layer: Error fetching AI model details: {err}")
+    except Exception:
         return None
 
-# 2.2. Category and Model Listing
+# 2.2. Kategori ve Model Listeleme
 def fetch_ai_categories_from_db() -> List[Dict[str, Any]]:
-    """
-    Retrieves all AI categories with their associated models.
-    
-    Returns:
-        List of dictionaries containing category information and associated models
-    """
+    """Tüm AI kategorilerini ve ilişkili modellerini getirir."""
     try:
         ai_repo = AIModelRepository()
         categories = ai_repo.get_all_ai_categories()
@@ -98,29 +81,16 @@ def fetch_ai_categories_from_db() -> List[Dict[str, Any]]:
             
         return categories_data
         
-    except Exception as err:
-        print(f"Service Layer: Error fetching AI categories: {err}")
+    except Exception:
         return []
 
 # -----------------------------------------------------------------------------
-# 3. Future Expansion Areas
+# 3. Yardımcı Fonksiyonlar
 # -----------------------------------------------------------------------------
-# 3.1. Model Administration
+# 3.1. Model Ekleme
 def add_ai_model(category_name: str, model_name: str, model_icon: str, 
                data_ai_index: str, api_url: str) -> bool:
-    """
-    Adds a new AI model to the database.
-    
-    Args:
-        category_name: Name of the category to add the model to
-        model_name: Name of the model
-        model_icon: Icon identifier for the model
-        data_ai_index: Unique identifier for the model
-        api_url: API URL for the model
-        
-    Returns:
-        True if successful, False otherwise
-    """
+    """Veritabanına yeni bir AI modeli ekler."""
     try:
         ai_repo = AIModelRepository()
         
@@ -131,7 +101,6 @@ def add_ai_model(category_name: str, model_name: str, model_icon: str,
             ai_repo.insert_ai_category(category_name, "bi-folder")
             category = ai_repo.get_ai_category_by_name(category_name)
             if not category:
-                print(f"Service Layer: Failed to create category: {category_name}")
                 return False
         
         # Add the model
@@ -140,18 +109,12 @@ def add_ai_model(category_name: str, model_name: str, model_icon: str,
         )
         return result
         
-    except Exception as err:
-        print(f"Service Layer: Error adding AI model: {err}")
+    except Exception:
         return False
 
-# 3.2. API Integration
+# 3.2. Tüm Modelleri Getirme
 def get_all_available_models() -> List[Dict[str, Any]]:
-    """
-    Retrieves all available AI models in a flat list format.
-    
-    Returns:
-        List of dictionaries containing model information
-    """
+    """Tüm mevcut AI modellerini düz bir liste formatında getirir."""
     try:
         ai_repo = AIModelRepository()
         models = ai_repo.get_all_ai_models()
@@ -167,6 +130,5 @@ def get_all_available_models() -> List[Dict[str, Any]]:
             
         return result
         
-    except Exception as err:
-        print(f"Service Layer: Error fetching all AI models: {err}")
+    except Exception:
         return []

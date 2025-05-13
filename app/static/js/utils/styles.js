@@ -172,6 +172,12 @@ function addDynamicStyles() {
             background-color: var(--gray-700);
             color: var(--gray-300);
         }
+
+        body.dark-mode .btn-icon-control {
+            background-color: var(--gray-700);
+            color: var(--gray-300);
+        }
+
         body.dark-mode .ai-message {
             background-color: var(--gray-700);
             color: var(--gray-200);

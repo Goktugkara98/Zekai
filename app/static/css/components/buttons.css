@@ -3,11 +3,19 @@ BUTTON STYLES
 --------------------------------------------------
 TABLE OF CONTENTS:
 --------------------------------------------------
-1.0 GENERAL BUTTON RESET/BASE (.btn)
-    1.1 Base Styling
-2.0 ICON BUTTONS (.btn-icon)
-    2.1 Default Styling
-    2.2 Default Hover State
+1.0 GENERAL BUTTON RESET/BASE
+    1.1 Base Styling (.btn)
+2.0 ICON BUTTONS
+    2.1 Default Styling (.btn-icon)
+    2.2 Hover State (.btn-icon:hover)
+3.0 CONTROL BAR ICON BUTTONS
+    3.1 Default Styling (.btn-icon-control)
+    3.2 Hover State (.btn-icon-control:hover)
+    3.3 Active State (.btn-icon-control:active)
+    3.4 Dark Mode (.dark-mode .btn-icon-control, .dark-mode .btn-icon-control:hover, .dark-mode .btn-icon-control:active)
+4.0 CONTROL BAR INPUT
+    4.1 Broadcast Message Input (#control-bar #broadcast-message-input)
+    4.2 Dark Mode (#control-bar #broadcast-message-input in .dark-mode)
 --------------------------------------------------
 
 /* ==================================================
@@ -89,26 +97,6 @@ TABLE OF CONTENTS:
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* Dark mode */
-body.dark-mode .btn-icon-control {
-    background-color: var(--gray-750, #2d3748); /* Koyu tema için uygun bir arka plan, fallback ile */
-    color: var(--gray-300);
-    border-color: var(--gray-650, #4a5568);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-}
-
-body.dark-mode .btn-icon-control:hover {
-    background-color: var(--gray-700, #1a202c);
-    color: var(--primary-light, var(--primary)); /* Koyu temada hover için ana rengin açığı, fallback ile */
-    border-color: var(--gray-600, #2d3748);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-body.dark-mode .btn-icon-control:active {
-    background-color: var(--gray-650, #4a5568);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-}
-
 /* Control Bar Broadcast Input Styles */
 #control-bar #broadcast-message-input {
     /* İsteğe bağlı olarak input yüksekliğini butonlarla eşleştirebilirsiniz */
@@ -117,11 +105,6 @@ body.dark-mode .btn-icon-control:active {
     /* Temel Bootstrap form-control stillerini korur, ancak gerekirse özelleştirilebilir */
 }
 
-body.dark-mode #control-bar #broadcast-message-input {
-    background-color: var(--gray-700, #1a202c);
-    color: var(--gray-200, #e2e8f0);
-    border-color: var(--gray-600, #2d3748);
-}
 
 body.dark-mode #control-bar #broadcast-message-input::placeholder {
     color: var(--gray-500, #a0aec0);

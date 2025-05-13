@@ -1,3 +1,20 @@
+# =============================================================================
+# Main Routes Module
+# =============================================================================
+# Contents:
+# 1. Imports
+# 2. Blueprint Definition
+# 3. Utility Functions
+# 4. View Routes (HTML Rendering)
+#    4.1. / (GET) - Main Index Page
+# 5. API Routes (JSON)
+#    5.1. POST /chat - Handle Chat Message
+#    5.2. POST /mock-gemini - Mock Gemini Content Generation
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Imports
+# -----------------------------------------------------------------------------
 from flask import Blueprint, render_template, request, jsonify
 import requests # requests importu eklendi
 import json
@@ -5,7 +22,14 @@ import os
 from services.ai_model_service import get_ai_model_api_details, fetch_ai_categories_from_db # Birleşik import
 from app.models.database import AIModelRepository # Veritabanı deposunu import et
 
+# -----------------------------------------------------------------------------
+# 2. Blueprint Definition
+# -----------------------------------------------------------------------------
 main_bp = Blueprint('main_bp', __name__)
+
+# -----------------------------------------------------------------------------
+# 3. Utility Functions
+# -----------------------------------------------------------------------------
 
 def generate_mock_response(user_message):
     """
@@ -25,11 +49,9 @@ def extract_response_by_path(response_json, path):
     """
     Extracts a value from a nested JSON object using a dot-notation path.
     For array indices, use the format 'key[index]'.
-    
     Args:
         response_json: The JSON response to extract from
         path: The path to the value, e.g., 'candidates[0].content.parts[0].text'
-        
     Returns:
         The extracted value or a default message if extraction fails
     """
@@ -37,13 +59,11 @@ def extract_response_by_path(response_json, path):
         # Split the path by dots
         parts = path.split('.')
         result = response_json
-        
         for part in parts:
             # Check if we have an array index notation
             if '[' in part and ']' in part:
                 key, index_str = part.split('[', 1)
                 index = int(index_str.split(']')[0])
-                
                 # Get the array by key, then the element by index
                 if key:
                     result = result[key][index]
@@ -52,13 +72,17 @@ def extract_response_by_path(response_json, path):
             else:
                 # Regular key
                 result = result[part]
-                
         return result
     except (KeyError, IndexError, TypeError) as e:
         print(f"Error extracting response using path '{path}': {e}")
         return f"Error processing AI response: {str(e)}"
     except Exception as e:
         print(f"Unexpected error extracting response: {e}")
+
+# -----------------------------------------------------------------------------
+# 4. View Routes (HTML Rendering)
+# -----------------------------------------------------------------------------
+
         return "An unexpected error occurred processing the AI response."
 
 
@@ -381,15 +405,13 @@ def handle_chat_message():
 
         return jsonify({"error": ai_response}), 500 # Return the error message
 
-# YENİ SAHTE GEMINI API ROTASI
+# 5.2. POST /mock-gemini - Mock Gemini Content Generation
+# -----------------------------------------------------------------------------
+# Returns a mock Gemini API response for development/testing purposes.
+
 @main_bp.route('/mock_gemini_api/v1beta/models/gemini-2.0-flash:generateContent', methods=['POST'])
 def mock_gemini_generate_content():
-    # API anahtarını URL'den alabiliriz (isteğe bağlı, şimdilik kullanmıyoruz)
-    # api_key = request.args.get('key') 
-    # print(f"Mock Gemini API called with key: {api_key}")
-
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 400
+    # ... (existing code remains the same)
 
     data = request.json
     

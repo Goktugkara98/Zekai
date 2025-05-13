@@ -1,12 +1,25 @@
 # =============================================================================
 # Admin Panel Service Module
 # =============================================================================
-# Contents:
+# İçindekiler:
 # 1. Imports
-# 2. Authentication Services
-# 3. Category Management Services
-# 4. Model Management Services
-# 5. Utility Functions
+# 2. Kimlik Doğrulama Servisleri
+#    2.1. Admin Kimlik Doğrulama
+#    2.2. Yetkilendirme Decorator
+# 3. Kategori Yönetimi Servisleri
+#    3.1. Kategori Listeleme
+#    3.2. Kategori Detayları
+#    3.3. Kategori Oluşturma
+#    3.4. Kategori Güncelleme
+#    3.5. Kategori Silme
+# 4. Model Yönetimi Servisleri
+#    4.1. Model Listeleme
+#    4.2. Model Detayları
+#    4.3. Model Oluşturma
+#    4.4. Model Güncelleme
+#    4.5. Model Silme
+# 5. Yardımcı Fonksiyonlar
+#    5.1. İkon Yönetimi
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -17,27 +30,16 @@ from typing import Dict, List, Optional, Any, Tuple
 from flask import session
 
 # -----------------------------------------------------------------------------
-# 2. Authentication Services
+# 2. Kimlik Doğrulama Servisleri
 # -----------------------------------------------------------------------------
+# 2.1. Admin Kimlik Doğrulama
 def is_admin_authenticated() -> bool:
-    """
-    Checks if the current user is authenticated as an admin.
-    
-    Returns:
-        True if authenticated as admin, False otherwise
-    """
+    """Admin kimlik doğrulamasını kontrol eder."""
     return session.get('is_admin', False)
 
+# 2.2. Yetkilendirme Decorator
 def require_admin_auth(func):
-    """
-    Decorator to require admin authentication for a function.
-    
-    Args:
-        func: The function to decorate
-        
-    Returns:
-        Wrapped function that checks admin authentication
-    """
+    """Admin kimlik doğrulaması gerektiren fonksiyonlar için decorator."""
     def wrapper(*args, **kwargs):
         if not is_admin_authenticated():
             return False, "Admin authentication required"
@@ -45,35 +47,23 @@ def require_admin_auth(func):
     return wrapper
 
 # -----------------------------------------------------------------------------
-# 3. Category Management Services
+# 3. Kategori Yönetimi Servisleri
 # -----------------------------------------------------------------------------
+# 3.1. Kategori Listeleme
 @require_admin_auth
 def get_all_categories() -> List[Dict[str, Any]]:
-    """
-    Retrieves all AI categories.
-    
-    Returns:
-        List of category dictionaries
-    """
+    """Tüm AI kategorilerini getirir."""
     try:
         admin_repo = AdminRepository()
         categories = admin_repo.ai_repo.get_all_ai_categories()
         return categories
-    except Exception as e:
-        print(f"Service Layer: Error fetching all categories: {e}")
+    except Exception:
         return []
 
 @require_admin_auth
+# 3.2. Kategori Detayları
 def get_category_with_models(category_id: int) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Retrieves a category with all its models.
-    
-    Args:
-        category_id: The ID of the category
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Bir kategoriyi ve tüm modellerini getirir."""
     try:
         admin_repo = AdminRepository()
         category = admin_repo.get_category_details(category_id)
@@ -83,21 +73,12 @@ def get_category_with_models(category_id: int) -> Tuple[bool, Dict[str, Any]]:
             
         return True, category
     except Exception as e:
-        print(f"Service Layer: Error fetching category details: {e}")
         return False, {"error": f"Error fetching category details: {str(e)}"}
 
 @require_admin_auth
+# 3.3. Kategori Oluşturma
 def create_new_category(name: str, icon: str) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Creates a new AI category.
-    
-    Args:
-        name: The name of the category
-        icon: The icon identifier for the category
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Yeni bir AI kategorisi oluşturur."""
     try:
         admin_repo = AdminRepository()
         success, message = admin_repo.create_category(name, icon)
@@ -107,22 +88,12 @@ def create_new_category(name: str, icon: str) -> Tuple[bool, Dict[str, Any]]:
             
         return True, {"message": message}
     except Exception as e:
-        print(f"Service Layer: Error creating category: {e}")
         return False, {"error": f"Error creating category: {str(e)}"}
 
 @require_admin_auth
+# 3.4. Kategori Güncelleme
 def update_existing_category(category_id: int, name: str, icon: str) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Updates an existing AI category.
-    
-    Args:
-        category_id: The ID of the category to update
-        name: The new name of the category
-        icon: The new icon identifier for the category
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Var olan bir AI kategorisini günceller."""
     try:
         admin_repo = AdminRepository()
         success, message = admin_repo.update_category(category_id, name, icon)
@@ -132,20 +103,12 @@ def update_existing_category(category_id: int, name: str, icon: str) -> Tuple[bo
             
         return True, {"message": message}
     except Exception as e:
-        print(f"Service Layer: Error updating category: {e}")
         return False, {"error": f"Error updating category: {str(e)}"}
 
 @require_admin_auth
+# 3.5. Kategori Silme
 def delete_existing_category(category_id: int) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Deletes an AI category and all associated models.
-    
-    Args:
-        category_id: The ID of the category to delete
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Bir AI kategorisini ve ilişkili tüm modellerini siler."""
     try:
         admin_repo = AdminRepository()
         success, message = admin_repo.delete_category(category_id)
@@ -155,39 +118,26 @@ def delete_existing_category(category_id: int) -> Tuple[bool, Dict[str, Any]]:
             
         return True, {"message": message}
     except Exception as e:
-        print(f"Service Layer: Error deleting category: {e}")
         return False, {"error": f"Error deleting category: {str(e)}"}
 
 # -----------------------------------------------------------------------------
-# 4. Model Management Services
+# 4. Model Yönetimi Servisleri
 # -----------------------------------------------------------------------------
+# 4.1. Model Listeleme
 @require_admin_auth
 def get_all_models() -> List[Dict[str, Any]]:
-    """
-    Retrieves all AI models.
-    
-    Returns:
-        List of model dictionaries
-    """
+    """Tüm AI modellerini getirir."""
     try:
         admin_repo = AdminRepository()
         models = admin_repo.ai_repo.get_all_ai_models()
         return models
-    except Exception as e:
-        print(f"Service Layer: Error fetching all models: {e}")
+    except Exception:
         return []
 
 @require_admin_auth
+# 4.2. Model Detayları
 def get_model_details(model_id: int) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Retrieves detailed information about a model.
-    
-    Args:
-        model_id: The ID of the model
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Bir model hakkında detaylı bilgi getirir."""
     try:
         admin_repo = AdminRepository()
         model = admin_repo.get_model_details(model_id)
@@ -197,27 +147,15 @@ def get_model_details(model_id: int) -> Tuple[bool, Dict[str, Any]]:
             
         return True, model
     except Exception as e:
-        print(f"Service Layer: Error fetching model details: {e}")
         return False, {"error": f"Error fetching model details: {str(e)}"}
 
 @require_admin_auth
+# 4.3. Model Oluşturma
 def create_new_model(category_id: int, name: str, icon: str, 
                     data_ai_index: str, api_url: str, request_method: str = 'POST',
                     request_headers: str = None, request_body_template: str = None,
                     response_path: str = None) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Creates a new AI model.
-    
-    Args:
-        category_id: The ID of the category for this model
-        name: The name of the model
-        icon: The icon identifier for the model
-        data_ai_index: The unique data-ai-index value
-        api_url: The API URL for the model
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Yeni bir AI modeli oluşturur."""
     try:
         admin_repo = AdminRepository()
         success, message = admin_repo.create_model(
@@ -230,28 +168,15 @@ def create_new_model(category_id: int, name: str, icon: str,
             
         return True, {"message": message}
     except Exception as e:
-        print(f"Service Layer: Error creating model: {e}")
         return False, {"error": f"Error creating model: {str(e)}"}
 
 @require_admin_auth
+# 4.4. Model Güncelleme
 def update_existing_model(model_id: int, category_id: int, name: str, 
                          icon: str, data_ai_index: str, api_url: str,
                          request_method: str = 'POST', request_headers: str = None,
                          request_body_template: str = None, response_path: str = None) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Updates an existing AI model.
-    
-    Args:
-        model_id: The ID of the model to update
-        category_id: The ID of the category for this model
-        name: The name of the model
-        icon: The icon identifier for the model
-        data_ai_index: The unique data-ai-index value
-        api_url: The API URL for the model
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Var olan bir AI modelini günceller."""
     try:
         admin_repo = AdminRepository()
         success, message = admin_repo.update_model(
@@ -264,20 +189,12 @@ def update_existing_model(model_id: int, category_id: int, name: str,
             
         return True, {"message": message}
     except Exception as e:
-        print(f"Service Layer: Error updating model: {e}")
         return False, {"error": f"Error updating model: {str(e)}"}
 
 @require_admin_auth
+# 4.5. Model Silme
 def delete_existing_model(model_id: int) -> Tuple[bool, Dict[str, Any]]:
-    """
-    Deletes an AI model.
-    
-    Args:
-        model_id: The ID of the model to delete
-        
-    Returns:
-        Tuple of (success, data)
-    """
+    """Bir AI modelini siler."""
     try:
         admin_repo = AdminRepository()
         success, message = admin_repo.delete_model(model_id)
@@ -287,35 +204,28 @@ def delete_existing_model(model_id: int) -> Tuple[bool, Dict[str, Any]]:
             
         return True, {"message": message}
     except Exception as e:
-        print(f"Service Layer: Error deleting model: {e}")
         return False, {"error": f"Error deleting model: {str(e)}"}
 
 # -----------------------------------------------------------------------------
-# 5. Utility Functions
+# 5. Yardımcı Fonksiyonlar
 # -----------------------------------------------------------------------------
+# 5.1. İkon Yönetimi
 def get_available_icons() -> List[Dict[str, str]]:
-    """
-    Returns a list of available Bootstrap icons for use in the admin panel.
-    
-    Returns:
-        List of icon dictionaries with name and class
-    """
-    # Common Bootstrap icons that might be useful for AI categories/models
+    """Admin paneli için kullanılabilir Bootstrap ikonlarını getirir."""
     return [
-        {"name": "Robot", "class": "bi-robot"},
-        {"name": "Gem", "class": "bi-gem"},
-        {"name": "CPU", "class": "bi-cpu"},
-        {"name": "Brain", "class": "bi-brain"},
-        {"name": "Chat", "class": "bi-chat-dots"},
-        {"name": "Code", "class": "bi-code-square"},
-        {"name": "Image", "class": "bi-image"},
-        {"name": "Music", "class": "bi-music-note"},
-        {"name": "Video", "class": "bi-camera-video"},
-        {"name": "Document", "class": "bi-file-text"},
-        {"name": "Search", "class": "bi-search"},
-        {"name": "Translate", "class": "bi-translate"},
-        {"name": "Magic", "class": "bi-magic"},
-        {"name": "Lightning", "class": "bi-lightning"},
-        {"name": "Star", "class": "bi-star"},
-        {"name": "Folder", "class": "bi-folder"}
+        {"class": "bi-robot", "name": "Robot"},
+        {"class": "bi-cpu", "name": "CPU"},
+        {"class": "bi-chat-dots", "name": "Chat"},
+        {"class": "bi-lightning", "name": "Lightning"},
+        {"class": "bi-stars", "name": "Stars"},
+        {"class": "bi-magic", "name": "Magic"},
+        {"class": "bi-gear", "name": "Gear"},
+        {"class": "bi-code", "name": "Code"},
+        {"class": "bi-file-text", "name": "Document"},
+        {"class": "bi-search", "name": "Search"},
+        {"class": "bi-translate", "name": "Translate"},
+        {"class": "bi-magic", "name": "Magic"},
+        {"class": "bi-lightning", "name": "Lightning"},
+        {"class": "bi-star", "name": "Star"},
+        {"class": "bi-folder", "name": "Folder"}
     ]

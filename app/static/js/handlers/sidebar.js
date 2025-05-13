@@ -9,6 +9,7 @@
  * ================
  * 1. Event Handlers
  *    1.1 Button Event Setup
+ *    1.2 Collapsible Sections
  */
 
 //=============================================================================
@@ -55,4 +56,41 @@ function setupSidebarHandlers() {
     
     // Log successful setup
     console.log('Sidebar handlers initialized successfully');
+}
+
+/**
+ * 1.2 Collapsible Sections
+ * -------------------
+ */
+
+/**
+ * Sets up event handlers for collapsible sidebar sections
+ * Manages chevron rotation and animation for dropdown sections
+ * 
+ * @returns {void}
+ */
+function setupCollapsibleSections() {
+    // Handle main section collapsible headers (AI Categories, Active Chats, Chat History)
+    const collapsibleTriggers = document.querySelectorAll('.sidebar-heading[data-bs-toggle="collapse"]');
+    
+    collapsibleTriggers.forEach(trigger => {
+        const targetId = trigger.getAttribute('data-bs-target');
+        const targetElement = document.querySelector(targetId);
+        const chevron = trigger.querySelector('i.bi-chevron-down');
+        
+        if (targetElement && chevron) {
+            // Add Bootstrap collapse event listeners
+            targetElement.addEventListener('show.bs.collapse', function() {
+                // When expanding, rotate chevron
+                chevron.style.transform = 'rotate(180deg)';
+            });
+            
+            targetElement.addEventListener('hide.bs.collapse', function() {
+                // When collapsing, reset chevron
+                chevron.style.transform = 'rotate(0deg)';
+            });
+        }
+    });
+    
+    console.log('Collapsible sidebar sections initialized');
 }
