@@ -4,40 +4,33 @@
  * @description Manages AI chat windows, layouts, and user interactions
  * @version 1.0.0
  * @author ZekAI Team
- * 
- * TABLE OF CONTENTS
+ * * TABLE OF CONTENTS
  * ================
  * 1. Core System
- *    1.1 Logging System
- *    1.2 State Management
- *    1.3 DOM Elements
- *    1.4 Initialization
- * 
- * 2. UI Components
- *    2.1 Chat Element Factories
- *    2.2 Message HTML Generators
- * 
- * 3. Rendering Functions
- *    3.1 Chat Windows
- *    3.2 Active Chats Dropdown
- *    3.3 Chat History
- * 
- * 4. Event Handlers
- *    4.1 Chat Controls
- *    4.2 Global Handlers
- * 
- * 5. Chat Operations
- *    5.1 Chat Management (Add/Remove/Clear)
- *    5.2 Messaging System
- *    5.3 Broadcast Messages
- * 
- * 6. AI Model Management
- *    6.1 Response Generation
- *    6.2 Model Selection
- * 
- * 7. Public API
- *    7.1 Exposed Methods
- *    7.2 DOM Ready Handlers
+ * 1.1 Logging System
+ * 1.2 State Management
+ * 1.3 DOM Elements
+ * 1.4 Initialization
+ * * 2. UI Components
+ * 2.1 Chat Element Factories
+ * 2.2 Message HTML Generators
+ * * 3. Rendering Functions
+ * 3.1 Chat Windows
+ * 3.2 Active Chats Dropdown
+ * 3.3 Chat History
+ * * 4. Event Handlers
+ * 4.1 Chat Controls
+ * 4.2 Global Handlers
+ * * 5. Chat Operations
+ * 5.1 Chat Management (Add/Remove/Clear)
+ * 5.2 Messaging System
+ * 5.3 Broadcast Messages
+ * * 6. AI Model Management
+ * 6.1 Response Generation
+ * 6.2 Model Selection
+ * * 7. Public API
+ * 7.1 Exposed Methods
+ * 7.2 DOM Ready Handlers
  */
 
 //=============================================================================
