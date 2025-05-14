@@ -220,13 +220,79 @@ const ChatManager = (function() {
      * @param {string} aiName - Name of the AI model (only used for first AI message)
      * @returns {string} HTML markup for the message
      */
-    function createMessageHTML(message, isFirstAIMessage = false, aiName = '') {
+    /**
+     * Renders content based on AI model type
+     * @param {string} content - The content to render
+     * @param {string} aiModelId - The AI model ID
+     * @returns {string} Rendered HTML content
+     */
+    function renderContent(content, aiModelId) {
+        // Get AI type from model ID prefix
+        const aiType = aiModelId.split('_')[0];
+        
+        switch(aiType) {
+            case 'img':
+                return renderImageContent(content);
+            case 'aud':
+                return renderAudioContent(content);
+            case 'txt':
+            default:
+                return renderTextContent(content);
+        }
+    }
+
+    /**
+     * Renders text content
+     * @param {string} content - Text content
+     * @returns {string} HTML markup
+     */
+    function renderTextContent(content) {
+        return `<div class="text-content">${content}</div>`;
+    }
+
+    /**
+     * Renders image content
+     * @param {string} content - Image URL or base64 data
+     * @returns {string} HTML markup
+     */
+    function renderImageContent(content) {
+        return `
+            <div class="image-content">
+                <img src="${content}" alt="AI Generated Image" class="ai-generated-image">
+                <div class="image-controls">
+                    <button class="btn btn-sm btn-primary download-image" onclick="downloadImage('${content}')"><i class="bi bi-download"></i> Download</button>
+                    <button class="btn btn-sm btn-secondary view-image" onclick="viewFullImage('${content}')"><i class="bi bi-arrows-fullscreen"></i> View Full</button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Renders audio content
+     * @param {string} content - Audio URL or base64 data
+     * @returns {string} HTML markup
+     */
+    function renderAudioContent(content) {
+        return `
+            <div class="audio-content">
+                <audio controls>
+                    <source src="${content}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <button class="btn btn-sm btn-primary download-audio" onclick="downloadAudio('${content}')"><i class="bi bi-download"></i> Download</button>
+            </div>
+        `;
+    }
+
+    function createMessageHTML(message, isFirstAIMessage = false, aiName = '', aiModelId = '') {
         const messageClass = message.isUser ? 'user-message' : 'ai-message';
         const timestamp = new Date(message.timestamp || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
-        // For the first AI message, include the model name
-        let messageContent = message.text;
-        if (!message.isUser && aiName) { // `isFirstAIMessage` kontrolü kaldırıldı
+        // For AI messages, render content based on AI type
+        let messageContent = message.isUser ? message.text : renderContent(message.text, aiModelId);
+        
+        // Add AI model indicator if it's an AI message
+        if (!message.isUser && aiName) {
             messageContent = `<div class="ai-model-indicator"><i class="bi bi-robot"></i> ${aiName}</div>${messageContent}`;
         }
         
@@ -378,6 +444,9 @@ const ChatManager = (function() {
         }
         
         elements.activeChatsDropdownTrigger.classList.remove('disabled');
+        // Yeni sohbet eklendiğinde dropdown'ı otomatik aç
+        elements.activeChatsDropdownMenu.classList.add('show');
+        elements.activeChatsDropdownTrigger.setAttribute('aria-expanded', 'true');
 
         state.chats.forEach(chatData => {
             const aiModel = window.state.aiTypes.find(m => m.id === chatData.aiModelId) || { name: `AI (${chatData.aiModelId ? chatData.aiModelId.slice(-4) : 'Unknown'})`, icon: 'bi bi-cpu' };
@@ -750,9 +819,7 @@ const ChatManager = (function() {
         state.chats.push(newChat);
         log('info', 'New chat added:', JSON.parse(JSON.stringify(newChat)));
         
-        renderChats(); // This function should call createChatElement internally
-         // To hide it if this is the first chat
-        renderActiveChatsDropdown(); // To update the list of active chats
+        renderChats(); // This will also call renderActiveChatsDropdown internally
         // saveChatsToHistory(); // Usually only save if there's interaction or on close
 
         // Focus the input of the new chat if it's visible
@@ -935,10 +1002,8 @@ const ChatManager = (function() {
         if (chatElement) {
             const messagesContainer = chatElement.querySelector('.chat-messages');
             if (messagesContainer) {
-                const messageElement = document.createElement('div');
-                // Kullanıcı mesajı için isFirstAIMessage her zaman false, aiName gereksiz
-                messageElement.innerHTML = createMessageHTML(userMessage, false, '');
-                messagesContainer.appendChild(messageElement.firstElementChild);
+                const userMessageHTML = createMessageHTML(userMessage, false, '', chat.aiModelId);
+                messagesContainer.insertAdjacentHTML('beforeend', userMessageHTML);
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
                 // Eğer bu kullanıcının ilk mesajıysa, model seçimi UI'ını kilitle
@@ -975,7 +1040,8 @@ const ChatManager = (function() {
                 const loadingMessageHTML = createMessageHTML(
                     { isUser: false, text: '' }, // Metin boş
                     isFirstAIMessageForLoading,
-                    currentAiNameForLoading
+                    currentAiNameForLoading,
+                    chat.aiModelId
                 );
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = loadingMessageHTML;
@@ -1056,7 +1122,8 @@ const ChatManager = (function() {
                 const finalMessageHTML = createMessageHTML(
                     aiMessage,
                     isFirstAIMessageForLoading, // Yüklenirken belirlenen değeri kullan
-                    currentAiNameForLoading // Yüklenirken belirlenen adı kullan
+                    currentAiNameForLoading, // Yüklenirken belirlenen adı kullan
+                    chat.aiModelId // AI model ID'sini geç
                 );
                 const finalTempDiv = document.createElement('div');
                 finalTempDiv.innerHTML = finalMessageHTML;
@@ -1107,7 +1174,7 @@ const ChatManager = (function() {
                 // chat.messages.push(aiErrorMessage); 
                 // chat.lastActivity = Date.now();
 
-                const errorMessageHTML = createMessageHTML(aiErrorMessage, false, "System");
+                const errorMessageHTML = createMessageHTML(aiErrorMessage, false, "System", chat.aiModelId);
                 const errorTempDiv = document.createElement('div');
                 errorTempDiv.innerHTML = errorMessageHTML;
                 const errorMessageElement = errorTempDiv.firstElementChild;
@@ -1173,7 +1240,71 @@ const ChatManager = (function() {
         log('info', 'Broadcast message sent and input cleared.');
     }
     //=============================================================================
-    // 6. AI MODEL MANAGEMENT
+    // 6. MEDIA HANDLING
+    //=============================================================================
+
+    /**
+     * Download an image from a URL or base64 data
+     * @param {string} imageData - Image URL or base64 data
+     */
+    function downloadImage(imageData) {
+        const link = document.createElement('a');
+        link.href = imageData;
+        link.download = `ai-generated-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    /**
+     * View an image in full screen
+     * @param {string} imageData - Image URL or base64 data
+     */
+    function viewFullImage(imageData) {
+        // Create modal container
+        const modal = document.createElement('div');
+        modal.className = 'image-modal';
+        modal.innerHTML = `
+            <div class="image-modal-content">
+                <img src="${imageData}" alt="AI Generated Image">
+                <button class="btn btn-light close-modal"><i class="bi bi-x-lg"></i></button>
+            </div>
+        `;
+
+        // Add click event to close modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal || e.target.closest('.close-modal')) {
+                document.body.removeChild(modal);
+            }
+        });
+
+        // Add keydown event to close modal with Escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(modal);
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+        document.body.appendChild(modal);
+    }
+
+    /**
+     * Download an audio file from a URL or base64 data
+     * @param {string} audioData - Audio URL or base64 data
+     */
+    function downloadAudio(audioData) {
+        const link = document.createElement('a');
+        link.href = audioData;
+        link.download = `ai-generated-audio-${Date.now()}.mp3`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    //=============================================================================
+    // 7. AI MODEL MANAGEMENT
     //=============================================================================
 
     /**
@@ -1379,7 +1510,7 @@ const ChatManager = (function() {
             log('warn', `Chat element for ${chatId} not found for UI update after model change. Re-rendering all.`);
             renderChats(); // Fallback if specific element isn't found
         }
-        renderActiveChatsDropdown();
+        // renderActiveChatsDropdown() is already called by renderChats()
         // Consider saving state here if necessary: saveChatsToHistory(); or similar
     }
 
@@ -1406,14 +1537,23 @@ const ChatManager = (function() {
         
         setupGlobalHandlers();
 
-        // NEW: Add event listeners to AI Model selector items
+        // Add event listeners to AI Model selector items
         const aiModelSelectorItems = document.querySelectorAll('.ai-model-selector-item');
         aiModelSelectorItems.forEach(item => {
-            item.addEventListener('click', function(event) {
-                event.preventDefault(); 
-                const modelId = this.dataset.aiIndex; // Get the string ID
-                if (modelId) { // Check if modelId is not null or empty
-                    ChatManager.addChat(modelId); // Pass the string ID
+            // Remove any existing click listeners first
+            const oldListener = item._clickListener;
+            if (oldListener) {
+                item.removeEventListener('click', oldListener);
+            }
+
+            // Add new click listener
+            const newListener = function(event) {
+                event.preventDefault();
+                event.stopPropagation(); // Prevent event bubbling
+                
+                const modelId = this.dataset.aiIndex;
+                if (modelId) {
+                    ChatManager.addChat(modelId);
                     
                     // Manage 'active' class
                     aiModelSelectorItems.forEach(i => i.classList.remove('active'));
@@ -1421,7 +1561,11 @@ const ChatManager = (function() {
                 } else {
                     log('error', 'Invalid AI model ID selected from sidebar.', this.dataset.aiIndex);
                 }
-            });
+            };
+
+            // Store the listener reference for future cleanup
+            item._clickListener = newListener;
+            item.addEventListener('click', newListener);
         });
         
         renderChats(); 

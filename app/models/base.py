@@ -158,16 +158,13 @@ class BaseRepository:
     # -------------------------------------------------------------------------
     def _ensure_connection(self) -> None:
         """Ensures the database connection is active, especially if repository owns it."""
-        if self.own_connection: # Only ensure if we own it; external connections manage themselves.
-            self.db._ensure_connection()
-        elif not self.db.connection or not self.db.connection.is_connected() or not self.db.cursor:
-            # This case implies an external connection was passed but is now closed.
-            # This could be an issue with how the external connection is managed.
-            # Log: "Warning: External DatabaseConnection is not active. Re-establishing might be needed by the owner."
-            # Optionally, could raise an error or try to reconnect if policy allows.
-            # For now, we assume the external connection manager handles this.
-            # If strict adherence is needed, one might raise an exception here.
-            raise Error("External DatabaseConnection is not active.")
+        try:
+            if not self.db.connection or not self.db.connection.is_connected() or not self.db.cursor:
+                self.db._ensure_connection()
+        except Error as e:
+            # Log: f"Database connection error: {e}"
+            raise Error(f"Failed to ensure database connection: {str(e)}")
+
 
 
     # 3.3. _close_if_owned

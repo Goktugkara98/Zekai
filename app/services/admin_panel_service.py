@@ -81,14 +81,15 @@ def create_new_category(name: str, icon: str) -> Tuple[bool, Dict[str, Any]]:
     """Yeni bir AI kategorisi oluşturur."""
     try:
         admin_repo = AdminRepository()
-        success, message = admin_repo.create_category(name, icon)
+        success, message, category_id = admin_repo.create_category(name, icon)
         
         if not success:
             return False, {"error": message}
             
-        return True, {"message": message}
+        return True, {"message": message, "id": category_id}
     except Exception as e:
         return False, {"error": f"Error creating category: {str(e)}"}
+
 
 @require_admin_auth
 # 3.4. Kategori Güncelleme
@@ -210,22 +211,26 @@ def delete_existing_model(model_id: int) -> Tuple[bool, Dict[str, Any]]:
 # 5. Yardımcı Fonksiyonlar
 # -----------------------------------------------------------------------------
 # 5.1. İkon Yönetimi
-def get_available_icons() -> List[Dict[str, str]]:
+def get_available_icons() -> Tuple[bool, Dict[str, Any]]:
     """Admin paneli için kullanılabilir Bootstrap ikonlarını getirir."""
-    return [
-        {"class": "bi-robot", "name": "Robot"},
-        {"class": "bi-cpu", "name": "CPU"},
-        {"class": "bi-chat-dots", "name": "Chat"},
-        {"class": "bi-lightning", "name": "Lightning"},
-        {"class": "bi-stars", "name": "Stars"},
-        {"class": "bi-magic", "name": "Magic"},
-        {"class": "bi-gear", "name": "Gear"},
-        {"class": "bi-code", "name": "Code"},
-        {"class": "bi-file-text", "name": "Document"},
-        {"class": "bi-search", "name": "Search"},
-        {"class": "bi-translate", "name": "Translate"},
-        {"class": "bi-magic", "name": "Magic"},
-        {"class": "bi-lightning", "name": "Lightning"},
-        {"class": "bi-star", "name": "Star"},
-        {"class": "bi-folder", "name": "Folder"}
-    ]
+    try:
+        icons = [
+            {"class": "bi-robot", "name": "Robot"},
+            {"class": "bi-cpu", "name": "CPU"},
+            {"class": "bi-chat-dots", "name": "Chat"},
+            {"class": "bi-lightning", "name": "Lightning"},
+            {"class": "bi-stars", "name": "Stars"},
+            {"class": "bi-magic", "name": "Magic"},
+            {"class": "bi-gear", "name": "Gear"},
+            {"class": "bi-code", "name": "Code"},
+            {"class": "bi-file-text", "name": "Document"},
+            {"class": "bi-search", "name": "Search"},
+            {"class": "bi-translate", "name": "Translate"},
+            {"class": "bi-magic", "name": "Magic"},
+            {"class": "bi-lightning", "name": "Lightning"},
+            {"class": "bi-star", "name": "Star"},
+            {"class": "bi-folder", "name": "Folder"}
+        ]
+        return True, {"icons": icons}
+    except Exception as e:
+        return False, {"error": f"Error getting icons: {str(e)}"}

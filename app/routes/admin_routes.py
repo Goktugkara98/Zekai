@@ -462,22 +462,39 @@ def api_update_model(model_id: int):
 @admin_login_required
 def api_delete_model(model_id: int):
     """API endpoint to delete a model."""
-    success, result = delete_existing_model(model_id)
+    success, data = delete_existing_model(model_id)
     
     if success:
         return jsonify({
             'success': True,
-            'message': result.get('message', 'Model deleted successfully.')
-        }) # Default 200 OK
+            'message': data.get('message', 'Model deleted successfully')
+        })
     else:
-        error_message = result.get('error', 'Failed to delete model.')
-        status_code = 400
-        if "not found" in error_message.lower():
-            status_code = 404
         return jsonify({
             'success': False,
-            'error': error_message
-        }), status_code
+            'error': data.get('error', 'Failed to delete model')
+        }), 400 # Bad Request
+
+# 6.7. POST /api/models/<int:model_id>/duplicate - Duplicate Model
+# -----------------------------------------------------------------------------
+@admin_bp.route('/api/models/<int:model_id>/duplicate', methods=['POST'])
+@admin_login_required
+def api_duplicate_model(model_id: int):
+    """API endpoint to duplicate a model."""
+    admin_repo = AdminRepository()
+    success, message, new_model_id = admin_repo.model_repo.duplicate_model(model_id)
+    
+    if success:
+        return jsonify({
+            'success': True,
+            'message': message,
+            'id': new_model_id
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': message
+        }), 400
 
 # -----------------------------------------------------------------------------
 # 7. Utility API Routes (JSON)
@@ -489,19 +506,18 @@ def api_delete_model(model_id: int):
 @admin_login_required
 def api_get_icons():
     """API endpoint to get a list of available icons."""
-    # This service should ideally fetch/generate the list of icons
-    success, data = get_available_icons() # Assuming this service exists and is implemented
+    success, data = get_available_icons()
     
     if success:
         return jsonify({
             'success': True,
-            'icons': data # 'data' is expected to be a list of icon names/paths
+            'icons': data['icons']
         })
     else:
         return jsonify({
             'success': False,
             'error': data.get('error', 'Failed to retrieve icon list.')
-        }), 500 # Internal Server Error or appropriate code
+        }), 500
 
 # 7.2. POST /api/logout - AJAX Logout (Alternative to view logout)
 # -----------------------------------------------------------------------------

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat.js Olay İşleyicileri Fonksiyon Raporu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f5f3ff; /* Violet 50 arka plan */
+        }
+        .function-section {
+            background-color: #ffffff;
+            border-radius: 0.75rem; /* 12px */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem; /* 32px */
+            padding: 1.5rem; /* 24px */
+            border-left: 4px solid #7c3aed; /* Violet 600 kenarlık */
+        }
+        .function-title-text {
+            color: #5b21b6; /* Violet 700 */
+            font-weight: 600; /* Yarı kalın */
+        }
+        .code-block { 
+            background-color: #1e293b; /* Gri 800 */
+            color: #e2e8f0; /* Gri 200 */
+            padding: 1rem; /* 16px */
+            border-radius: 0.5rem; /* 8px */
+            margin-top: 1rem; /* 16px */
+            margin-bottom: 1rem; /* 16px */
+            white-space: pre-wrap; 
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.875rem; /* 14px */
+            line-height: 1.5; 
+            overflow-x: auto; 
+        }
+        .explanation-summary {
+            background-color: #f5f3ff; /* Violet 50 */
+            padding: 0.75rem 1rem; /* 12px 16px */
+            border-radius: 0.5rem; /* 8px */
+            margin-bottom: 0.5rem; /* 8px */
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #6d28d9; /* Violet 700 */
+            font-weight: 500; /* Orta */
+            border: 1px solid #ddd6fe; /* Violet 200 */
+        }
+        .explanation-summary:hover {
+            background-color: #ede9fe; /* Violet 100 */
+        }
+        .explanation-details { 
+            margin-left: 1rem; /* 16px */
+            padding-left: 1rem; /* 16px */
+            border-left: 3px solid #c4b5fd; /* Violet 300 */
+            padding-top: 0.5rem; /* 8px */
+            padding-bottom: 0.5rem; /* 8px */
+            color: #374151; /* Gri 700 */
+        }
+        .explanation-details p {
+            margin-bottom: 0.75rem; /* 12px */
+        }
+        .explanation-details strong {
+            color: #1f2937; /* Gri 800 */
+        }
+        details > summary { 
+            list-style: none; 
+        }
+        details > summary::-webkit-details-marker { 
+            display: none; 
+        }
+        details > summary::marker { 
+            display: none; 
+        }
+        .chevron::before {
+            border-style: solid;
+            border-width: 0.15em 0.15em 0 0;
+            content: '';
+            display: inline-block;
+            height: 0.45em;
+            left: 0.15em;
+            position: relative;
+            top: 0.15em;
+            transform: rotate(-45deg);
+            vertical-align: top;
+            width: 0.45em;
+            transition: transform 0.2s ease-in-out;
+        }
+        details[open] > summary .chevron::before {
+            transform: rotate(135deg);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-xl p-6 md:p-8">
+        <header class="mb-8 pb-6 border-b border-gray-300">
+            <h1 class="text-4xl font-bold text-center text-violet-700"><code>chat.js</code> Olay İşleyicileri Fonksiyon Raporu</h1>
+            <p class="text-center text-gray-600 mt-3 text-lg"><code>chat.js</code> dosyasının "Olay İşleyicileri" (Event Handlers) olarak adlandırılan bölümündeki fonksiyonların ve komutlarının detaylı açıklaması.</p>
+        </header>
+
+        <section id="event-handlers-overview" class="mb-10 p-6 bg-violet-50 rounded-lg border border-violet-200">
+            <h2 class="text-2xl font-semibold text-violet-600 mb-3">4. Olay İşleyicileri (Event Handlers)</h2>
+            <p class="text-gray-700 leading-relaxed">
+                Bu bölüm, kullanıcı arayüzündeki etkileşimleri yakalayan ve bunlara yanıt veren fonksiyonları içerir. 
+                Hem bireysel sohbet pencerelerindeki kontrollere (kapatma, küçültme, model seçimi, mesaj gönderme) 
+                hem de genel uygulama kontrollerine (yeni sohbet, tüm sohbetleri temizle, yayın mesajı) 
+                ait olay dinleyicilerinin kurulumunu ve yönetimini kapsar.
+            </p>
+        </section>
+
+        <section class="function-section" id="setup-chat-controls">
+            <h3 class="text-xl function-title-text mb-3">4.1 Sohbet Kontrolleri (Chat Controls)</h3>
+            <p class="text-gray-600 mb-4"><code>setupChatControls(chatElement)</code> fonksiyonu, belirli bir sohbet penceresi içindeki interaktif elemanlara (kapatma, küçültme düğmeleri, model seçimi başlığı, mesaj gönderme alanı) olay dinleyicileri atar.</p>
+            
+            <h4 class="text-lg font-semibold text-gray-700 mt-4">Fonksiyon: <code>setupChatControls(chatElement)</code></h4>
+            <div class="code-block">
+function setupChatControls(chatElement) {
+    if (!chatElement) {
+        log('error', 'Cannot setup chat controls: chat element is null');
+        return;
+    }
+    
+    const chatId = chatElement.getAttribute('data-chat-id');
+    
+    // Kapatma butonu
+    const closeBtn = chatElement.querySelector('.chat-close-btn');
+    if (closeBtn) {
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            log('action', 'Close chat button clicked', chatId);
+            const chatData = state.chats.find(c => c.id === chatId);
+
+            if (chatData && chatData.messages && chatData.messages.length > 0) {
+                if (confirm("Bu sohbeti kapatmak istediğinizden emin misiniz?")) {
+                    removeChat(chatId);
+                }
+            } else {
+                removeChat(chatId);
+            }
+        };
+    }
+
+    // Küçültme butonu
+    const minimizeBtn = chatElement.querySelector('.chat-minimize-btn');
+    if (minimizeBtn) {
+        minimizeBtn.onclick = (e) => {
+            e.stopPropagation();
+            log('action', 'Minimize chat button clicked', chatId);
+            const chat = state.chats.find(c => c.id === chatId);
+            if (chat) {
+                chat.isMinimized = true;
+                renderChats();
+                renderActiveChatsDropdown();
+            }
+        };
+    }
+
+    // Model seçimi (sohbet başlığı üzerinden)
+    const chatTitle = chatElement.querySelector('.chat-title');
+    if (chatTitle && chatTitle.classList.contains('model-changeable')) {
+        chatTitle.onclick = (e) => {
+            e.stopPropagation();
+            log('action', 'Chat title clicked for model selection', chatId);
+            showModelDropdown(chatId, chatTitle);
+        };
+    }
+    
+    // Gönderme butonu ve giriş alanı
+    const sendBtn = chatElement.querySelector('.chat-send-btn');
+    const inputField = chatElement.querySelector('.chat-input');
+    
+    if (sendBtn && inputField) {
+        sendBtn.onclick = () => {
+            if (inputField.value.trim()) {
+                log('action', 'Send button clicked', chatId);
+                sendMessage(chatId, inputField.value);
+                inputField.value = '';
+            }
+        };
+        
+        inputField.onkeypress = (e) => {
+            if (e.key === 'Enter' && inputField.value.trim()) {
+                log('action', 'Enter key pressed in chat input', chatId);
+                sendMessage(chatId, inputField.value);
+                inputField.value = '';
+            }
+        };
+    }
+}
+            </div>
+            <details class="mt-2">
+                <summary class="explanation-summary">
+                    <span>Komut Açıklamaları</span>
+                    <span class="chevron"></span>
+                </summary>
+                <div class="explanation-details">
+                    <p><strong><code>if (!chatElement) { ... }</code></strong>: Fonksiyona parametre olarak gelen <code>chatElement</code>'in (sohbet penceresi DOM elemanı) geçerli olup olmadığını kontrol eder. Eğer <code>null</code> ise hata loglar ve fonksiyondan çıkar.</p>
+                    <p><strong><code>const chatId = chatElement.getAttribute('data-chat-id');</code></strong>: Sohbet penceresi elemanının <code>data-chat-id</code> niteliğinden sohbetin benzersiz kimliğini (ID) alır.</p>
+                    
+                    <p><strong>Kapatma Butonu (<code>.chat-close-btn</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>const closeBtn = chatElement.querySelector('.chat-close-btn');</code></strong>: Sohbet penceresi içindeki <code>.chat-close-btn</code> sınıfına sahip kapatma butonunu seçer.</li>
+                        <li><strong><code>if (closeBtn) { ... }</code></strong>: Buton bulunursa, olay dinleyicisi atanır.</li>
+                        <li><strong><code>closeBtn.onclick = (e) => { ... }</code></strong>: Butona tıklandığında çalışacak fonksiyonu tanımlar.</li>
+                        <li><strong><code>e.stopPropagation();</code></strong>: Olayın daha üst DOM elemanlarına yayılmasını (event bubbling) engeller.</li>
+                        <li><strong><code>log('action', ...);</code></strong>: Kapatma butonuna tıklandığını loglar.</li>
+                        <li><strong><code>const chatData = state.chats.find(c => c.id === chatId);</code></strong>: Kapatılmak istenen sohbetin verilerini <code>state.chats</code> dizisinden bulur.</li>
+                        <li><strong><code>if (chatData && chatData.messages && chatData.messages.length > 0) { ... }</code></strong>: Eğer sohbette mesaj varsa, kullanıcıya Türkçe bir onay mesajı (<code>confirm("Bu sohbeti kapatmak istediğinizden emin misiniz?")</code>) gösterir. Kullanıcı onaylarsa <code>removeChat(chatId)</code> fonksiyonunu çağırarak sohbeti kaldırır.</li>
+                        <li><strong><code>else { removeChat(chatId); }</code></strong>: Eğer sohbette hiç mesaj yoksa, onay istemeden doğrudan <code>removeChat(chatId)</code> fonksiyonunu çağırır.</li>
+                    </ul>
+
+                    <p><strong>Küçültme Butonu (<code>.chat-minimize-btn</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>const minimizeBtn = chatElement.querySelector('.chat-minimize-btn');</code></strong>: Sohbet penceresi içindeki <code>.chat-minimize-btn</code> sınıfına sahip küçültme butonunu seçer.</li>
+                        <li><strong><code>if (minimizeBtn) { ... }</code></strong>: Buton bulunursa, olay dinleyicisi atanır.</li>
+                        <li><strong><code>minimizeBtn.onclick = (e) => { ... }</code></strong>: Butona tıklandığında çalışacak fonksiyonu tanımlar.</li>
+                        <li><strong><code>e.stopPropagation();</code></strong>: Olay yayılmasını engeller.</li>
+                        <li><strong><code>log('action', ...);</code></strong>: Küçültme butonuna tıklandığını loglar.</li>
+                        <li><strong><code>const chat = state.chats.find(c => c.id === chatId);</code></strong>: İlgili sohbeti <code>state.chats</code> dizisinden bulur.</li>
+                        <li><strong><code>if (chat) { ... }</code></strong>: Sohbet bulunursa:</li>
+                        <li><strong><code>chat.isMinimized = true;</code></strong>: Sohbetin durumunu küçültülmüş olarak ayarlar.</li>
+                        <li><strong><code>renderChats(); renderActiveChatsDropdown();</code></strong>: Arayüzü güncellemek için ilgili render fonksiyonlarını çağırır.</li>
+                    </ul>
+
+                    <p><strong>Model Seçimi (Sohbet Başlığı - <code>.chat-title.model-changeable</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>const chatTitle = chatElement.querySelector('.chat-title');</code></strong>: Sohbet başlığı elemanını seçer.</li>
+                        <li><strong><code>if (chatTitle && chatTitle.classList.contains('model-changeable')) { ... }</code></strong>: Başlık elemanı varsa ve <code>model-changeable</code> sınıfına sahipse (yani model değiştirilebilir durumdaysa), olay dinleyicisi atanır.</li>
+                        <li><strong><code>chatTitle.onclick = (e) => { ... }</code></strong>: Başlığa tıklandığında çalışacak fonksiyonu tanımlar.</li>
+                        <li><strong><code>e.stopPropagation();</code></strong>: Olay yayılmasını engeller.</li>
+                        <li><strong><code>log('action', ...);</code></strong>: Model seçimi için başlığa tıklandığını loglar.</li>
+                        <li><strong><code>showModelDropdown(chatId, chatTitle);</code></strong>: Yapay zeka modeli seçim açılır menüsünü göstermek için <code>showModelDropdown</code> fonksiyonunu çağırır.</li>
+                    </ul>
+
+                    <p><strong>Gönderme Butonu (<code>.chat-send-btn</code>) ve Giriş Alanı (<code>.chat-input</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>const sendBtn = chatElement.querySelector('.chat-send-btn');</code></strong>: Gönderme butonunu seçer.</li>
+                        <li><strong><code>const inputField = chatElement.querySelector('.chat-input');</code></strong>: Mesaj giriş alanını seçer.</li>
+                        <li><strong><code>if (sendBtn && inputField) { ... }</code></strong>: Hem buton hem de giriş alanı bulunursa, olay dinleyicileri atanır.</li>
+                        <li><strong><code>sendBtn.onclick = () => { ... }</code></strong>: Gönderme butonuna tıklandığında:</li>
+                        <li><strong><code>if (inputField.value.trim()) { ... }</code></strong>: Giriş alanı boş değilse (başındaki ve sonundaki boşluklar temizlendikten sonra), <code>sendMessage(chatId, inputField.value)</code> fonksiyonunu çağırarak mesajı gönderir ve giriş alanını temizler.</li>
+                        <li><strong><code>inputField.onkeypress = (e) => { ... }</code></strong>: Giriş alanında bir tuşa basıldığında:</li>
+                        <li><strong><code>if (e.key === 'Enter' && inputField.value.trim()) { ... }</code></strong>: Basılan tuş 'Enter' ise ve giriş alanı boş değilse, <code>sendMessage(chatId, inputField.value)</code> fonksiyonunu çağırarak mesajı gönderir ve giriş alanını temizler.</li>
+                    </ul>
+                </div>
+            </details>
+        </section>
+
+        <section class="function-section" id="setup-global-handlers">
+            <h3 class="text-xl function-title-text mb-3">4.2 Genel İşleyiciler (Global Handlers)</h3>
+            <p class="text-gray-600 mb-4"><code>setupGlobalHandlers()</code> fonksiyonu, uygulama genelindeki kontrol elemanlarına (karşılama ekranındaki yeni sohbet butonu, genel yeni sohbet butonu, sohbetleri temizle butonu, yayın mesajı gönderme alanı) olay dinleyicileri atar.</p>
+
+            <h4 class="text-lg font-semibold text-gray-700 mt-4">Fonksiyon: <code>setupGlobalHandlers()</code></h4>
+            <div class="code-block">
+function setupGlobalHandlers() {
+    if (!elements.welcomeNewChatBtn || !elements.newChatBtn || !elements.clearChatsBtn) {
+        log('warn', 'Some control elements not found');
+        // return; // Kodda return yok, ancak olmaması bir sorun teşkil etmeyebilir.
+    }
+    
+    // Karşılama ekranı yeni sohbet butonu
+    if (elements.welcomeNewChatBtn) { // Elemanın varlığını kontrol et
+        elements.welcomeNewChatBtn.onclick = () => {
+            log('action', 'Welcome screen new chat button clicked');
+            addChat();
+        };
+    }
+    
+    // Kontrol çubuğu yeni sohbet butonu
+    if (elements.newChatBtn) { // Elemanın varlığını kontrol et
+        elements.newChatBtn.onclick = () => {
+            log('action', 'New chat button clicked');
+            addChat();
+        };
+    }
+    
+    // Tüm sohbetleri temizle butonu
+    if (elements.clearChatsBtn) { // Elemanın varlığını kontrol et
+        elements.clearChatsBtn.onclick = () => {
+            log('action', 'Clear all chats button clicked');
+            const chatsToRemovePreview = state.chats.filter(chat => !chat.messages || !chat.messages.some(msg => msg.isUser));
+            
+            if (chatsToRemovePreview.length > 0) {
+                if (confirm(\`Are you sure you want to close ${chatsToRemovePreview.length} unused chat(s)? Chats with ongoing conversations will not be affected.\`)) {
+                    clearAllChats(); 
+                }
+            } else {
+                alert('There are no unused chats to clear. All active chats have ongoing conversations or there are no chats.');
+            }
+        };
+    }
+
+    // Yayın Mesajı İşleyicileri
+    if (elements.sendBroadcastBtn && elements.broadcastMessageInput) {
+        elements.sendBroadcastBtn.addEventListener('click', () => {
+            log('action', 'Send broadcast button clicked');
+            sendBroadcastMessage();
+        });
+
+        elements.broadcastMessageInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                log('action', 'Enter key pressed in broadcast input');
+                sendBroadcastMessage();
+            }
+        });
+    }
+}
+            </div>
+            <details class="mt-2">
+                <summary class="explanation-summary">
+                    <span>Komut Açıklamaları</span>
+                    <span class="chevron"></span>
+                </summary>
+                <div class="explanation-details">
+                    <p><strong><code>if (!elements.welcomeNewChatBtn || ...) { log('warn', ...); }</code></strong>: Gerekli genel kontrol elemanlarından bazılarının (<code>elements</code> objesinde referansları tutulan) bulunup bulunmadığını kontrol eder. Eğer biri bile eksikse bir uyarı loglar. (Not: Orijinal kodda bu durumda fonksiyondan çıkış yapılmıyor, bu da eksik elemanlara rağmen diğer mevcut elemanlar için işleyicilerin atanmaya çalışılacağı anlamına gelir. Her bir eleman için ayrı null kontrolü daha güvenli bir yaklaşımdır ve aşağıdaki gibi eklenmiştir.)</p>
+                    
+                    <p><strong>Karşılama Ekranı Yeni Sohbet Butonu (<code>elements.welcomeNewChatBtn</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>if (elements.welcomeNewChatBtn) { ... }</code></strong>: Elemanın varlığını kontrol eder.</li>
+                        <li><strong><code>elements.welcomeNewChatBtn.onclick = () => { ... }</code></strong>: Butona tıklandığında:</li>
+                        <li><strong><code>log('action', ...);</code></strong>: Tıklama eylemini loglar.</li>
+                        <li><strong><code>addChat();</code></strong>: Yeni bir sohbet eklemek için <code>addChat</code> fonksiyonunu çağırır.</li>
+                    </ul>
+
+                    <p><strong>Kontrol Çubuğu Yeni Sohbet Butonu (<code>elements.newChatBtn</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>if (elements.newChatBtn) { ... }</code></strong>: Elemanın varlığını kontrol eder.</li>
+                        <li><strong><code>elements.newChatBtn.onclick = () => { ... }</code></strong>: Butona tıklandığında:</li>
+                        <li><strong><code>log('action', ...);</code></strong>: Tıklama eylemini loglar.</li>
+                        <li><strong><code>addChat();</code></strong>: Yeni bir sohbet eklemek için <code>addChat</code> fonksiyonunu çağırır.</li>
+                    </ul>
+
+                    <p><strong>Tüm Sohbetleri Temizle Butonu (<code>elements.clearChatsBtn</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>if (elements.clearChatsBtn) { ... }</code></strong>: Elemanın varlığını kontrol eder.</li>
+                        <li><strong><code>elements.clearChatsBtn.onclick = () => { ... }</code></strong>: Butona tıklandığında:</li>
+                        <li><strong><code>log('action', ...);</code></strong>: Tıklama eylemini loglar.</li>
+                        <li><strong><code>const chatsToRemovePreview = state.chats.filter(...);</code></strong>: Kullanıcı mesajı içermeyen (yani "kullanılmamış") sohbetleri filtreler.</li>
+                        <li><strong><code>if (chatsToRemovePreview.length > 0) { ... }</code></strong>: Eğer kaldırılacak kullanılmamış sohbet varsa:</li>
+                        <li><strong><code>if (confirm(...)) { clearAllChats(); }</code></strong>: Kullanıcıya İngilizce bir onay mesajı gösterir ("Are you sure you want to close X unused chat(s)?..."). Kullanıcı onaylarsa <code>clearAllChats</code> fonksiyonunu çağırır.</li>
+                        <li><strong><code>else { alert(...); }</code></strong>: Eğer kaldırılacak kullanılmamış sohbet yoksa, kullanıcıya İngilizce bir bilgi mesajı (alert) gösterir ("There are no unused chats to clear...").</li>
+                    </ul>
+                    
+                    <p><strong>Yayın Mesajı İşleyicileri (<code>elements.sendBroadcastBtn</code> ve <code>elements.broadcastMessageInput</code>):</strong></p>
+                    <ul>
+                        <li><strong><code>if (elements.sendBroadcastBtn && elements.broadcastMessageInput) { ... }</code></strong>: Hem yayın gönderme butonu hem de giriş alanı varsa olay dinleyicileri atanır.</li>
+                        <li><strong><code>elements.sendBroadcastBtn.addEventListener('click', () => { ... });</code></strong>: Yayın gönderme butonuna tıklandığında:</li>
+                        <li><strong><code>log('action', ...);</code></strong>: Tıklama eylemini loglar.</li>
+                        <li><strong><code>sendBroadcastMessage();</code></strong>: Yayın mesajını göndermek için <code>sendBroadcastMessage</code> fonksiyonunu çağırır.</li>
+                        <li><strong><code>elements.broadcastMessageInput.addEventListener('keypress', (event) => { ... });</code></strong>: Yayın mesajı giriş alanında bir tuşa basıldığında:</li>
+                        <li><strong><code>if (event.key === 'Enter') { ... }</code></strong>: Basılan tuş 'Enter' ise, eylemi loglar ve <code>sendBroadcastMessage</code> fonksiyonunu çağırır.</li>
+                    </ul>
+                </div>
+            </details>
+        </section>
+
+    </div>
+</body>
+</html>

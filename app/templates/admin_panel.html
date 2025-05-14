@@ -1,19 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zekai Admin Panel</title>
+    <title>Zekai Admin Paneli</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_panel.css') }}">
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <i class="bi bi-gear-fill me-2"></i>Zekai Admin Panel
+                <i class="bi bi-gear-fill me-2"></i>Zekai Admin Paneli
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -21,13 +20,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" id="nav-dashboard" href="#">Dashboard</a>
+                        <a class="nav-link active" id="nav-dashboard" href="#">Gösterge Paneli</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="nav-categories" href="#">Categories</a>
+                        <a class="nav-link" id="nav-categories" href="#">Kategoriler</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="nav-models" href="#">Models</a>
+                        <a class="nav-link" id="nav-models" href="#">Modeller</a>
                     </li>
                 </ul>
                 <div class="d-flex">
@@ -35,28 +34,25 @@
                         <i class="bi bi-person-circle me-1"></i>Admin
                     </span>
                     <button class="btn btn-outline-light btn-sm" id="logoutBtn">
-                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        <i class="bi bi-box-arrow-right me-1"></i>Çıkış Yap
                     </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Alert Container -->
     <div class="container mt-3">
         <div id="alertContainer"></div>
     </div>
 
-    <!-- Main Content -->
     <div class="container mt-3">
-        <!-- Dashboard Section -->
-        <div id="dashboard-section" class="content-section">
+        <div id="dashboard-section" class="content-section active">
             <div class="row">
                 <div class="col-12">
                     <div class="card shadow-sm">
                         <div class="card-header bg-light">
                             <h5 class="card-title mb-0">
-                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                <i class="bi bi-speedometer2 me-2"></i>Gösterge Paneli
                             </h5>
                         </div>
                         <div class="card-body">
@@ -65,10 +61,10 @@
                                     <div class="card bg-primary text-white">
                                         <div class="card-body">
                                             <h5 class="card-title">
-                                                <i class="bi bi-folder me-2"></i>Categories
+                                                <i class="bi bi-folder me-2"></i>Kategoriler
                                             </h5>
                                             <h2 id="categoryCount">0</h2>
-                                            <p class="card-text">Total AI categories</p>
+                                            <p class="card-text">Toplam AI kategorileri</p>
                                         </div>
                                     </div>
                                 </div>
@@ -76,10 +72,10 @@
                                     <div class="card bg-success text-white">
                                         <div class="card-body">
                                             <h5 class="card-title">
-                                                <i class="bi bi-robot me-2"></i>AI Models
+                                                <i class="bi bi-robot me-2"></i>AI Modelleri
                                             </h5>
                                             <h2 id="modelCount">0</h2>
-                                            <p class="card-text">Total AI models</p>
+                                            <p class="card-text">Toplam AI modelleri</p>
                                         </div>
                                     </div>
                                 </div>
@@ -87,10 +83,9 @@
                                     <div class="card bg-info text-white">
                                         <div class="card-body">
                                             <h5 class="card-title">
-                                                <i class="bi bi-activity me-2"></i>System Status
+                                                <i class="bi bi-activity me-2"></i>Sistem Durumu
                                             </h5>
-                                            <h2 id="systemStatus">Active</h2>
-                                            <p class="card-text">All systems operational</p>
+                                            <h2 id="systemStatus">Aktif</h2> <p class="card-text">Tüm sistemler çalışır durumda</p>
                                         </div>
                                     </div>
                                 </div>
@@ -99,15 +94,15 @@
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-header bg-light">
-                                            <h6 class="mb-0">Quick Actions</h6>
+                                            <h6 class="mb-0">Hızlı İşlemler</h6>
                                         </div>
                                         <div class="card-body">
                                             <div class="d-flex flex-wrap gap-2">
                                                 <button class="btn btn-primary" id="quick-add-category">
-                                                    <i class="bi bi-plus-circle me-1"></i>Add Category
+                                                    <i class="bi bi-plus-circle me-1"></i>Kategori Ekle
                                                 </button>
                                                 <button class="btn btn-success" id="quick-add-model">
-                                                    <i class="bi bi-plus-circle me-1"></i>Add AI Model
+                                                    <i class="bi bi-plus-circle me-1"></i>AI Modeli Ekle
                                                 </button>
                                             </div>
                                         </div>
@@ -120,15 +115,14 @@
             </div>
         </div>
 
-        <!-- Categories Section -->
-        <div id="categories-section" class="content-section" style="display: none;">
+        <div id="categories-section" class="content-section">
             <div class="card shadow-sm">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-folder me-2"></i>AI Categories
+                        <i class="bi bi-folder me-2"></i>AI Kategorileri
                     </h5>
                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-                        <i class="bi bi-plus-circle me-1"></i>Add Category
+                        <i class="bi bi-plus-circle me-1"></i>Kategori Ekle
                     </button>
                 </div>
                 <div class="card-body">
@@ -137,30 +131,28 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Icon</th>
-                                    <th>Name</th>
-                                    <th>Models</th>
-                                    <th>Actions</th>
+                                    <th>İkon</th>
+                                    <th>İsim</th>
+                                    <th>Modeller</th>
+                                    <th>Eylemler</th>
                                 </tr>
                             </thead>
                             <tbody id="categoriesTableBody">
-                                <!-- Categories will be loaded here -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Models Section -->
-        <div id="models-section" class="content-section" style="display: none;">
+        <div id="models-section" class="content-section">
             <div class="card shadow-sm">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">
-                        <i class="bi bi-robot me-2"></i>AI Models
+                        <i class="bi bi-robot me-2"></i>AI Modelleri
                     </h5>
                     <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addModelModal">
-                        <i class="bi bi-plus-circle me-1"></i>Add Model
+                        <i class="bi bi-plus-circle me-1"></i>Model Ekle
                     </button>
                 </div>
                 <div class="card-body">
@@ -169,69 +161,64 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Icon</th>
-                                    <th>Name</th>
-                                    <th>Category</th>
+                                    <th>İkon</th>
+                                    <th>İsim</th>
+                                    <th>Kategori</th>
                                     <th>Data AI Index</th>
                                     <th>API URL</th>
-                                    <th>Actions</th>
+                                    <th>Eylemler</th>
                                 </tr>
                             </thead>
                             <tbody id="modelsTableBody">
-                                <!-- Models will be loaded here -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-        </div>
     </div>
 
-    <!-- Add Category Modal -->
     <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-folder-plus me-2"></i>Add New Category
+                        <i class="bi bi-folder-plus me-2"></i>Yeni Kategori Ekle
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addCategoryForm">
                         <div class="mb-3">
-                            <label for="categoryName" class="form-label">Category Name</label>
+                            <label for="categoryName" class="form-label">Kategori Adı</label>
                             <input type="text" class="form-control" id="categoryName" required>
                         </div>
                         <div class="mb-3">
-                            <label for="categoryIcon" class="form-label">Icon</label>
+                            <label for="categoryIcon" class="form-label">İkon</label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <i id="iconPreview" class="bi bi-folder"></i>
                                 </span>
                                 <select class="form-select" id="categoryIcon" required>
-                                    <!-- Icons will be loaded here -->
-                                </select>
+                                    </select>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveCategoryBtn">Save Category</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="saveCategoryBtn">Kaydet</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Category Modal -->
     <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-pencil-square me-2"></i>Edit Category
+                        <i class="bi bi-pencil-square me-2"></i>Kategoriyi Düzenle
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -239,206 +226,219 @@
                     <form id="editCategoryForm">
                         <input type="hidden" id="editCategoryId">
                         <div class="mb-3">
-                            <label for="editCategoryName" class="form-label">Category Name</label>
+                            <label for="editCategoryName" class="form-label">Kategori Adı</label>
                             <input type="text" class="form-control" id="editCategoryName" required>
                         </div>
                         <div class="mb-3">
-                            <label for="editCategoryIcon" class="form-label">Icon</label>
+                            <label for="editCategoryIcon" class="form-label">İkon</label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <i id="editIconPreview" class="bi bi-folder"></i>
                                 </span>
                                 <select class="form-select" id="editCategoryIcon" required>
-                                    <!-- Icons will be loaded here -->
-                                </select>
+                                    </select>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateCategoryBtn">Update Category</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-primary" id="updateCategoryBtn">Güncelle</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Model Modal -->
     <div class="modal fade" id="addModelModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg"> <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-plus-circle me-2"></i>Add New AI Model
+                        <i class="bi bi-plus-circle me-2"></i>Yeni AI Modeli Ekle
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addModelForm">
-                        <div class="mb-3">
-                            <label for="modelCategory" class="form-label">Category</label>
-                            <select class="form-select" id="modelCategory" required>
-                                <!-- Categories will be loaded here -->
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modelName" class="form-label">Model Name</label>
-                            <input type="text" class="form-control" id="modelName" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modelIcon" class="form-label">Icon</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i id="modelIconPreview" class="bi bi-robot"></i>
-                                </span>
-                                <select class="form-select" id="modelIcon" required>
-                                    <!-- Icons will be loaded here -->
-                                </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="modelCategory" class="form-label">Kategori</label>
+                                    <select class="form-select" id="modelCategory" required>
+                                        </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="modelName" class="form-label">Model Adı</label>
+                                    <input type="text" class="form-control" id="modelName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="modelIcon" class="form-label">İkon</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i id="modelIconPreview" class="bi bi-robot"></i>
+                                        </span>
+                                        <select class="form-select" id="modelIcon" required>
+                                            </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="modelDataAiIndex" class="form-label">Data AI Index</label>
+                                    <input type="text" class="form-control" id="modelDataAiIndex" required>
+                                    <div class="form-text">Ön yüzde kullanılan benzersiz tanımlayıcı (örn: Gemini için "5")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="modelApiUrl" class="form-label">API URL/Anahtar</label>
+                                    <input type="text" class="form-control" id="modelApiUrl" required>
+                                    <div class="form-text">Bu model için API anahtarı veya uç nokta URL'si</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="modelRequestMethod" class="form-label">İstek Metodu</label>
+                                    <select class="form-select" id="modelRequestMethod">
+                                        <option value="POST" selected>POST</option>
+                                        <option value="GET">GET</option>
+                                    </select>
+                                    <div class="form-text">API istekleri için HTTP metodu</div>
+                                </div>
+                                 <div class="mb-3">
+                                    <label for="modelResponsePath" class="form-label">Yanıt Yolu</label>
+                                    <input type="text" class="form-control" id="modelResponsePath" value="candidates[0].content.parts[0].text">
+                                    <div class="form-text">API JSON yanıtından yanıt metnini çıkarmak için yol</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="modelDataAiIndex" class="form-label">Data AI Index</label>
-                            <input type="text" class="form-control" id="modelDataAiIndex" required>
-                            <div class="form-text">Unique identifier used in the frontend (e.g., "5" for Gemini)</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modelApiUrl" class="form-label">API URL/Key</label>
-                            <input type="text" class="form-control" id="modelApiUrl" required>
-                            <div class="form-text">API key or endpoint URL for this model</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modelRequestMethod" class="form-label">Request Method</label>
-                            <select class="form-select" id="modelRequestMethod">
-                                <option value="POST" selected>POST</option>
-                                <option value="GET">GET</option>
-                            </select>
-                            <div class="form-text">HTTP method for API requests</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modelRequestHeaders" class="form-label">Request Headers (JSON)</label>
-                            <textarea class="form-control" id="modelRequestHeaders" rows="3">{"Content-Type": "application/json"}</textarea>
-                            <div class="form-text">JSON object with headers for API requests</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modelRequestBody" class="form-label">Request Body Template (JSON)</label>
-                            <textarea class="form-control" id="modelRequestBody" rows="5">{"contents": [{"parts":[{"text": "$message"}]}]}</textarea>
-                            <div class="form-text">JSON template for request body. Use $message as placeholder for user message.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="modelResponsePath" class="form-label">Response Path</label>
-                            <input type="text" class="form-control" id="modelResponsePath" value="candidates[0].content.parts[0].text">
-                            <div class="form-text">Path to extract response text from API JSON response</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                               <div class="mb-3">
+                                    <label for="modelRequestHeaders" class="form-label">İstek Başlıkları (JSON)</label>
+                                    <textarea class="form-control" id="modelRequestHeaders" rows="3">{"Content-Type": "application/json"}</textarea>
+                                    <div class="form-text">API istekleri için başlıkları içeren JSON nesnesi</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                 <div class="mb-3">
+                                    <label for="modelRequestBody" class="form-label">İstek Gövdesi Şablonu (JSON)</label>
+                                    <textarea class="form-control" id="modelRequestBody" rows="3">{"contents": [{"parts":[{"text": "$message"}]}]}</textarea>
+                                    <div class="form-text">İstek gövdesi için JSON şablonu. Kullanıcı mesajı için $message kullanın.</div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" id="saveModelBtn">Save Model</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-success" id="saveModelBtn">Modeli Kaydet</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Model Modal -->
     <div class="modal fade" id="editModelModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg"> <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-pencil-square me-2"></i>Edit AI Model
+                        <i class="bi bi-pencil-square me-2"></i>AI Modelini Düzenle
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="editModelForm">
                         <input type="hidden" id="editModelId">
-                        <div class="mb-3">
-                            <label for="editModelCategory" class="form-label">Category</label>
-                            <select class="form-select" id="editModelCategory" required>
-                                <!-- Categories will be loaded here -->
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editModelName" class="form-label">Model Name</label>
-                            <input type="text" class="form-control" id="editModelName" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editModelIcon" class="form-label">Icon</label>
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i id="editModelIconPreview" class="bi bi-robot"></i>
-                                </span>
-                                <select class="form-select" id="editModelIcon" required>
-                                    <!-- Icons will be loaded here -->
-                                </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editModelCategory" class="form-label">Kategori</label>
+                                    <select class="form-select" id="editModelCategory" required>
+                                        </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editModelName" class="form-label">Model Adı</label>
+                                    <input type="text" class="form-control" id="editModelName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editModelIcon" class="form-label">İkon</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i id="editModelIconPreview" class="bi bi-robot"></i>
+                                        </span>
+                                        <select class="form-select" id="editModelIcon" required>
+                                            </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editModelDataAiIndex" class="form-label">Data AI Index</label>
+                                    <input type="text" class="form-control" id="editModelDataAiIndex" required>
+                                    <div class="form-text">Ön yüzde kullanılan benzersiz tanımlayıcı</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editModelApiUrl" class="form-label">API URL/Anahtar</label>
+                                    <input type="text" class="form-control" id="editModelApiUrl" required>
+                                    <div class="form-text">Bu model için API anahtarı veya uç nokta URL'si</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editModelRequestMethod" class="form-label">İstek Metodu</label>
+                                    <select class="form-select" id="editModelRequestMethod">
+                                        <option value="POST">POST</option>
+                                        <option value="GET">GET</option>
+                                    </select>
+                                    <div class="form-text">API istekleri için HTTP metodu</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editModelResponsePath" class="form-label">Yanıt Yolu</label>
+                                    <input type="text" class="form-control" id="editModelResponsePath">
+                                    <div class="form-text">API JSON yanıtından yanıt metnini çıkarmak için yol</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="editModelDataAiIndex" class="form-label">Data AI Index</label>
-                            <input type="text" class="form-control" id="editModelDataAiIndex" required>
-                            <div class="form-text">Unique identifier used in the frontend</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editModelApiUrl" class="form-label">API URL/Key</label>
-                            <input type="text" class="form-control" id="editModelApiUrl" required>
-                            <div class="form-text">API key or endpoint URL for this model</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editModelRequestMethod" class="form-label">Request Method</label>
-                            <select class="form-select" id="editModelRequestMethod">
-                                <option value="POST">POST</option>
-                                <option value="GET">GET</option>
-                            </select>
-                            <div class="form-text">HTTP method for API requests</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editModelRequestHeaders" class="form-label">Request Headers (JSON)</label>
-                            <textarea class="form-control" id="editModelRequestHeaders" rows="3"></textarea>
-                            <div class="form-text">JSON object with headers for API requests</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editModelRequestBody" class="form-label">Request Body Template (JSON)</label>
-                            <textarea class="form-control" id="editModelRequestBody" rows="5"></textarea>
-                            <div class="form-text">JSON template for request body. Use $message as placeholder for user message.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editModelResponsePath" class="form-label">Response Path</label>
-                            <input type="text" class="form-control" id="editModelResponsePath">
-                            <div class="form-text">Path to extract response text from API JSON response</div>
+                         <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editModelRequestHeaders" class="form-label">İstek Başlıkları (JSON)</label>
+                                    <textarea class="form-control" id="editModelRequestHeaders" rows="3"></textarea>
+                                    <div class="form-text">API istekleri için başlıkları içeren JSON nesnesi</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editModelRequestBody" class="form-label">İstek Gövdesi Şablonu (JSON)</label>
+                                    <textarea class="form-control" id="editModelRequestBody" rows="3"></textarea>
+                                    <div class="form-text">İstek gövdesi için JSON şablonu. Kullanıcı mesajı için $message kullanın.</div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" id="updateModelBtn">Update Model</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-success" id="updateModelBtn">Modeli Güncelle</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title">
-                        <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+                        <i class="bi bi-exclamation-triangle me-2"></i>Silme Onayı
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p id="deleteConfirmMessage">Are you sure you want to delete this item?</p>
-                    <p class="text-danger"><strong>This action cannot be undone.</strong></p>
+                    <p id="deleteConfirmMessage">Bu öğeyi silmek istediğinizden emin misiniz?</p>
+                    <p class="text-danger"><strong>Bu işlem geri alınamaz.</strong></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Sil</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/admin_panel.js') }}"></script>
 </body>
