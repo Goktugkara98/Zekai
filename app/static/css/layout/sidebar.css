@@ -1,346 +1,490 @@
 /*
-SIDEBAR STYLES
---------------------------------------------------
-TABLE OF CONTENTS:
---------------------------------------------------
-1.0 SIDEBAR CONTAINER
-    1.1 Sidebar (#sidebar)
-    1.2 Sidebar Header (.sidebar-header)
-    1.3 Sidebar Search (.sidebar-search, .input-group, .input-group-text, .form-control)
-2.0 SIDEBAR SECTIONS
-    2.1 Section Container (.sidebar-section)
-    2.2 Section Heading (.sidebar-heading)
-    2.3 Collapsible Sections (.collapse)
-3.0 AI CATEGORIES
-    3.1 Categories Container (#aiCategoriesAccordion)
-    3.2 Category Item (.sidebar-category-item)
-    3.3 Category Header (.sidebar-category-header)
-    3.4 Model Items (.ai-model-selector-item)
-4.0 AI ICON
-    4.1 AI Icon (.ai-icon)
---------------------------------------------------
-*/
-#sidebar {
+ * KENAR ÇUBUĞU STİLLERİ (SIDEBAR STYLES)
+ * ============================================================================
+ * Bu dosya, kenar çubuğunun genel yapısı, bölümleri, AI kategorileri,
+ * arama çubuğu ve profil bölümü gibi çeşitli bileşenleri için CSS stillerini içerir.
+ *
+ * İÇİNDEKİLER:
+ * ----------------------------------------------------------------------------
+ * 1.0 KENAR ÇUBUĞU KONTEYNERİ (SIDEBAR CONTAINER)
+ * 1.1. Kenar Çubuğu Ana Elemanı (#sidebar)
+ * 1.2. Kenar Çubuğu Başlığı (.sidebar-header)
+ * 1.3. Kenar Çubuğu Arama Alanı (.sidebar-search)
+ * 1.3.1. Arama Giriş Grubu (.sidebar-search .input-group)
+ * 1.3.2. Arama Giriş Metni ve Kontrolü (.sidebar-search .input-group-text, .form-control)
+ * 1.3.3. Arama Kontrolü Odaklanma Durumu (.sidebar-search .form-control:focus)
+ *
+ * 2.0 KENAR ÇUBUĞU BÖLÜMLERİ (SIDEBAR SECTIONS)
+ * 2.1. Bölüm Konteyneri (.sidebar-section)
+ * 2.2. Bölüm Başlığı (.sidebar-heading)
+ * 2.3. Daraltılabilir Bölüm Başlıkları (.sidebar-heading[data-bs-toggle="collapse"])
+ * 2.3.1. Daraltılabilir Başlık Üzerine Gelme (.sidebar-heading[data-bs-toggle="collapse"]:hover)
+ * 2.3.2. Daraltılabilir Başlık İkon Döndürme (.sidebar-heading[data-bs-toggle="collapse"] i, .sidebar-heading[data-bs-toggle="collapse"][aria-expanded="true"] i)
+ *
+ * 3.0 AI LİSTESİ (AI LIST - Eskiden AI Kategorileri olarak adlandırılıyordu, genel bir liste için yeniden düzenlendi)
+ * 3.1. AI Liste Konteyneri (#ai-list)
+ * 3.2. AI Liste Öğesi (#ai-list .list-group-item)
+ * 3.3. Aktif AI Liste Öğesi (#ai-list .list-group-item.active)
+ * 3.4. AI Liste Öğesi Üzerine Gelme (#ai-list .list-group-item:hover:not(.active))
+ *
+ * 4.0 AI KATEGORİLERİ AKORDİYONU (AI CATEGORIES ACCORDION)
+ * 4.1. Akordiyon Konteyneri (#aiCategoriesAccordion)
+ * 4.2. Kategori Öğesi (.sidebar-category-item)
+ * 4.2.1. Kategori Öğesi Kenarlığı (#aiCategoriesAccordion .sidebar-category-item, #aiCategoriesAccordion .sidebar-category-item:last-child)
+ * 4.3. Kategori Başlığı (.sidebar-category-header)
+ * 4.3.1. Kategori Başlığı Üzerine Gelme (.sidebar-category-header:hover)
+ * 4.3.2. Açık Kategori Başlığı (.sidebar-category-header[aria-expanded="true"])
+ * 4.3.3. Kategori Chevron İkonu (.sidebar-category-header .category-chevron)
+ * 4.4. Model Seçici Öğeleri (.ai-model-selector-item)
+ * 4.4.1. Model Seçici Öğesi Üzerine Gelme (.ai-model-selector-item:hover)
+ * 4.4.2. Model Seçici Öğesi Aktif Durumu (.ai-model-selector-item:active)
+ * 4.4.3. Model Seçici Öğesi İkonu (.ai-model-selector-item .ai-icon)
+ * 4.5. Akordiyon İçindeki Model Listesi (#aiCategoriesAccordion .collapse .list-group-item)
+ * 4.5.1. Model Listesi Öğesi Üzerine Gelme (#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item:hover)
+ * 4.5.2. Aktif Model Listesi Öğesi (#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active)
+ * 4.5.3. Aktif Model İkon ve İsim Rengi (#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-icon i, #aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-name)
+ * 4.6. Bootstrap Çökme Animasyon Düzeltmeleri (#aiCategoriesAccordion .collapse, #aiCategoriesAccordion .collapsing, #aiCategoriesAccordion .collapse .list-group, #aiCategoriesAccordion .collapse .list-group-item)
+ *
+ * 5.0 AI İKONU (AI ICON)
+ * 5.1. Genel AI İkonu (.ai-icon)
+ * 5.2. Aktif Durumdaki AI İkonu (.active .ai-icon)
+ * 5.3. AI İsmi (.ai-name)
+ *
+ * 6.0 PROFİL BÖLÜMÜ (PROFILE SECTION)
+ * 6.1. Profil Bölümü Konteyneri (.sidebar .profile-section)
+ * 6.2. Profil Bölümü Üzerine Gelme (.sidebar .profile-section:hover)
+ * 6.3. Profil Bilgisi Linki (.sidebar .profile-section .profile-info small)
+ * 6.3.1. Profil Bilgisi Linki Üzerine Gelme (.sidebar .profile-section .profile-info small:hover)
+ * 6.4. Çıkış Butonu (.sidebar .profile-section .btn-icon)
+ * 6.4.1. Çıkış Butonu Üzerine Gelme (.sidebar .profile-section .btn-icon:hover)
+ *
+ * 7.0 KENAR ÇUBUĞU ALT BİLGİSİ (SIDEBAR FOOTER)
+ * 7.1. Alt Bilgi Elemanı (.sidebar-footer)
+ * ============================================================================
+ */
+
+/* ============================================================================
+   1.0 KENAR ÇUBUĞU KONTEYNERİ (SIDEBAR CONTAINER)
+   ============================================================================ */
+
+/* 1.1. Kenar Çubuğu Ana Elemanı (#sidebar)
+   ---------------------------------------------------------------------------- */
+   #sidebar {
     width: var(--sidebar-width);
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
-    background-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    z-index: 1030;
-    transition: var(--transition);
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background-color: rgba(255, 255, 255, 0.1); /* Yarı saydam beyaz arka plan */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); /* Hafif gölge */
+    z-index: 1030; /* Bootstrap'in standart z-index değerlerinden biri */
+    transition: var(--transition); /* Genel geçiş efekti */
+    border-right: 1px solid rgba(255, 255, 255, 0.2); /* Sağ kenarlık */
+    backdrop-filter: blur(20px); /* Arka planı bulanıklaştırma */
+    -webkit-backdrop-filter: blur(20px); /* Safari için */
 }
 
+/* 1.2. Kenar Çubuğu Başlığı (.sidebar-header)
+   ---------------------------------------------------------------------------- */
 .sidebar-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Alt kenarlık */
+    padding: 1.25rem 1.5rem; /* İç boşluk */
 }
 
+/* 1.3. Kenar Çubuğu Arama Alanı (.sidebar-search)
+   ---------------------------------------------------------------------------- */
 .sidebar-search {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.5rem; /* İç boşluk */
 }
 
+/* 1.3.1. Arama Giriş Grubu (.sidebar-search .input-group) */
 .sidebar-search .input-group {
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border-radius: var(--border-radius); /* Yuvarlak köşeler */
+    overflow: hidden; /* Taşan içeriği gizle */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Hafif gölge */
 }
 
+/* 1.3.2. Arama Giriş Metni ve Kontrolü (.sidebar-search .input-group-text, .form-control) */
 .sidebar-search .input-group-text,
 .sidebar-search .form-control {
-    background-color: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: 0.875rem;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    background-color: rgba(255, 255, 255, 0.15); /* Yarı saydam arka plan */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Kenarlık */
+    font-size: 0.875rem; /* Yazı tipi boyutu */
+    backdrop-filter: blur(5px); /* Bulanıklaştırma */
+    -webkit-backdrop-filter: blur(5px); /* Safari için */
 }
 
 .sidebar-search .input-group-text {
-    color: var(--gray-500);
-    border-right: none;
+    color: var(--gray-500); /* İkon rengi */
+    border-right: none; /* Sağ kenarlığı kaldır */
 }
 
 .sidebar-search .form-control {
-    padding: 0.625rem 0.75rem;
-    border-left: none;
+    padding: 0.625rem 0.75rem; /* İç boşluk */
+    border-left: none; /* Sol kenarlığı kaldır */
 }
 
+/* 1.3.3. Arama Kontrolü Odaklanma Durumu (.sidebar-search .form-control:focus) */
 .sidebar-search .form-control:focus {
-    box-shadow: 0 0 0 3px rgba(62, 99, 221, 0.15);
-    border-color: rgba(62, 99, 221, 0.5);
-    background-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 3px rgba(62, 99, 221, 0.15); /* Odaklanma gölgesi */
+    border-color: rgba(62, 99, 221, 0.5); /* Odaklanma kenarlık rengi */
+    background-color: rgba(255, 255, 255, 0.25); /* Odaklanma arka plan rengi */
 }
 
-#ai-list {
-    padding: 0.75rem 1rem;
-}
+/* ============================================================================
+   2.0 KENAR ÇUBUĞU BÖLÜMLERİ (SIDEBAR SECTIONS)
+   ============================================================================ */
 
-#ai-list .list-group-item {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--border-radius);
-    margin-bottom: 0.5rem;
-    padding: 0.75rem 1rem;
-    transition: var(--transition);
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--gray-700);
-    font-size: 0.875rem;
-    font-weight: var(--font-weight-medium);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-}
-
-#ai-list .list-group-item.active {
-    background-color: var(--primary);
-    color: white;
-    box-shadow: 0 4px 12px rgba(62, 99, 221, 0.25);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-#ai-list .list-group-item:hover:not(.active) {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: var(--gray-900);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-}
-
-.ai-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    font-size: 1rem;
-    background: linear-gradient(135deg, rgba(62, 99, 221, 0.8), rgba(41, 73, 182, 0.8));
-    border-radius: 6px;
-    color: white;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.active .ai-icon {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
-    color: white;
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.ai-name {
-    font-weight: var(--font-weight-medium);
-}
-
-.sidebar-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1.25rem 1.5rem;
-}
-
-/* Sidebar Sections */
+/* 2.1. Bölüm Konteyneri (.sidebar-section)
+   ---------------------------------------------------------------------------- */
 .sidebar-section {
-    margin-bottom: 1rem;
+    margin-bottom: 1rem; /* Alt boşluk */
 }
 
+/* 2.2. Bölüm Başlığı (.sidebar-heading)
+   ---------------------------------------------------------------------------- */
 .sidebar-heading {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--gray-500);
-    font-weight: var(--font-weight-semibold);
-    transition: all 0.2s ease;
-    border-radius: var(--border-radius);
+    font-size: 0.75rem; /* Yazı tipi boyutu */
+    text-transform: uppercase; /* Büyük harf */
+    letter-spacing: 0.05em; /* Harf aralığı */
+    color: var(--gray-500); /* Metin rengi */
+    font-weight: var(--font-weight-semibold); /* Yazı tipi kalınlığı */
+    transition: all 0.2s ease; /* Geçiş efekti */
+    border-radius: var(--border-radius); /* Yuvarlak köşeler */
 }
 
-/* Collapsible section headers */
+/* 2.3. Daraltılabilir Bölüm Başlıkları (.sidebar-heading[data-bs-toggle="collapse"])
+   ---------------------------------------------------------------------------- */
 .sidebar-heading[data-bs-toggle="collapse"] {
-    background-color: rgba(255, 255, 255, 0.05);
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    background-color: rgba(255, 255, 255, 0.05); /* Arka plan rengi */
+    padding: 0.75rem 1rem; /* İç boşluk */
+    margin-bottom: 0.5rem; /* Alt boşluk */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Kenarlık */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03); /* Gölge */
+    cursor: pointer; /* İmleç tipi */
 }
 
+/* 2.3.1. Daraltılabilir Başlık Üzerine Gelme (.sidebar-heading[data-bs-toggle="collapse"]:hover) */
 .sidebar-heading[data-bs-toggle="collapse"]:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--gray-700);
+    background-color: rgba(255, 255, 255, 0.1); /* Üzerine gelince arka plan rengi */
+    color: var(--gray-700); /* Üzerine gelince metin rengi */
 }
 
+/* 2.3.2. Daraltılabilir Başlık İkon Döndürme (.sidebar-heading[data-bs-toggle="collapse"] i, .sidebar-heading[data-bs-toggle="collapse"][aria-expanded="true"] i) */
 .sidebar-heading[data-bs-toggle="collapse"] i {
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease; /* Döndürme geçişi */
 }
 
 .sidebar-heading[data-bs-toggle="collapse"][aria-expanded="true"] i {
-    transform: rotate(180deg);
+    transform: rotate(180deg); /* Açık durumda ikon döndürme */
 }
 
-/* AI Categories Section */
+/* ============================================================================
+   3.0 AI LİSTESİ (AI LIST)
+   ============================================================================ */
+
+/* 3.1. AI Liste Konteyneri (#ai-list)
+   ---------------------------------------------------------------------------- */
+#ai-list {
+    padding: 0.75rem 1rem; /* İç boşluk */
+}
+
+/* 3.2. AI Liste Öğesi (#ai-list .list-group-item)
+   ---------------------------------------------------------------------------- */
+#ai-list .list-group-item {
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Kenarlık */
+    border-radius: var(--border-radius); /* Yuvarlak köşeler */
+    margin-bottom: 0.5rem; /* Alt boşluk */
+    padding: 0.75rem 1rem; /* İç boşluk */
+    transition: var(--transition); /* Geçiş efekti */
+    background-color: rgba(255, 255, 255, 0.05); /* Arka plan rengi */
+    color: var(--gray-700); /* Metin rengi */
+    font-size: 0.875rem; /* Yazı tipi boyutu */
+    font-weight: var(--font-weight-medium); /* Yazı tipi kalınlığı */
+    backdrop-filter: blur(10px); /* Bulanıklaştırma */
+    -webkit-backdrop-filter: blur(10px); /* Safari için */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02); /* Gölge */
+    cursor: pointer; /* İmleç tipi */
+}
+
+/* 3.3. Aktif AI Liste Öğesi (#ai-list .list-group-item.active)
+   ---------------------------------------------------------------------------- */
+#ai-list .list-group-item.active {
+    background-color: var(--primary); /* Aktif arka plan rengi */
+    color: white; /* Aktif metin rengi */
+    box-shadow: 0 4px 12px rgba(62, 99, 221, 0.25); /* Aktif gölge */
+    border-color: rgba(255, 255, 255, 0.2); /* Aktif kenarlık rengi */
+}
+
+/* 3.4. AI Liste Öğesi Üzerine Gelme (#ai-list .list-group-item:hover:not(.active))
+   ---------------------------------------------------------------------------- */
+#ai-list .list-group-item:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.15); /* Üzerine gelince arka plan rengi */
+    color: var(--gray-900); /* Üzerine gelince metin rengi */
+    transform: translateY(-1px); /* Hafif yukarı kayma efekti */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Üzerine gelince gölge */
+}
+
+/* ============================================================================
+   4.0 AI KATEGORİLERİ AKORDİYONU (AI CATEGORIES ACCORDION)
+   ============================================================================ */
+
+/* 4.1. Akordiyon Konteyneri (#aiCategoriesAccordion)
+   ---------------------------------------------------------------------------- */
 #aiCategoriesAccordion {
-    padding: 0.5rem;
+    padding: 0.5rem; /* İç boşluk */
 }
 
+/* 4.2. Kategori Öğesi (.sidebar-category-item)
+   ---------------------------------------------------------------------------- */
 .sidebar-category-item {
-    margin-bottom: 0.5rem;
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    background-color: rgba(255, 255, 255, 0.03);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-    transition: all 0.2s ease;
+    margin-bottom: 0.5rem; /* Alt boşluk */
+    border-radius: var(--border-radius); /* Yuvarlak köşeler */
+    overflow: hidden; /* Taşan içeriği gizle */
+    background-color: rgba(255, 255, 255, 0.03); /* Arka plan rengi */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); /* Gölge */
+    transition: all 0.2s ease; /* Geçiş efekti */
 }
 
-.sidebar-category-header {
-    font-size: 0.85rem;
-    font-weight: var(--font-weight-medium);
-    color: var(--gray-600);
-    transition: all 0.2s ease;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.sidebar-category-header:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--gray-800);
-}
-
-.sidebar-category-header .category-chevron {
-    transition: transform 0.3s ease;
-    opacity: 0.7;
-    font-size: 0.75rem;
-}
-
-.sidebar-category-header[aria-expanded="true"] .category-chevron {
-    transform: rotate(180deg);
-    opacity: 1;
-}
-
-/* AI Model Items */
-.ai-model-selector-item {
-    padding-left: 1rem;
-    font-size: 0.8rem;
-    border: none;
-    background-color: transparent;
-    transition: all 0.2s ease;
-    border-radius: var(--border-radius);
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-}
-
-/* Category list styles */
-/* Fix Bootstrap collapse animation issues */
-#aiCategoriesAccordion .collapse,
-#aiCategoriesAccordion .collapsing {
-    transition-property: height, visibility;
-    transition-duration: 0.35s;
-    transition-timing-function: ease;
-    width: 100% !important;
-    position: relative !important;
-}
-
-#aiCategoriesAccordion .collapse .list-group {
-    width: 100%;
-    padding-left: 0.5rem;
-}
-
-#aiCategoriesAccordion .collapse .list-group-item {
-    width: 100%;
-    position: relative;
-    left: 0 !important;
-    transition: none !important;
-}
-
-.ai-model-selector-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: translateX(2px);
-}
-
-.ai-model-selector-item:active {
-    background-color: rgba(var(--primary-rgb), 0.15);
-}
-
-.ai-model-selector-item .ai-icon {
-    width: 24px;
-    height: 24px;
-    font-size: 0.8rem;
-}
-
-/* AI Categories Accordion Styles */
+/* 4.2.1. Kategori Öğesi Kenarlığı (#aiCategoriesAccordion .sidebar-category-item, #aiCategoriesAccordion .sidebar-category-item:last-child) */
 #aiCategoriesAccordion .sidebar-category-item {
     border-bottom: 1px solid var(--bs-border-color-translucent); /* Kategoriler arası ince çizgi */
 }
 
 #aiCategoriesAccordion .sidebar-category-item:last-child {
-    border-bottom: none;
+    border-bottom: none; /* Son öğenin alt çizgisi olmasın */
 }
 
-#aiCategoriesAccordion .sidebar-category-header {
-    transition: background-color 0.15s ease-in-out;
-    font-weight: 500; /* Kategori başlığı biraz daha kalın */
+/* 4.3. Kategori Başlığı (.sidebar-category-header)
+   ---------------------------------------------------------------------------- */
+.sidebar-category-header {
+    font-size: 0.85rem; /* Yazı tipi boyutu */
+    font-weight: var(--font-weight-medium); /* Yazı tipi kalınlığı */
+    color: var(--gray-600); /* Metin rengi */
+    transition: background-color 0.15s ease-in-out, color 0.2s ease; /* Geçiş efektleri */
+    background-color: rgba(255, 255, 255, 0.05); /* Arka plan rengi */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Alt kenarlık */
+    padding: 0.75rem 1rem; /* İç boşluk, Bootstrap butonuna benzer hale getirmek için */
+    display: flex; /* İçeriği hizalamak için */
+    justify-content: space-between; /* Başlık ve chevron arasını açmak için */
+    align-items: center; /* Dikey hizalama */
+    width: 100%; /* Tam genişlik */
+    text-align: left; /* Metni sola yasla */
+    border-radius: 0; /* Buton varsayılanını sıfırla */
 }
 
-#aiCategoriesAccordion .sidebar-category-header:hover {
+/* 4.3.1. Kategori Başlığı Üzerine Gelme (.sidebar-category-header:hover) */
+.sidebar-category-header:hover {
     background-color: rgba(var(--bs-emphasis-color-rgb), 0.07); /* Hover'da hafif arka plan */
+    color: var(--gray-800); /* Hover'da metin rengi */
 }
 
-#aiCategoriesAccordion .sidebar-category-header[aria-expanded="true"] {
+/* 4.3.2. Açık Kategori Başlığı (.sidebar-category-header[aria-expanded="true"]) */
+.sidebar-category-header[aria-expanded="true"] {
     background-color: rgba(var(--bs-primary-rgb), 0.1); /* Açık kategori başlığı için farklı arka plan */
-    color: var(--bs-primary);
+    color: var(--bs-primary); /* Açık kategori başlığı metin rengi */
 }
 
-#aiCategoriesAccordion .sidebar-category-header .category-chevron {
-    transition: transform 0.2s ease-in-out; 
+/* 4.3.3. Kategori Chevron İkonu (.sidebar-category-header .category-chevron) */
+.sidebar-category-header .category-chevron {
+    transition: transform 0.2s ease-in-out; /* Döndürme geçişi */
+    opacity: 0.7; /* Şeffaflık */
+    font-size: 0.75rem; /* İkon boyutu */
 }
 
-/* Akordeon içindeki model listesi */
+.sidebar-category-header[aria-expanded="true"] .category-chevron {
+    transform: rotate(180deg); /* Açık durumda ikon döndürme */
+    opacity: 1; /* Tam görünürlük */
+}
+
+/* 4.4. Model Seçici Öğeleri (.ai-model-selector-item)
+   ---------------------------------------------------------------------------- */
+.ai-model-selector-item {
+    padding: 0.5rem 1rem 0.5rem 1.5rem; /* Sol iç boşluk artırıldı */
+    font-size: 0.8rem; /* Yazı tipi boyutu */
+    border: none; /* Kenarlık yok */
+    background-color: transparent; /* Şeffaf arka plan */
+    transition: all 0.2s ease; /* Geçiş efekti */
+    border-radius: var(--border-radius); /* Yuvarlak köşeler */
+    margin-bottom: 0.25rem; /* Alt boşluk */
+    display: flex; /* Flexbox */
+    align-items: center; /* Dikey hizalama */
+    justify-content: flex-start; /* Sola yasla */
+    width: 100%; /* Tam genişlik */
+    text-align: left; /* Metni sola yasla */
+    color: var(--text-color); /* Bootstrap .list-group-item varsayılan rengi */
+}
+
+/* 4.4.1. Model Seçici Öğesi Üzerine Gelme (.ai-model-selector-item:hover) */
+.ai-model-selector-item:hover {
+    background-color: rgba(var(--bs-emphasis-color-rgb), 0.1); /* Hover arka planı */
+    /* transform: translateX(2px); Kaldırıldı, padding ile hiza sağlandı */
+    color: var(--bs-emphasis-color); /* Hover metin rengi */
+}
+
+/* 4.4.2. Model Seçici Öğesi Aktif Durumu (.ai-model-selector-item:active) */
+/* Bu :active stili genellikle tıklama anı için, .active sınıfı seçili durumu belirtir */
+.ai-model-selector-item:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.15); /* Tıklama anı arka planı */
+}
+
+/* 4.4.3. Model Seçici Öğesi İkonu (.ai-model-selector-item .ai-icon) */
+.ai-model-selector-item .ai-icon {
+    width: 24px; /* İkon genişliği */
+    height: 24px; /* İkon yüksekliği */
+    font-size: 0.8rem; /* İkon yazı tipi boyutu */
+    margin-right: 0.5rem; /* İkon ve metin arası boşluk */
+}
+
+/* 4.5. Akordiyon İçindeki Model Listesi (#aiCategoriesAccordion .collapse .list-group-item)
+   ---------------------------------------------------------------------------- */
 #aiCategoriesAccordion .collapse .list-group-item {
     background-color: rgba(var(--bs-emphasis-color-rgb), 0.03); /* Alt menü için çok hafif farklı arka plan */
-    border-top: 1px solid var(--bs-border-color-translucent);
-    padding-left: 0rem; /* Sağa kayma engellenecek */
+    border-top: 1px solid var(--bs-border-color-translucent); /* Üst kenarlık */
+    padding-left: 1.5rem; /* Sol iç boşluk, .ai-model-selector-item ile aynı */
 }
 
 #aiCategoriesAccordion .collapse .list-group-item:first-child {
     border-top: none; /* İlk öğenin üst çizgisi olmasın */
 }
 
-#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item:hover {
-    background-color: rgba(var(--bs-emphasis-color-rgb), 0.1);
-}
+/* 4.5.1. Model Listesi Öğesi Üzerine Gelme (#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item:hover) */
+/* .ai-model-selector-item:hover stili zaten bunu kapsıyor */
 
-/* Tıklanarak sohbeti açılan aktif modelin stili */
+/* 4.5.2. Aktif Model Listesi Öğesi (#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active) */
 #aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active {
-    background-color: var(--bs-primary);
-    color: var(--bs-white);
-    border-color: var(--bs-primary);
+    background-color: var(--bs-primary); /* Aktif arka plan rengi */
+    color: var(--bs-white); /* Aktif metin rengi */
+    border-color: var(--bs-primary); /* Aktif kenarlık rengi */
 }
 
+/* 4.5.3. Aktif Model İkon ve İsim Rengi (#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-icon i, #aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-name) */
+#aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-icon,
 #aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-icon i,
 #aiCategoriesAccordion .collapse .list-group-item.ai-model-selector-item.active .ai-name {
     color: var(--bs-white) !important; /* Aktif olduğunda ikon ve isim rengi */
 }
 
-/* Profile Section Styles */
-.sidebar .profile-section {
-    transition: background-color 0.2s ease-in-out; /* Hover için yumuşak geçiş */
+/* 4.6. Bootstrap Çökme Animasyon Düzeltmeleri
+   ---------------------------------------------------------------------------- */
+#aiCategoriesAccordion .collapse,
+#aiCategoriesAccordion .collapsing {
+    transition-property: height, visibility; /* Geçiş özellikleri */
+    transition-duration: 0.35s; /* Geçiş süresi */
+    transition-timing-function: ease; /* Geçiş zamanlama fonksiyonu */
+    width: 100% !important; /* Genişlik */
+    position: relative !important; /* Pozisyon */
 }
 
+#aiCategoriesAccordion .collapse .list-group {
+    width: 100%; /* Liste grubu genişliği */
+    padding-left: 0; /* Sol iç boşluğu sıfırla, öğeler kendi padding'ini yönetecek */
+    margin-bottom: 0; /* Alt boşluğu sıfırla */
+}
+
+#aiCategoriesAccordion .collapse .list-group-item {
+    width: 100%; /* Liste öğesi genişliği */
+    position: relative; /* Pozisyon */
+    left: 0 !important; /* Sol pozisyon */
+    transition: none !important; /* Geçiş yok */
+    border-radius: 0; /* Köşe yuvarlaklığını sıfırla, ana öğe yönetecek */
+}
+
+
+/* ============================================================================
+   5.0 AI İKONU (AI ICON)
+   ============================================================================ */
+
+/* 5.1. Genel AI İkonu (.ai-icon)
+   ---------------------------------------------------------------------------- */
+.ai-icon {
+    display: flex; /* Flexbox */
+    align-items: center; /* Dikey hizalama */
+    justify-content: center; /* Yatay hizalama */
+    width: 28px; /* Genişlik */
+    height: 28px; /* Yükseklik */
+    font-size: 1rem; /* Yazı tipi boyutu */
+    background: linear-gradient(135deg, rgba(62, 99, 221, 0.8), rgba(41, 73, 182, 0.8)); /* Arka plan gradyanı */
+    border-radius: 6px; /* Yuvarlak köşeler */
+    color: white; /* Metin rengi */
+    backdrop-filter: blur(5px); /* Bulanıklaştırma */
+    -webkit-backdrop-filter: blur(5px); /* Safari için */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Kenarlık */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Gölge */
+}
+
+/* 5.2. Aktif Durumdaki AI İkonu (.active .ai-icon)
+   ---------------------------------------------------------------------------- */
+/* Bu stil, .list-group-item.active içindeki .ai-icon için geçerli olacak şekilde ayarlanmalı */
+/* Örneğin: #ai-list .list-group-item.active .ai-icon */
+.active .ai-icon { /* Genel .active durumu için, daha spesifik olabilir */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1)); /* Aktif arka plan */
+    color: white; /* Aktif metin rengi */
+    border-color: rgba(255, 255, 255, 0.3); /* Aktif kenarlık rengi */
+}
+
+/* 5.3. AI İsmi (.ai-name)
+   ---------------------------------------------------------------------------- */
+.ai-name {
+    font-weight: var(--font-weight-medium); /* Yazı tipi kalınlığı */
+    margin-left: 0.5rem; /* İkon ve isim arası boşluk */
+}
+
+
+/* ============================================================================
+   6.0 PROFİL BÖLÜMÜ (PROFILE SECTION)
+   ============================================================================ */
+
+/* 6.1. Profil Bölümü Konteyneri (.sidebar .profile-section)
+   ---------------------------------------------------------------------------- */
+.sidebar .profile-section {
+    padding: 1rem 1.5rem; /* İç boşluk, .sidebar-header ile tutarlı */
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Üst kenarlık */
+    transition: background-color 0.2s ease-in-out; /* Yumuşak geçiş */
+    display: flex; /* Flexbox */
+    align-items: center; /* Dikey hizalama */
+    justify-content: space-between; /* İçeriği yay */
+}
+
+/* 6.2. Profil Bölümü Üzerine Gelme (.sidebar .profile-section:hover)
+   ---------------------------------------------------------------------------- */
 .sidebar .profile-section:hover {
     background-color: rgba(var(--bs-emphasis-color-rgb), 0.05); /* Hover'da hafif arka plan */
 }
 
+/* 6.3. Profil Bilgisi Linki (.sidebar .profile-section .profile-info small)
+   ---------------------------------------------------------------------------- */
 .sidebar .profile-section .profile-info small {
     cursor: pointer; /* "View Profile" tıklanabilir gibi görünsün */
     color: var(--bs-primary) !important; /* Temayla uyumlu link rengi */
+    display: block; /* Tam genişlik kaplaması ve alt satıra geçmesi için */
+    margin-top: 0.25rem; /* Üstteki isimle arasında boşluk */
 }
 
+/* 6.3.1. Profil Bilgisi Linki Üzerine Gelme (.sidebar .profile-section .profile-info small:hover) */
 .sidebar .profile-section .profile-info small:hover {
-    text-decoration: underline;
+    text-decoration: underline; /* Altını çiz */
 }
 
+/* 6.4. Çıkış Butonu (.sidebar .profile-section .btn-icon)
+   ---------------------------------------------------------------------------- */
 .sidebar .profile-section .btn-icon { /* Çıkış butonu için stil */
-    color: var(--bs-secondary-color);
+    color: var(--bs-secondary-color); /* İkincil renk */
+    font-size: 1.25rem; /* İkon boyutu */
 }
 
+/* 6.4.1. Çıkış Butonu Üzerine Gelme (.sidebar .profile-section .btn-icon:hover) */
 .sidebar .profile-section .btn-icon:hover {
     color: var(--bs-danger); /* Hover'da çıkışa uygun bir renk */
+}
+
+
+/* ============================================================================
+   7.0 KENAR ÇUBUĞU ALT BİLGİSİ (SIDEBAR FOOTER)
+   ============================================================================ */
+
+/* 7.1. Alt Bilgi Elemanı (.sidebar-footer)
+   ---------------------------------------------------------------------------- */
+.sidebar-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1); /* Üst kenarlık */
+    padding: 1.25rem 1.5rem; /* İç boşluk */
+    /* Genellikle sürüm bilgisi veya diğer linkler için kullanılır */
 }

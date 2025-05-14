@@ -130,56 +130,23 @@
          * Örnek olarak statik bir liste kullanılmıştır.
          */
         function loadIconOptions() {
-             // GERÇEK API Entegrasyonu: API'den ikon listesi çekiliyorsa aşağıdaki gibi yapılabilir:
-            /*
-            fetch('/admin/api/icons') // Kendi API endpoint'inizi kullanın
-                .then(response => response.json())
+            fetch('/admin/api/icons')
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok ' + response.statusText);
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success && data.icons) {
                         populateIconDropdowns(data.icons);
                     } else {
-                        console.error('Failed to load icons from API or icons data is missing.');
-                        // Fallback to a default list or show an error
-                        const defaultIcons = [
-                            { name: 'Klasör', class: 'bi-folder' },
-                            { name: 'Robot', class: 'bi-robot' },
-                            { name: 'Kalem', class: 'bi-pencil' },
-                            { name: 'Çöp Kutusu', class: 'bi-trash' }
-                        ];
-                        populateIconDropdowns(defaultIcons);
+                        console.error('Failed to load icons from API');
+                        showAlert('error', 'İkonlar yüklenemedi');
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching icons:', error);
-                     const defaultIcons = [
-                        { name: 'Klasör', class: 'bi-folder' },
-                        { name: 'Robot', class: 'bi-robot' },
-                        { name: 'Kalem', class: 'bi-pencil' },
-                        { name: 'Çöp Kutusu', class: 'bi-trash' }
-                    ];
-                    populateIconDropdowns(defaultIcons);
+                    showAlert('error', 'İkonlar yüklenemedi. Lütfen tekrar deneyin.');
                 });
-            */
-
-            // Şimdilik örnek statik Bootstrap Icons listesi
-            const sampleIcons = [
-                { name: 'Klasör', class: 'bi-folder' },
-                { name: 'Klasör Artı', class: 'bi-folder-plus' },
-                { name: 'Robot', class: 'bi-robot' },
-                { name: 'Kalem', class: 'bi-pencil-square' },
-                { name: 'Dişli', class: 'bi-gear' },
-                { name: 'Ev', class: 'bi-house' },
-                { name: 'Grafik Yukarı', class: 'bi-graph-up' },
-                { name: 'Soru İşareti Daire', class: 'bi-question-circle' },
-                { name: 'Bilgi Daire', class: 'bi-info-circle' },
-                { name: 'Uyarı Üçgen', class: 'bi-exclamation-triangle' },
-                { name: 'Kontrol Daire', class: 'bi-check-circle' },
-                { name: 'Artı Daire', class: 'bi-plus-circle' },
-                { name: 'Göz', class: 'bi-eye' },
-                { name: 'Kullanıcı', class: 'bi-person' },
-                { name: 'Etiket', class: 'bi-tag' }
-            ];
-            populateIconDropdowns(sampleIcons);
         }
 
 
@@ -385,12 +352,15 @@
                     category_id: parseInt(categoryId),
                     name: modelName,
                     icon: modelIcon,
-                    data_ai_index: dataAiIndex,
                     api_url: apiUrl,
-                    request_method: requestMethod,
-                    request_headers: requestHeaders,
-                    request_body_template: requestBodyTemplate,
-                    response_path: responsePath
+                    description: modelName, // Using model name as initial description
+                    details: {
+                        data_ai_index: dataAiIndex,
+                        request_method: requestMethod,
+                        request_headers: requestHeaders,
+                        request_body_template: requestBodyTemplate,
+                        response_path: responsePath
+                    }
                 };
                 // GERÇEK API Entegrasyonu: Aşağıdaki URL'yi kendi backend API'nizle değiştirin
                 fetch('/admin/api/models', {
@@ -438,12 +408,15 @@
                     category_id: parseInt(categoryId),
                     name: modelName,
                     icon: modelIcon,
-                    data_ai_index: dataAiIndex,
                     api_url: apiUrl,
-                    request_method: requestMethod,
-                    request_headers: requestHeaders,
-                    request_body_template: requestBodyTemplate,
-                    response_path: responsePath
+                    description: modelName,
+                    details: {
+                        data_ai_index: dataAiIndex,
+                        request_method: requestMethod,
+                        request_headers: requestHeaders,
+                        request_body_template: requestBodyTemplate,
+                        response_path: responsePath
+                    }
                 };
                 // GERÇEK API Entegrasyonu: Aşağıdaki URL'yi kendi backend API'nizle değiştirin
                 fetch(`/admin/api/models/${modelId}`, {

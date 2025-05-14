@@ -1,224 +1,338 @@
-        /* =============================================================================
-           Admin Panel Styles
-           ============================================================================= */
+/*
+ * YÖNETİCİ PANELİ STİLLERİ (ADMIN PANEL STYLES)
+ * ============================================================================
+ * Bu dosya, yönetici panelinin genel görünümü, navigasyon, kartlar, tablolar,
+ * formlar, modallar ve diğer özel bileşenler için CSS stillerini içerir.
+ *
+ * İÇİNDEKİLER:
+ * ----------------------------------------------------------------------------
+ * 1.0 GENEL STİLLER (GENERAL STYLES)
+ * 1.1. Sayfa Gövdesi (body)
+ * 1.2. Kartlar (.card, .card-header)
+ * 1.3. Gölgeler (.shadow-sm)
+ *
+ * 2.0 NAVİGASYON (NAVIGATION)
+ * 2.1. Navigasyon Çubuğu (.navbar)
+ * 2.2. Marka (.navbar-brand)
+ *
+ * 3.0 KONTROL PANELİ KARTLARI (DASHBOARD CARDS)
+ * 3.1. Kart Başlığı (.card-title)
+ * 3.2. Arka Plan ve Buton Renkleri (.bg-primary, .btn-primary, .bg-success, .btn-success, .bg-info)
+ * 3.3. Açık Renk Anahatlı Buton Hover (.btn-outline-light:hover)
+ *
+ * 4.0 TABLOLAR (TABLES)
+ * 4.1. Genel Tablo Stilleri (.table)
+ * 4.2. Tablo Başlık Hücreleri (.table th)
+ * 4.3. Tablo Satırı Üzerine Gelme (.table-hover tbody tr:hover)
+ * 4.4. İkon Sütunu (.table td:nth-child(2) i)
+ * 4.5. Eylem Butonları (.action-buttons, .action-buttons .btn)
+ *
+ * 5.0 FORMLAR VE MODALLAR (FORMS AND MODALS)
+ * 5.1. Modal Başlığı (.modal-header, .modal-title)
+ * 5.2. Form Etiketleri (.form-label)
+ * 5.3. Form Yardımcı Metni (.form-text)
+ * 5.4. Giriş Grubu İkonları (.input-group-text i)
+ * 5.5. İkon Önizleme (#iconPreview, #editIconPreview, #modelIconPreview, #editModelIconPreview)
+ *
+ * 6.0 UYARILAR VE BİLDİRİMLER (ALERTS AND NOTIFICATIONS)
+ * 6.1. Uyarı Kutuları (.alert)
+ * 6.2. Kapatılabilir Uyarı Butonu (.alert-dismissible .btn-close)
+ *
+ * 7.0 RESPONSIVE AYARLAMALAR (RESPONSIVE ADJUSTMENTS)
+ * 7.1. Küçük Ekranlar (@media (max-width: 767.98px))
+ * 7.1.1. Kart İçeriği Padding (.card-body)
+ * 7.1.2. Tablo Font Boyutu (.table-responsive)
+ * 7.1.3. Eylem Butonları Düzeni (.action-buttons, .action-buttons .btn)
+ *
+ * 8.0 ANİMASYON EFEKTLERİ (ANIMATION EFFECTS)
+ * 8.1. İçeri Solma Animasyonu (.fade-in, @keyframes fadeIn)
+ * 8.2. Satır Vurgulama Efekti (.highlight-row, @keyframes highlightRow)
+ *
+ * 9.0 ÖZEL BİLEŞENLER (CUSTOM COMPONENTS)
+ * 9.1. İkon Seçici (.icon-grid, .icon-item, .icon-item:hover, .icon-item.selected, .icon-item i)
+ * 9.2. İçerik Bölümleri (.content-section, .content-section.active)
+ * ============================================================================
+ */
 
-        /* -----------------------------------------------------------------------------
-           1. General Styles
-           ----------------------------------------------------------------------------- */
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+/* ============================================================================
+   1.0 GENEL STİLLER (GENERAL STYLES)
+   ============================================================================ */
 
-        .card {
-            border-radius: 0.5rem;
-            margin-bottom: 1.5rem;
-            border: none;
-        }
+/* 1.1. Sayfa Gövdesi (body)
+   ---------------------------------------------------------------------------- */
+   body {
+    background-color: #f8f9fa; /* Açık gri sayfa arka planı */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern bir font ailesi */
+}
 
-        .card-header {
-            border-radius: 0.5rem 0.5rem 0 0 !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-        }
+/* 1.2. Kartlar (.card, .card-header)
+   ---------------------------------------------------------------------------- */
+.card {
+    border-radius: 0.5rem; /* Kartlar için yuvarlak köşeler */
+    margin-bottom: 1.5rem; /* Kartlar arası alt boşluk */
+    border: none; /* Varsayılan kenarlığı kaldır */
+}
 
-        .shadow-sm {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-        }
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important; /* Kart başlığı için üst köşeleri yuvarla */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125); /* Kart başlığı alt kenarlığı */
+}
 
-        /* -----------------------------------------------------------------------------
-           2. Navigation
-           ----------------------------------------------------------------------------- */
-        .navbar {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+/* 1.3. Gölgeler (.shadow-sm)
+   ---------------------------------------------------------------------------- */
+.shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important; /* Küçük gölge efekti */
+}
 
-        .navbar-brand {
-            font-weight: 600;
-        }
+/* ============================================================================
+   2.0 NAVİGASYON (NAVIGATION)
+   ============================================================================ */
 
-        /* -----------------------------------------------------------------------------
-           3. Dashboard Cards
-           ----------------------------------------------------------------------------- */
-        .card-title {
-            font-weight: 600;
-        }
+/* 2.1. Navigasyon Çubuğu (.navbar)
+   ---------------------------------------------------------------------------- */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Navigasyon çubuğu için gölge */
+}
 
-        .bg-primary, .btn-primary {
-            background-color: #3f51b5 !important;
-            border-color: #3f51b5 !important;
-        }
+/* 2.2. Marka (.navbar-brand)
+   ---------------------------------------------------------------------------- */
+.navbar-brand {
+    font-weight: 600; /* Marka metni için kalın yazı tipi */
+}
 
-        .bg-success, .btn-success {
-            background-color: #4caf50 !important;
-            border-color: #4caf50 !important;
-        }
+/* ============================================================================
+   3.0 KONTROL PANELİ KARTLARI (DASHBOARD CARDS)
+   ============================================================================ */
 
-        .bg-info {
-            background-color: #2196f3 !important;
-            border-color: #2196f3 !important;
-        }
+/* 3.1. Kart Başlığı (.card-title)
+   ---------------------------------------------------------------------------- */
+.card-title {
+    font-weight: 600; /* Kart başlıkları için kalın yazı tipi */
+}
 
-        .btn-outline-light:hover {
-            color: #3f51b5;
-        }
+/* 3.2. Arka Plan ve Buton Renkleri
+   ---------------------------------------------------------------------------- */
+.bg-primary, .btn-primary {
+    background-color: #3f51b5 !important; /* Birincil renk (Material Design Indigo) */
+    border-color: #3f51b5 !important;
+}
 
-        /* -----------------------------------------------------------------------------
-           4. Tables
-           ----------------------------------------------------------------------------- */
-        .table {
-            vertical-align: middle;
-        }
+.bg-success, .btn-success {
+    background-color: #4caf50 !important; /* Başarı rengi (Material Design Green) */
+    border-color: #4caf50 !important;
+}
 
-        .table th {
-            font-weight: 600;
-            background-color: #f8f9fa;
-        }
+.bg-info {
+    background-color: #2196f3 !important; /* Bilgi rengi (Material Design Blue) */
+    border-color: #2196f3 !important;
+}
 
-        .table-hover tbody tr:hover {
-            background-color: rgba(63, 81, 181, 0.05);
-        }
+/* 3.3. Açık Renk Anahatlı Buton Hover (.btn-outline-light:hover)
+   ---------------------------------------------------------------------------- */
+.btn-outline-light:hover {
+    color: #3f51b5; /* Hover durumunda birincil renk ile metin rengi */
+}
 
-        /* Icon column */
-        .table td:nth-child(2) i {
-            font-size: 1.25rem;
-        }
+/* ============================================================================
+   4.0 TABLOLAR (TABLES)
+   ============================================================================ */
 
-        /* Actions column */
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
+/* 4.1. Genel Tablo Stilleri (.table)
+   ---------------------------------------------------------------------------- */
+.table {
+    vertical-align: middle; /* Hücre içeriğini dikeyde ortala */
+}
 
-        .action-buttons .btn {
-            padding: 0.25rem 0.5rem;
-        }
+/* 4.2. Tablo Başlık Hücreleri (.table th)
+   ---------------------------------------------------------------------------- */
+.table th {
+    font-weight: 600; /* Tablo başlıkları için kalın yazı tipi */
+    background-color: #f8f9fa; /* Tablo başlığı arka plan rengi */
+}
 
-        /* -----------------------------------------------------------------------------
-           5. Forms and Modals
-           ----------------------------------------------------------------------------- */
-        .modal-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-        }
+/* 4.3. Tablo Satırı Üzerine Gelme (.table-hover tbody tr:hover)
+   ---------------------------------------------------------------------------- */
+.table-hover tbody tr:hover {
+    background-color: rgba(63, 81, 181, 0.05); /* Satır üzerine gelince hafif birincil renk tonu */
+}
 
-        .modal-title {
-            font-weight: 600;
-        }
+/* 4.4. İkon Sütunu (.table td:nth-child(2) i)
+   ---------------------------------------------------------------------------- */
+/* Genellikle ikinci sütun ikonlar için kullanılır */
+.table td:nth-child(2) i {
+    font-size: 1.25rem; /* İkon boyutu */
+}
 
-        .form-label {
-            font-weight: 500;
-        }
+/* 4.5. Eylem Butonları (.action-buttons, .action-buttons .btn)
+   ---------------------------------------------------------------------------- */
+.action-buttons {
+    display: flex; /* Butonları yan yana diz */
+    gap: 0.5rem; /* Butonlar arası boşluk */
+}
 
-        .form-text {
-            font-size: 0.75rem;
-        }
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem; /* Buton iç boşluğu */
+}
 
-        .input-group-text i {
-            font-size: 1.25rem;
-        }
+/* ============================================================================
+   5.0 FORMLAR VE MODALLAR (FORMS AND MODALS)
+   ============================================================================ */
 
-        /* Icon preview */
-        #iconPreview, #editIconPreview, #modelIconPreview, #editModelIconPreview {
-            min-width: 1.5rem;
-            text-align: center;
-        }
+/* 5.1. Modal Başlığı (.modal-header, .modal-title)
+   ---------------------------------------------------------------------------- */
+.modal-header {
+    background-color: #f8f9fa; /* Modal başlığı arka plan rengi */
+    border-bottom: 1px solid #dee2e6; /* Modal başlığı alt kenarlığı */
+}
 
-        /* -----------------------------------------------------------------------------
-           6. Alerts and Notifications
-           ----------------------------------------------------------------------------- */
-        .alert {
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-        }
+.modal-title {
+    font-weight: 600; /* Modal başlığı için kalın yazı tipi */
+}
 
-        .alert-dismissible .btn-close {
-            padding: 0.75rem 1rem;
-        }
+/* 5.2. Form Etiketleri (.form-label)
+   ---------------------------------------------------------------------------- */
+.form-label {
+    font-weight: 500; /* Form etiketleri için orta kalınlıkta yazı tipi */
+}
 
-        /* -----------------------------------------------------------------------------
-           7. Responsive Adjustments
-           ----------------------------------------------------------------------------- */
-        @media (max-width: 767.98px) {
-            .card-body {
-                padding: 1rem;
-            }
+/* 5.3. Form Yardımcı Metni (.form-text)
+   ---------------------------------------------------------------------------- */
+.form-text {
+    font-size: 0.75rem; /* Form yardımcı metinleri için küçük yazı tipi */
+}
 
-            .table-responsive {
-                font-size: 0.875rem;
-            }
+/* 5.4. Giriş Grubu İkonları (.input-group-text i)
+   ---------------------------------------------------------------------------- */
+.input-group-text i {
+    font-size: 1.25rem; /* Giriş grubu içindeki ikonların boyutu */
+}
 
-            .action-buttons {
-                flex-direction: column;
-                gap: 0.25rem;
-            }
+/* 5.5. İkon Önizleme (#iconPreview, #editIconPreview, #modelIconPreview, #editModelIconPreview)
+   ---------------------------------------------------------------------------- */
+#iconPreview,
+#editIconPreview,
+#modelIconPreview,
+#editModelIconPreview {
+    min-width: 1.5rem; /* İkon önizleme alanı için minimum genişlik */
+    text-align: center; /* İkonu ortala */
+}
 
-            .action-buttons .btn {
-                width: 100%;
-            }
-        }
+/* ============================================================================
+   6.0 UYARILAR VE BİLDİRİMLER (ALERTS AND NOTIFICATIONS)
+   ============================================================================ */
 
-        /* -----------------------------------------------------------------------------
-           8. Animation Effects
-           ----------------------------------------------------------------------------- */
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
+/* 6.1. Uyarı Kutuları (.alert)
+   ---------------------------------------------------------------------------- */
+.alert {
+    border-radius: 0.5rem; /* Uyarı kutuları için yuvarlak köşeler */
+    margin-bottom: 1rem; /* Uyarı kutuları arası alt boşluk */
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+/* 6.2. Kapatılabilir Uyarı Butonu (.alert-dismissible .btn-close)
+   ---------------------------------------------------------------------------- */
+.alert-dismissible .btn-close {
+    padding: 0.75rem 1rem; /* Kapatma butonu için iç boşluk */
+}
 
-        /* Table row highlight effect */
-        .highlight-row {
-            animation: highlightRow 1s ease-in-out;
-        }
+/* ============================================================================
+   7.0 RESPONSIVE AYARLAMALAR (RESPONSIVE ADJUSTMENTS)
+   ============================================================================ */
 
-        @keyframes highlightRow {
-            0% { background-color: rgba(63, 81, 181, 0.2); }
-            100% { background-color: transparent; }
-        }
+/* 7.1. Küçük Ekranlar (@media (max-width: 767.98px))
+   ---------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    /* 7.1.1. Kart İçeriği Padding (.card-body) */
+    .card-body {
+        padding: 1rem; /* Küçük ekranlarda kart iç boşluğunu azalt */
+    }
 
-        /* -----------------------------------------------------------------------------
-           9. Custom Components
-           ----------------------------------------------------------------------------- */
-        /* Icon selector */
-        .icon-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-            gap: 0.5rem;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 0.5rem;
-            border: 1px solid #dee2e6;
-            border-radius: 0.25rem;
-            margin-top: 0.5rem;
-        }
+    /* 7.1.2. Tablo Font Boyutu (.table-responsive) */
+    .table-responsive { /* Bu genellikle .table-responsive sarmalayıcısı için geçerlidir */
+        font-size: 0.875rem; /* Küçük ekranlarda tablo yazı tipini küçült */
+    }
 
-        .icon-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 40px;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    /* 7.1.3. Eylem Butonları Düzeni (.action-buttons, .action-buttons .btn) */
+    .action-buttons {
+        flex-direction: column; /* Eylem butonlarını alt alta diz */
+        gap: 0.25rem; /* Butonlar arası boşluğu azalt */
+    }
 
-        .icon-item:hover {
-            background-color: rgba(63, 81, 181, 0.1);
-        }
+    .action-buttons .btn {
+        width: 100%; /* Butonların tam genişlikte olmasını sağla */
+    }
+}
 
-        .icon-item.selected {
-            background-color: rgba(63, 81, 181, 0.2);
-        }
+/* ============================================================================
+   8.0 ANİMASYON EFEKTLERİ (ANIMATION EFFECTS)
+   ============================================================================ */
 
-        .icon-item i {
-            font-size: 1.25rem;
-        }
-        .content-section {
-            display: none; /* Varsayılan olarak bölümleri gizle */
-        }
-         .content-section.active {
-            display: block; /* Aktif bölümü göster */
-        }
+/* 8.1. İçeri Solma Animasyonu (.fade-in, @keyframes fadeIn)
+   ---------------------------------------------------------------------------- */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 8.2. Satır Vurgulama Efekti (.highlight-row, @keyframes highlightRow)
+   ---------------------------------------------------------------------------- */
+.highlight-row {
+    animation: highlightRow 1s ease-in-out;
+}
+
+@keyframes highlightRow {
+    0% { background-color: rgba(63, 81, 181, 0.2); } /* Başlangıçta vurgu rengi */
+    100% { background-color: transparent; } /* Animasyon sonunda şeffaf */
+}
+
+/* ============================================================================
+   9.0 ÖZEL BİLEŞENLER (CUSTOM COMPONENTS)
+   ============================================================================ */
+
+/* 9.1. İkon Seçici (.icon-grid, .icon-item, .icon-item:hover, .icon-item.selected, .icon-item i)
+   ---------------------------------------------------------------------------- */
+.icon-grid {
+    display: grid; /* Izgara düzeni */
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); /* Otomatik dolan sütunlar */
+    gap: 0.5rem; /* Izgara öğeleri arası boşluk */
+    max-height: 200px; /* Maksimum yükseklik */
+    overflow-y: auto; /* Dikey taşma durumunda kaydırma çubuğu */
+    padding: 0.5rem; /* İç boşluk */
+    border: 1px solid #dee2e6; /* Kenarlık */
+    border-radius: 0.25rem; /* Yuvarlak köşeler */
+    margin-top: 0.5rem; /* Üst boşluk */
+}
+
+.icon-item {
+    display: flex;
+    align-items: center; /* Dikeyde ortala */
+    justify-content: center; /* Yatayda ortala */
+    height: 40px; /* Yükseklik */
+    border-radius: 0.25rem; /* Yuvarlak köşeler */
+    cursor: pointer; /* Tıklanabilir imleç */
+    transition: all 0.2s; /* Yumuşak geçiş */
+}
+
+.icon-item:hover {
+    background-color: rgba(63, 81, 181, 0.1); /* Üzerine gelince hafif birincil renk tonu */
+}
+
+.icon-item.selected {
+    background-color: rgba(63, 81, 181, 0.2); /* Seçili durumda daha belirgin birincil renk tonu */
+}
+
+.icon-item i {
+    font-size: 1.25rem; /* İkon boyutu */
+}
+
+/* 9.2. İçerik Bölümleri (.content-section, .content-section.active)
+   ---------------------------------------------------------------------------- */
+.content-section {
+    display: none; /* Varsayılan olarak bölümleri gizle */
+}
+ .content-section.active {
+    display: block; /* Aktif bölümü göster */
+}

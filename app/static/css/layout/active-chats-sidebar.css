@@ -1,54 +1,74 @@
 /*
-ACTIVE CHATS SIDEBAR STYLES
---------------------------------------------------
-TABLE OF CONTENTS:
---------------------------------------------------
-1.0 ACTIVE CHATS DROPDOWN
-    1.1 Dropdown Item (#active-chats-dropdown-menu .list-group-item)
-    1.2 Dropdown Item Hover (#active-chats-dropdown-menu .list-group-item:hover)
-    1.3 Started Chat Item (.active-chat-item--started)
-    1.4 Rendered Inactive Chat Item (.active-chat-item--rendered-inactive)
-2.0 ICONS & CONTROLS
-    2.1 Chevron Icon Rotation (chevron icon, rotation classes)
---------------------------------------------------
-*/
-#active-chats-dropdown-menu .list-group-item {
-    font-size: 0.85rem; /* Slightly smaller font for dropdown items */
+ * AKTİF SOHBETLER KENAR ÇUBUĞU STİLLERİ (ACTIVE CHATS SIDEBAR STYLES)
+ * ============================================================================
+ * Bu dosya, aktif sohbetler kenar çubuğu bileşenleri için CSS stillerini içerir.
+ *
+ * İÇİNDEKİLER:
+ * ----------------------------------------------------------------------------
+ * 1.0 AKTİF SOHBETLER AÇILIR MENÜSÜ (ACTIVE CHATS DROPDOWN)
+ * 1.1. Açılır Menü Öğesi (#active-chats-dropdown-menu .list-group-item)
+ * 1.2. Açılır Menü Öğesi Üzerine Gelme Durumu (#active-chats-dropdown-menu .list-group-item:hover)
+ * 1.3. Başlamış Sohbet Öğesi (.active-chat-item--started)
+ * 1.4. Oluşturulmuş Aktif Olmayan Sohbet Öğesi (.active-chat-item--rendered-inactive)
+ *
+ * 2.0 İKONLAR VE KONTROLLER (ICONS & CONTROLS)
+ * 2.1. Chevron İkonu Döndürme (Chevron icon, rotation classes)
+ * ============================================================================
+ */
+
+/* ============================================================================
+   1.0 AKTİF SOHBETLER AÇILIR MENÜSÜ (ACTIVE CHATS DROPDOWN)
+   ============================================================================ */
+
+/* 1.1. Açılır Menü Öğesi (#active-chats-dropdown-menu .list-group-item)
+   ---------------------------------------------------------------------------- */
+   #active-chats-dropdown-menu .list-group-item {
+    font-size: 0.85rem; /* Açılır menü öğeleri için biraz daha küçük yazı tipi */
     color: var(--text-color);
-    background-color: transparent; /* Make sure it inherits sidebar background */
-    border: none; /* Remove default list-group borders */
-    padding-left: 0.5rem; /* Adjust padding as needed */
+    background-color: transparent; /* Kenar çubuğu arka planını devralmasını sağlar */
+    border: none; /* Varsayılan liste grubu kenarlıklarını kaldırır */
+    padding-left: 0.5rem; /* Gerektiği gibi dolguyu ayarlar */
     padding-right: 0.5rem;
     cursor: pointer;
-    border-radius: var(--bs-border-radius); /* Use Bootstrap's border radius */
+    border-radius: var(--bs-border-radius); /* Bootstrap'in kenar yarıçapını kullanır */
 }
 
+/* 1.2. Açılır Menü Öğesi Üzerine Gelme Durumu (#active-chats-dropdown-menu .list-group-item:hover)
+   ---------------------------------------------------------------------------- */
 #active-chats-dropdown-menu .list-group-item:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* Style for chats that have started (messages exist) */
+/* 1.3. Başlamış Sohbet Öğesi (.active-chat-item--started)
+   ---------------------------------------------------------------------------- */
+/* Başlamış (mesajları olan) sohbetler için stil */
 .active-chat-item--started {
-    color: var(--text-color) !important; /* Ensure it's black or main text color */
-    font-weight: 600; /* Bold for started chats */
-    /* Add a border, e.g., left border or full border */
-    /* border-left: 3px solid var(--primary);  Example with primary color */
-    border: 1px solid var(--text-color); /* Black border */
-    background-color: rgba(0,0,0, 0.03); /* Slightly different background */
+    color: var(--text-color) !important; /* Siyah veya ana metin rengi olmasını sağlar */
+    font-weight: 600; /* Başlamış sohbetler için kalın yazı tipi */
+    /* Bir kenarlık ekleyin, örn. sol kenarlık veya tam kenarlık */
+    /* border-left: 3px solid var(--primary);  Birincil renk ile örnek */
+    border: 1px solid var(--text-color); /* Siyah kenarlık */
+    background-color: rgba(0,0,0, 0.03); /* Biraz farklı arka plan */
 }
 
-/* Style for chats rendered on screen but not active (no messages) */
+/* 1.4. Oluşturulmuş Aktif Olmayan Sohbet Öğesi (.active-chat-item--rendered-inactive)
+   ---------------------------------------------------------------------------- */
+/* Ekranda oluşturulmuş ancak aktif olmayan (mesajı olmayan) sohbetler için stil */
 .active-chat-item--rendered-inactive {
-    color: var(--text-muted) !important; /* Gray text */
+    color: var(--text-muted) !important; /* Gri metin */
     font-style: italic;
 }
 
 
-/* Chevron icon rotation */
+/* ============================================================================
+   2.0 İKONLAR VE KONTROLLER (ICONS & CONTROLS)
+   ============================================================================ */
+
+/* 2.1. Chevron İkonu Döndürme (Chevron icon, rotation classes)
+   ---------------------------------------------------------------------------- */
 #active-chats-dropdown-trigger[aria-expanded="true"] .bi-chevron-down {
     transform: rotate(180deg);
 }
 #active-chats-dropdown-trigger .bi-chevron-down {
     transition: transform 0.3s ease;
 }
-

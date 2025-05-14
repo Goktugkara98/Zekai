@@ -21,11 +21,25 @@ from typing import Dict, List, Optional, Any
 # 2. AI Model Yönetimi
 # -----------------------------------------------------------------------------
 # 2.1. Model Detayları Getirme
-def get_ai_model_api_details(data_ai_index: str) -> Optional[Dict[str, Any]]:
-    """Belirli bir AI modelinin API detaylarını data_ai_index ile getirir."""
+def get_ai_model_api_details(model_identifier: str) -> Optional[Dict[str, Any]]:
+    """Belirli bir AI modelinin API detaylarını model_id veya data_ai_index ile getirir.
+    
+    Args:
+        model_identifier (str): Model ID'si veya data_ai_index değeri
+        
+    Returns:
+        Optional[Dict[str, Any]]: Model detayları veya bulunamazsa None
+    """
     try:
         ai_repo = AIModelRepository()
-        model = ai_repo.get_ai_model_by_data_ai_index(data_ai_index)
+        
+        # Önce model_id olarak dene
+        try:
+            model_id = int(model_identifier)
+            model = ai_repo.get_ai_model_by_id(model_id)
+        except (ValueError, TypeError):
+            # Eğer model_id olarak çevrilemezse, data_ai_index olarak dene
+            model = ai_repo.get_ai_model_by_data_ai_index(model_identifier)
         
         if not model:
             return None
@@ -35,15 +49,16 @@ def get_ai_model_api_details(data_ai_index: str) -> Optional[Dict[str, Any]]:
             "name": model["name"],
             "api_url": model["api_url"],
             "data_ai_index": model["data_ai_index"],
-            "request_method": model["request_method"],
-            "request_headers": model["request_headers"],
-            "request_body_template": model["request_body_template"],
-            "response_path": model["response_path"]
+            "request_method": model.get("request_method", "POST"),  # Varsayılan POST
+            "request_headers": model.get("request_headers", {}),  # Varsayılan boş
+            "request_body_template": model.get("request_body_template", ""),  # Varsayılan boş
+            "response_path": model.get("response_path", "")  # Varsayılan boş
         }
         
         return model_details
         
-    except Exception:
+    except Exception as e:
+        # print(f"HATA: Model detayları alınırken: {e}")
         return None
 
 # 2.2. Kategori ve Model Listeleme

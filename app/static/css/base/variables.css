@@ -1,100 +1,276 @@
 /*
-CSS CUSTOM PROPERTIES (VARIABLES)
---------------------------------------------------
-TABLE OF CONTENTS:
---------------------------------------------------
-1.0 COLOR PALETTE
-    1.1 Primary & Accent Colors (--primary, --primary-light, --primary-dark, --secondary, --success, --danger, --warning, --info, --light, --dark)
-    1.2 Grayscale (--gray-50 ... --gray-900)
-2.0 LAYOUT & SPACING
-    2.1 Sidebar Dimensions (--sidebar-width, --sidebar-collapsed-width)
-3.0 UI ELEMENTS
-    3.1 Border Radius (--border-radius-sm, --border-radius, --border-radius-lg, --border-radius-xl)
-    3.2 Box Shadows (--box-shadow, --box-shadow-md, --box-shadow-lg, --box-shadow-xl)
-4.0 TYPOGRAPHY
-    4.1 Font Weights (--font-weight-normal, --font-weight-medium, --font-weight-semibold, --font-weight-bold)
-5.0 ANIMATIONS & TRANSITIONS
-    5.1 Transitions (--transition, --transition-slow)
---------------------------------------------------
-*/
+ * CSS ÖZEL ÖZELLİKLERİ (DEĞİŞKENLER) - (CSS CUSTOM PROPERTIES - VARIABLES)
+ * ============================================================================
+ * Bu dosya, uygulama genelinde tutarlı bir görünüm ve tema yönetimi sağlamak
+ * için kullanılan CSS özel özelliklerini (değişkenlerini) tanımlar.
+ * Renk paletleri, tipografi ayarları, boşluklar, gölgeler ve geçişler gibi
+ * değerler burada merkezi olarak yönetilir.
+ *
+ * İÇİNDEKİLER:
+ * ----------------------------------------------------------------------------
+ * 1.0 RENK PALETİ (COLOR PALETTE)
+ * 1.1. Ana ve Vurgu Renkleri (Primary & Accent Colors)
+ * (--primary, --primary-light, --primary-dark, --secondary,
+ * --success, --danger, --warning, --info, --light, --dark)
+ * 1.2. Gri Tonları (Grayscale)
+ * (--gray-50 ... --gray-900, --white, --black)
+ * 1.3. Metin Renkleri (Text Colors - Opsiyonel, genellikle ana renklerden türetilir)
+ * (--text-primary, --text-secondary, --text-muted)
+ *
+ * 2.0 YERLEŞİM VE BOŞLUKLAR (LAYOUT & SPACING)
+ * 2.1. Kenar Çubuğu Boyutları (Sidebar Dimensions)
+ * (--sidebar-width, --sidebar-collapsed-width)
+ * 2.2. Genel Boşluk Birimleri (Global Spacing Units - Opsiyonel)
+ * (--spacing-xs, --spacing-sm, --spacing-md, --spacing-lg, --spacing-xl)
+ * 2.3. Konteyner Genişlikleri (Container Widths - Opsiyonel)
+ * (--container-max-width)
+ *
+ * 3.0 KULLANICI ARAYÜZÜ ELEMENTLERİ (UI ELEMENTS)
+ * 3.1. Kenar Yarıçapları (Border Radius)
+ * (--border-radius-sm, --border-radius, --border-radius-lg, --border-radius-xl, --border-radius-pill, --border-radius-circle)
+ * 3.2. Kutu Gölgeleri (Box Shadows)
+ * (--box-shadow-xs, --box-shadow-sm, --box-shadow, --box-shadow-md, --box-shadow-lg, --box-shadow-xl)
+ * 3.3. Kenarlıklar (Borders - Opsiyonel)
+ * (--border-width, --border-color)
+ *
+ * 4.0 TİPOGRAFİ (TYPOGRAPHY)
+ * 4.1. Font Aileleri (Font Families)
+ * (--font-family-sans-serif, --font-family-monospace - Opsiyonel)
+ * 4.2. Font Ağırlıkları (Font Weights)
+ * (--font-weight-light, --font-weight-normal, --font-weight-medium, --font-weight-semibold, --font-weight-bold)
+ * 4.3. Font Boyutları (Font Sizes - Opsiyonel, genellikle rem/em kullanılır)
+ * (--font-size-base, --font-size-sm, --font-size-lg)
+ *
+ * 5.0 ANİMASYONLAR VE GEÇİŞLER (ANIMATIONS & TRANSITIONS)
+ * 5.1. Geçiş Süreleri ve Zamanlama Fonksiyonları (Transition Durations & Timing Functions)
+ * (--transition-duration, --transition-duration-fast, --transition-duration-slow)
+ * (--transition-timing-function)
+ * 5.2. Genel Geçiş Özelliği (Global Transition Property)
+ * (--transition-base, --transition-color, --transition-transform)
+ *
+ * 6.0 Z-ENDeksleri (Z-INDEXES - Opsiyonel, katman yönetimi için)
+ * (--z-index-dropdown, --z-index-modal, --z-index-tooltip)
+ * ============================================================================
+ */
 
-:root {
+ :root {
 
-    /* ==================================================
-       1.0 COLOR PALETTE
-       ================================================== */
-
-    /* 1.1 Primary & Accent Colors
-       -------------------------------------------------- */
-    --primary: #3E63DD;
-    --primary-light: #5D7DF5;
-    --primary-dark: #2F4FB0;
-    --secondary: #64748B;
-    --success: #10B981;
-    --danger: #F43F5E;
-    --warning: #F59E0B;
-    --info: #0EA5E9;
-    --light: #F8FAFC;
-    --dark: #0F172A;
-    
-    /* 1.2 Grayscale
-       -------------------------------------------------- */
-    --gray-50: #F8FAFC;
-    --gray-100: #F1F5F9;
-    --gray-200: #E2E8F0;
-    --gray-300: #CBD5E1;
-    --gray-400: #94A3B8;
-    --gray-500: #64748B;
-    --gray-600: #475569;
-    --gray-700: #334155;
-    --gray-800: #1E293B;
-    --gray-900: #0F172A;
-    
-    /* ==================================================
-       2.0 LAYOUT & SPACING
-       ================================================== */
-
-    /* 2.1 Sidebar Dimensions
-       -------------------------------------------------- */
-    --sidebar-width: 280px;
-    --sidebar-collapsed-width: 70px;
-    
-    /* ==================================================
-       3.0 UI ELEMENTS
-       ================================================== */
-
-    /* 3.1 Border Radius
-       -------------------------------------------------- */
-    --border-radius-sm: 0.25rem;
-    --border-radius: 0.5rem;
-    --border-radius-lg: 0.75rem;
-    --border-radius-xl: 1rem;
-    
-    /* 3.2 Box Shadows
-       -------------------------------------------------- */
-    --box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --box-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --box-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-
-    /* ==================================================
-       4.0 TYPOGRAPHY
-       ================================================== */
-
-    /* 4.1 Font Weights
-       -------------------------------------------------- */
-
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
-    
-    /* ==================================================
-       5.0 ANIMATIONS & TRANSITIONS
-       ================================================== */
-
-    /* 5.1 Transitions
-       -------------------------------------------------- */
-    --transition: all 0.2s ease-in-out;
-    --transition-slow: all 0.3s ease-in-out;
-}
+   /* ==========================================================================
+      1.0 RENK PALETİ (COLOR PALETTE)
+      ========================================================================== */
+ 
+   /* 1.1. Ana ve Vurgu Renkleri (Primary & Accent Colors)
+      -------------------------------------------------------------------------- */
+   --primary: #3E63DD;         /* Ana Mavi */
+   --primary-light: #5D7DF5;   /* Ana Mavi - Açık Ton */
+   --primary-dark: #2F4FB0;    /* Ana Mavi - Koyu Ton */
+ 
+   --secondary: #64748B;      /* İkincil Gri/Mavi */
+   --secondary-light: #94A3B8; /* İkincil Gri/Mavi - Açık Ton */
+   --secondary-dark: #475569;  /* İkincil Gri/Mavi - Koyu Ton */
+ 
+   --success: #10B981;        /* Başarı Yeşili */
+   --success-light: #34D399;  /* Başarı Yeşili - Açık Ton */
+   --success-dark: #059669;   /* Başarı Yeşili - Koyu Ton */
+ 
+   --danger: #F43F5E;         /* Tehlike Kırmızısı */
+   --danger-light: #FB7185;   /* Tehlike Kırmızısı - Açık Ton */
+   --danger-dark: #E11D48;    /* Tehlike Kırmızısı - Koyu Ton */
+ 
+   --warning: #F59E0B;        /* Uyarı Turuncusu */
+   --warning-light: #FBBF24;  /* Uyarı Turuncusu - Açık Ton */
+   --warning-dark: #D97706;   /* Uyarı Turuncusu - Koyu Ton */
+ 
+   --info: #0EA5E9;           /* Bilgi Mavisi */
+   --info-light: #38BDF8;     /* Bilgi Mavisi - Açık Ton */
+   --info-dark: #0284C7;      /* Bilgi Mavisi - Koyu Ton */
+ 
+   --light: #F8FAFC;          /* Açık Arkaplan/Element Rengi */
+   --dark: #0F172A;           /* Koyu Arkaplan/Element Rengi */
+ 
+   /* 1.2. Gri Tonları (Grayscale)
+      --------------------------------------------------------------------------
+      Modern tasarım sistemlerinde genellikle 50'den 900'e kadar bir skala kullanılır.
+   */
+   --white: #FFFFFF;
+   --gray-50: #F8FAFC;   /* --light ile aynı, alternatif isim */
+   --gray-100: #F1F5F9;  /* Çok Açık Gri */
+   --gray-200: #E2E8F0;  /* Açık Gri */
+   --gray-300: #CBD5E1;  /* Açık-Orta Gri (Kenarlıklar için ideal) */
+   --gray-400: #94A3B8;  /* Orta Gri (İkincil metinler, ikonlar) */
+   --gray-500: #64748B;  /* --secondary ile aynı, temel gri */
+   --gray-600: #475569;  /* Koyu-Orta Gri */
+   --gray-700: #334155;  /* Koyu Gri (Ana metin için alternatif) */
+   --gray-800: #1E293B;  /* Çok Koyu Gri (Ana metin için ideal) */
+   --gray-900: #0F172A;  /* --dark ile aynı, en koyu gri/siyah */
+   --black: #000000;
+ 
+   /* 1.3. Metin Renkleri (Text Colors - Opsiyonel)
+      -------------------------------------------------------------------------- */
+   --text-primary: var(--gray-800);       /* Ana metin rengi */
+   --text-secondary: var(--gray-600);     /* İkincil, daha az önemli metinler */
+   --text-muted: var(--gray-400);         /* Sessiz, en az önemli metinler */
+   --text-on-primary: var(--white);       /* --primary arkaplan üzerindeki metin */
+   --text-on-dark: var(--gray-100);       /* --dark arkaplan üzerindeki metin */
+   --text-link: var(--primary);           /* Bağlantı metin rengi */
+   --text-error: var(--danger-dark);      /* Hata mesajları için metin rengi */
+ 
+ 
+   /* ==========================================================================
+      2.0 YERLEŞİM VE BOŞLUKLAR (LAYOUT & SPACING)
+      ========================================================================== */
+ 
+   /* 2.1. Kenar Çubuğu Boyutları (Sidebar Dimensions)
+      -------------------------------------------------------------------------- */
+   --sidebar-width: 280px;
+   --sidebar-collapsed-width: 70px;
+   --header-height: 60px; /* Üst başlık (header) yüksekliği (opsiyonel) */
+ 
+   /* 2.2. Genel Boşluk Birimleri (Global Spacing Units - Opsiyonel)
+      --------------------------------------------------------------------------
+      Tutarlı boşluklar için rem veya px tabanlı bir skala.
+      Örnek: --spacing-1: 0.25rem; --spacing-2: 0.5rem; ...
+   */
+   --spacing-base: 1rem; /* 16px */
+   --spacing-xs: calc(var(--spacing-base) * 0.25); /* 4px */
+   --spacing-sm: calc(var(--spacing-base) * 0.5);  /* 8px */
+   --spacing-md: var(--spacing-base);              /* 16px */
+   --spacing-lg: calc(var(--spacing-base) * 1.5);  /* 24px */
+   --spacing-xl: calc(var(--spacing-base) * 2);    /* 32px */
+   --spacing-xxl: calc(var(--spacing-base) * 3);   /* 48px */
+ 
+   /* 2.3. Konteyner Genişlikleri (Container Widths - Opsiyonel)
+      -------------------------------------------------------------------------- */
+   --container-max-width-sm: 540px;
+   --container-max-width-md: 720px;
+   --container-max-width-lg: 960px;
+   --container-max-width-xl: 1140px;
+   --container-max-width-xxl: 1320px;
+ 
+ 
+   /* ==========================================================================
+      3.0 KULLANICI ARAYÜZÜ ELEMENTLERİ (UI ELEMENTS)
+      ========================================================================== */
+ 
+   /* 3.1. Kenar Yarıçapları (Border Radius)
+      -------------------------------------------------------------------------- */
+   --border-radius-xs: 0.125rem; /* 2px - Çok küçük */
+   --border-radius-sm: 0.25rem;  /* 4px - Küçük */
+   --border-radius: 0.5rem;      /* 8px - Varsayılan/Orta */
+   --border-radius-md: 0.75rem;  /* 12px - Orta-Büyük (orijinal -lg ile aynı) */
+   --border-radius-lg: 1rem;     /* 16px - Büyük (orijinal -xl ile aynı) */
+   --border-radius-xl: 1.5rem;   /* 24px - Çok Büyük */
+   --border-radius-pill: 50rem;  /* Hap şeklinde butonlar/elementler için */
+   --border-radius-circle: 50%;  /* Tam daire için */
+ 
+   /* 3.2. Kutu Gölgeleri (Box Shadows)
+      --------------------------------------------------------------------------
+      Farklı derinlikler için çeşitli gölge seçenekleri.
+   */
+   --box-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Çok Hafif Gölge */
+   --box-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); /* Hafif Gölge (Tailwind sm) */
+   --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); /* Varsayılan Gölge (Tailwind default) */
+   --box-shadow-md: 0 6px 10px -2px rgba(0, 0, 0, 0.1), 0 4px 6px -3px rgba(0, 0, 0, 0.1); /* Orta Gölge (Tailwind md) */
+   --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); /* Büyük Gölge (Tailwind lg) */
+   --box-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); /* Çok Büyük Gölge (Tailwind xl) */
+   --box-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* En Büyük Gölge (Tailwind 2xl) */
+   --box-shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05); /* İç Gölge */
+ 
+   /* 3.3. Kenarlıklar (Borders - Opsiyonel)
+      -------------------------------------------------------------------------- */
+   --border-width-base: 1px;
+   --border-width-lg: 2px;
+   --border-color-base: var(--gray-300);
+   --border-color-light: var(--gray-200);
+   --border-color-dark: var(--gray-400);
+ 
+ 
+   /* ==========================================================================
+      4.0 TİPOGRAFİ (TYPOGRAPHY)
+      ========================================================================== */
+ 
+   /* 4.1. Font Aileleri (Font Families)
+      -------------------------------------------------------------------------- */
+   --font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+   --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+   /* Projenizde özel bir font kullanıyorsanız, burada tanımlayabilirsiniz:
+      --font-family-custom: 'Custom Font Name', var(--font-family-sans-serif);
+   */
+ 
+   /* 4.2. Font Ağırlıkları (Font Weights)
+      -------------------------------------------------------------------------- */
+   --font-weight-light: 300;
+   --font-weight-normal: 400;
+   --font-weight-medium: 500;
+   --font-weight-semibold: 600;
+   --font-weight-bold: 700;
+   --font-weight-extrabold: 800;
+   --font-weight-black: 900;
+ 
+   /* 4.3. Font Boyutları (Font Sizes - Opsiyonel)
+      --------------------------------------------------------------------------
+      Temel font boyutu (rem) ve diğer boyutlar için bir skala.
+      reset.css dosyasında body için font-size: 0.9375rem (15px) ayarlanmıştı.
+      Eğer bu temel boyut ise, --font-size-base olarak burada tanımlanabilir.
+   */
+   --font-size-root: 16px; /* HTML root element için (rem hesaplamalarında temel alınır) */
+   --font-size-base: 0.9375rem; /* 15px */
+   --font-size-sm: 0.875rem;   /* 14px */
+   --font-size-xs: 0.75rem;    /* 12px */
+   --font-size-lg: 1.125rem;   /* 18px */
+   --font-size-xl: 1.25rem;    /* 20px */
+   /* Başlıklar için daha büyük boyutlar eklenebilir:
+      --font-size-h1: 2.5rem;
+      --font-size-h2: 2rem; ...
+   */
+ 
+ 
+   /* ==========================================================================
+      5.0 ANİMASYONLAR VE GEÇİŞLER (ANIMATIONS & TRANSITIONS)
+      ========================================================================== */
+ 
+   /* 5.1. Geçiş Süreleri ve Zamanlama Fonksiyonları
+      -------------------------------------------------------------------------- */
+   --transition-duration-fast: 0.1s;
+   --transition-duration-base: 0.2s; /* Orijinal --transition ile uyumlu */
+   --transition-duration-slow: 0.3s; /* Orijinal --transition-slow ile uyumlu */
+   --transition-duration-slower: 0.5s;
+ 
+   --transition-timing-function-ease: ease;
+   --transition-timing-function-ease-in: ease-in;
+   --transition-timing-function-ease-out: ease-out;
+   --transition-timing-function-ease-in-out: ease-in-out;
+   --transition-timing-function-linear: linear;
+ 
+   /* 5.2. Genel Geçiş Özelliği (Global Transition Property)
+      -------------------------------------------------------------------------- */
+   --transition-base: all var(--transition-duration-base) var(--transition-timing-function-ease-in-out);
+   --transition-color: color var(--transition-duration-base) var(--transition-timing-function-ease-in-out), background-color var(--transition-duration-base) var(--transition-timing-function-ease-in-out), border-color var(--transition-duration-base) var(--transition-timing-function-ease-in-out);
+   --transition-opacity: opacity var(--transition-duration-base) var(--transition-timing-function-ease-in-out);
+   --transition-transform: transform var(--transition-duration-base) var(--transition-timing-function-ease-in-out);
+   /* Orijinal değişkenler (uyumluluk için korunabilir veya bunlar kullanılabilir)
+      --transition: all 0.2s ease-in-out;
+      --transition-slow: all 0.3s ease-in-out;
+   */
+ 
+ 
+   /* ==========================================================================
+      6.0 Z-ENDeksleri (Z-INDEXES - Opsiyonel)
+      ==========================================================================
+      Farklı UI katmanlarının (dropdown, modal, tooltip vb.) üst üste gelme
+      sırasını yönetmek için.
+   */
+   --z-index-back: -1;
+   --z-index-base: 0;
+   --z-index-content: 1;
+   --z-index-sticky: 100;       /* Sabitlenen elementler (örn: sticky header) */
+   --z-index-dropdown: 1000;
+   --z-index-overlay: 1030;     /* Modal arkaplanı gibi */
+   --z-index-modal: 1050;
+   --z-index-popover: 1070;
+   --z-index-tooltip: 1090;
+   --z-index-toast: 1100;       /* Bildirimler için */
+   --z-index-loading: 9999;     /* Yükleme göstergeleri için */
+ 
+ }
+ 

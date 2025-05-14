@@ -1,532 +1,485 @@
 # =============================================================================
-# Admin Panel Routes Module
+# Admin Paneli Rotaları Modülü (Admin Panel Routes Module)
 # =============================================================================
-# Contents:
-# 1. Imports
-# 2. Blueprint Definition
-# 3. Authentication
-#    3.1. admin_login_required (Decorator)
-# 4. View Routes (HTML Rendering)
-#    4.1. /login (GET, POST) - Admin Login Page
-#    4.2. /logout (GET) - Admin Logout
-#    4.3. / (GET) - Admin Panel Main Page (Dashboard)
-#    4.4. /messages (GET) - List User Messages
-# 5. Category API Routes (JSON)
-#    5.1. GET /api/categories - Get All Categories
-#    5.2. GET /api/categories/count - Get Category Count
-#    5.3. GET /api/categories/<int:category_id> - Get Specific Category
-#    5.4. POST /api/categories - Create New Category
-#    5.5. PUT /api/categories/<int:category_id> - Update Category
-# 6. Model API Routes (JSON)
-#    (Further routes to be defined based on full file content)
-# 7. Utility API Routes (JSON)
-#    (Further routes to be defined based on full file content, e.g., for icons)
+# Bu modül, yönetici paneli için Flask rotalarını tanımlar.
+# Kullanıcı arayüzü (HTML) ve API (JSON) endpoint'lerini içerir.
+#
+# İçindekiler:
+# 1. İçe Aktarmalar (Imports)
+# 2. Blueprint Tanımı (Blueprint Definition)
+# 3. Kimlik Doğrulama (Authentication)
+#    3.1. admin_login_required (Decorator) : Admin girişi gerektiren rotalar için.
+# 4. Arayüz Rotaları (View Routes - HTML Rendering)
+#    4.1. /login (GET, POST)               : Admin giriş sayfası.
+#    4.2. /logout (GET)                    : Admin çıkış işlemi.
+#    4.3. / (GET)                          : Admin paneli ana sayfası (Dashboard).
+#    4.4. /messages (GET)                  : Kullanıcı mesajlarını listeler.
+#    4.5. /settings (GET, POST)            : (Örnek) Admin ayarları sayfası.
+# 5. Kategori API Rotaları (Category API Routes - JSON)
+#    5.1. GET    /api/categories                 : Tüm kategorileri getirir.
+#    5.2. GET    /api/categories/count           : Toplam kategori sayısını getirir.
+#    5.3. GET    /api/categories/<int:category_id> : Belirli bir kategoriyi getirir.
+#    5.4. POST   /api/categories                 : Yeni bir kategori oluşturur.
+#    5.5. PUT    /api/categories/<int:category_id> : Bir kategoriyi günceller.
+#    5.6. DELETE /api/categories/<int:category_id> : Bir kategoriyi siler.
+# 6. Model API Rotaları (Model API Routes - JSON)
+#    6.1. GET    /api/models                     : Tüm modelleri getirir.
+#    6.2. GET    /api/models/count               : Toplam model sayısını getirir.
+#    6.3. GET    /api/models/<int:model_id>      : Belirli bir modeli getirir.
+#    6.4. POST   /api/models                     : Yeni bir model oluşturur.
+#    6.5. PUT    /api/models/<int:model_id>      : Bir modeli günceller.
+#    6.6. DELETE /api/models/<int:model_id>      : Bir modeli siler.
+#    6.7. POST   /api/models/<int:model_id>/duplicate : Bir modeli çoğaltır.
+# 7. Yardımcı API Rotaları (Utility API Routes - JSON)
+#    7.1. GET  /api/icons                      : Kullanılabilir ikonları listeler.
+#    7.2. POST /api/logout                     : AJAX ile admin çıkış işlemi.
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# 1. Imports
-# -----------------------------------------------------------------------------
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash
+# 1. İçe Aktarmalar (Imports)
+# =============================================================================
+from flask import (
+    Blueprint, render_template, request, jsonify, session,
+    redirect, url_for, flash
+)
 from functools import wraps
 import os
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename # Dosya yükleme için (eğer kullanılacaksa)
+# from werkzeug.security import check_password_hash, generate_password_hash # Eğer veritabanında hash'li şifre tutulacaksa
 
+# Servis katmanı importları
 from app.services.admin_panel_service import (
-    is_admin_authenticated, get_all_categories, get_category_with_models,
-    create_new_category, update_existing_category, delete_existing_category, # delete_existing_category might be used later
-    get_all_models, get_model_details, create_new_model,
-    update_existing_model, delete_existing_model, get_available_icons # These services suggest more routes exist
+    is_admin_authenticated,
+    get_admin_dashboard_statistics, # Dashboard için eklendi
+    get_all_categories_with_model_counts, # Kategori listesi için güncellendi
+    get_category_details_with_models, # Tek kategori detayı için güncellendi
+    create_new_category,
+    update_existing_category,
+    delete_existing_category,
+    get_all_models_with_category_info, # Model listesi için güncellendi
+    get_model_details_with_category, # Tek model detayı için güncellendi
+    create_new_model,
+    update_existing_model,
+    delete_existing_model,
+    duplicate_existing_model, # Model çoğaltma servisi
+    get_available_icons_list, # İkon listesi servisi
+    get_paginated_user_messages, # Mesaj listeleme servisi
+    get_total_user_message_count # Toplam mesaj sayısı servisi
 )
-from app.models.database import AIModelRepository # Used for /messages route
+# from app.models.database import AIModelRepository # Direkt repository kullanımı yerine servis katmanı tercih edilir.
+                                                 # Ancak get_paginated_user_messages bunu zaten kullanıyor olmalı.
 
-# -----------------------------------------------------------------------------
-# 2. Blueprint Definition
-# -----------------------------------------------------------------------------
-admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+# 2. Blueprint Tanımı (Blueprint Definition)
+# =============================================================================
+admin_bp = Blueprint(
+    'admin',
+    __name__,
+    url_prefix='/admin', # Tüm admin rotaları /admin altında olacak
+    template_folder='templates/admin', # Admin paneline özel şablonlar için (opsiyonel)
+    static_folder='static/admin'       # Admin paneline özel statik dosyalar için (opsiyonel)
+)
+# print("DEBUG: Admin Blueprint oluşturuldu.")
 
-# -----------------------------------------------------------------------------
-# 3. Authentication
-# -----------------------------------------------------------------------------
+# 3. Kimlik Doğrulama (Authentication)
+# =============================================================================
 
 # 3.1. admin_login_required (Decorator)
 # -----------------------------------------------------------------------------
 def admin_login_required(f):
     """
-    Decorator to ensure that the admin is logged in.
-    Redirects to the login page if the admin is not authenticated.
+    Admin kullanıcısının giriş yapmış olmasını gerektiren bir decorator.
+    Giriş yapılmamışsa login sayfasına yönlendirir.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not is_admin_authenticated():
-            flash('You need to be logged in as an administrator to access this page.', 'warning')
-            return redirect(url_for('admin.login'))
+        if not is_admin_authenticated(): # Bu fonksiyon admin_panel_service içinde tanımlı olmalı
+            flash('Bu sayfaya erişmek için yönetici olarak giriş yapmanız gerekmektedir.', 'warning')
+            return redirect(url_for('admin.login_page')) # Rota adı login_page olarak güncellendi
         return f(*args, **kwargs)
     return decorated_function
 
-# -----------------------------------------------------------------------------
-# 4. View Routes (HTML Rendering)
-# -----------------------------------------------------------------------------
+# 4. Arayüz Rotaları (View Routes - HTML Rendering)
+# =============================================================================
 
-# 4.1. /login (GET, POST) - Admin Login Page
+# 4.1. /login (GET, POST) - Admin Giriş Sayfası
 # -----------------------------------------------------------------------------
 @admin_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    """Admin login page."""
+def login_page(): # Fonksiyon adı login_page olarak değiştirildi (login decorator ile karışmaması için)
+    """Admin giriş sayfasını yönetir."""
     if is_admin_authenticated():
-        return redirect(url_for('admin.panel')) # Redirect if already logged in
-        
+        return redirect(url_for('admin.dashboard_page')) # Rota adı dashboard_page olarak güncellendi
+
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        # Admin credentials
-        # In a production environment, ensure ADMIN_USERNAME and especially a hashed password
-        # are securely managed (e.g., via environment variables or a secure config).
-        # Avoid hardcoding passwords directly in the code.
-        admin_username_env = os.environ.get('ADMIN_USERNAME', 'admin')
-        # IMPORTANT: The password 'zekaiadmin' is hardcoded here for development.
-        # This is a security risk in production. Use hashed passwords and secure storage.
-        admin_password_hardcoded = 'zekaiadmin' 
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '') # Şifrede strip() genellikle yapılmaz
 
-        if username == admin_username_env and password == admin_password_hardcoded: # Replace with password_hash check in production
-            session['is_admin'] = True
-            flash('You have been logged in as administrator.', 'success')
-            return redirect(url_for('admin.panel'))
+        # Admin kimlik bilgileri (güvenli bir yerden alınmalı)
+        # ÖNEMLİ: Şifreler ASLA doğrudan koda yazılmamalıdır.
+        # Ortam değişkenleri ve hash'lenmiş şifreler kullanılmalıdır.
+        admin_username_env = os.environ.get('ADMIN_USERNAME', 'admin') # Varsayılan kullanıcı adı
+        admin_password_env = os.environ.get('ADMIN_PASSWORD', 'zekaiadmin') # Varsayılan şifre (TEST AMAÇLI)
+        # admin_password_hash_env = os.environ.get('ADMIN_PASSWORD_HASH') # Üretimde bu kullanılmalı
+
+        # Üretim için: check_password_hash(admin_password_hash_env, password)
+        if username == admin_username_env and password == admin_password_env:
+            session['is_admin'] = True # Oturumu başlat
+            session.permanent = True # Oturumun kalıcı olmasını sağla (tarayıcı kapanınca silinmesin)
+            flash('Yönetici olarak başarıyla giriş yaptınız.', 'success')
+            return redirect(url_for('admin.dashboard_page'))
         else:
-            flash('Invalid username or password.', 'danger')
-    
-    return render_template('admin_login.html', title='Admin Login')
+            flash('Geçersiz kullanıcı adı veya şifre.', 'danger')
 
-# 4.2. /logout (GET) - Admin Logout
+    return render_template('login.html', title='Admin Girişi') # Şablon adı login.html varsayıldı
+
+# 4.2. /logout (GET) - Admin Çıkış İşlemi
 # -----------------------------------------------------------------------------
 @admin_bp.route('/logout')
 @admin_login_required
-def logout():
-    """Admin logout."""
-    session.pop('is_admin', None)
-    flash('You have been logged out.', 'info')
-    return redirect(url_for('admin.login'))
+def logout_route(): # Fonksiyon adı logout_route olarak değiştirildi
+    """Admin çıkış işlemini gerçekleştirir."""
+    session.pop('is_admin', None) # Oturumu sonlandır
+    flash('Başarıyla çıkış yaptınız.', 'info')
+    return redirect(url_for('admin.login_page'))
 
-# 4.3. / (GET) - Admin Panel Main Page (Dashboard)
+# 4.3. / (GET) - Admin Paneli Ana Sayfası (Dashboard)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/')
 @admin_login_required
-def panel():
-    """Admin panel main page (Dashboard)."""
-    # Logic for the main admin panel page can be added here.
-    # For now, it just renders a template.
-    return render_template('admin_panel.html', title='Admin Panel')
+def dashboard_page(): # Fonksiyon adı panel -> dashboard_page olarak değiştirildi
+    """Admin paneli ana sayfasını (Dashboard) gösterir."""
+    try:
+        stats = get_admin_dashboard_statistics() # Servis fonksiyonundan istatistikleri al
+    except Exception as e:
+        # print(f"DEBUG: Dashboard istatistikleri alınırken hata: {e}")
+        flash(f"Dashboard verileri yüklenirken bir hata oluştu: {str(e)}", "danger")
+        stats = { # Hata durumunda boş veya varsayılan istatistikler
+            'total_category_count': 0,
+            'total_model_count': 0,
+            'recent_categories': [],
+            'recent_models': [],
+            'user_message_stats': {}
+        }
+    return render_template('dashboard.html', title='Admin Paneli', stats=stats) # Şablon adı dashboard.html varsayıldı
 
-# 4.4. /messages (GET) - List User Messages
+# 4.4. /messages (GET) - Kullanıcı Mesajlarını Listeler
 # -----------------------------------------------------------------------------
 @admin_bp.route('/messages')
-@admin_login_required # Ensures only logged-in admins can access
-def list_messages():
-    """Displays a paginated list of user messages."""
+@admin_login_required
+def list_messages_page(): # Fonksiyon adı list_messages -> list_messages_page
+    """Kullanıcı mesajlarını sayfalamalı olarak listeler."""
     try:
-        # Note: AIModelRepository is used directly here.
-        # Consider moving this logic to admin_panel_service for consistency.
-        ai_repo = AIModelRepository()
-        
-        # Get pagination parameters (with default values)
         page = request.args.get('page', 1, type=int)
-        per_page = 25 # Number of messages to display per page
-        offset = (page - 1) * per_page
+        per_page = request.args.get('per_page', 25, type=int) # Sayfa başına öğe sayısı da parametrik olabilir
+        if page < 1: page = 1
+        if per_page < 1: per_page = 25
 
-        messages = ai_repo.get_all_user_messages(limit=per_page, offset=offset)
-
-        # TODO: Implement total message count for better pagination (e.g., showing total pages).
-        # total_messages = ai_repo.get_user_messages_count() 
-        # total_pages = (total_messages + per_page - 1) // per_page
+        messages_data = get_paginated_user_messages(page, per_page) # Servis fonksiyonu
+        total_messages = get_total_user_message_count() # Toplam mesaj sayısı
+        total_pages = (total_messages + per_page - 1) // per_page
 
     except Exception as e:
-        flash(f'An error occurred while fetching messages: {str(e)}', 'danger')
-        messages = []
-        # Log: f"Error fetching messages for admin panel: {e}"
+        # print(f"DEBUG: Mesajlar listelenirken hata: {e}")
+        flash(f'Mesajlar yüklenirken bir hata oluştu: {str(e)}', 'danger')
+        messages_data = []
+        total_pages = 0
+        page = 1 # Hata durumunda sayfayı başa al
 
-    # Ensure the template name 'admin/messages.html' is correct.
-    return render_template('admin/messages.html', 
-                           title='User Messages', 
-                           messages=messages, 
-                           current_page=page, 
-                           per_page=per_page) # Pass per_page for pagination controls in template
+    return render_template(
+        'messages.html', # Şablon adı messages.html varsayıldı
+        title='Kullanıcı Mesajları',
+        messages=messages_data,
+        current_page=page,
+        total_pages=total_pages,
+        per_page=per_page
+    )
 
+# 4.5. /settings (GET, POST) - (Örnek) Admin Ayarları Sayfası
 # -----------------------------------------------------------------------------
-# 5. Category API Routes (JSON)
-# -----------------------------------------------------------------------------
+@admin_bp.route('/settings', methods=['GET', 'POST'])
+@admin_login_required
+def settings_page():
+    """Admin ayarları sayfasını yönetir (Örnek)."""
+    if request.method == 'POST':
+        # Ayarları kaydetme mantığı buraya eklenecek
+        # Örnek: os.environ['SOME_SETTING'] = request.form.get('some_setting')
+        flash('Ayarlar başarıyla kaydedildi.', 'success')
+        return redirect(url_for('admin.settings_page'))
 
-# 5.1. GET /api/categories - Get All Categories
+    # Kayıtlı ayarları yükleme mantığı buraya eklenecek
+    # current_settings = {"some_setting": os.environ.get('SOME_SETTING', 'default_value')}
+    current_settings = {} # Boş örnek
+    return render_template('settings.html', title='Ayarlar', settings=current_settings)
+
+
+# 5. Kategori API Rotaları (Category API Routes - JSON)
+# =============================================================================
+# Bu API endpoint'leri genellikle admin panelindeki AJAX istekleri için kullanılır.
+
+# 5.1. GET /api/categories - Tüm Kategorileri Getirir
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories', methods=['GET'])
 @admin_login_required
-def api_get_categories():
-    """API endpoint to get all categories, including a count of models in each."""
-    categories_data = get_all_categories() # Assuming this service function returns a list of dicts
-    
-    # The service should ideally return model_count directly if it's a common need.
-    # If get_all_categories already includes models, this loop might be simplified or moved to the service.
-    for category in categories_data:
-        if 'models' in category and isinstance(category['models'], list):
-            category['model_count'] = len(category['models'])
-        else:
-            category['model_count'] = 0 # Default if no models key or not a list
-    
-    return jsonify({
-        'success': True,
-        'categories': categories_data
-    })
+def api_get_all_categories():
+    """Tüm kategorileri (model sayılarıyla birlikte) JSON formatında döndürür."""
+    try:
+        categories = get_all_categories_with_model_counts() # Servis fonksiyonu
+        return jsonify({'success': True, 'categories': categories})
+    except Exception as e:
+        # print(f"DEBUG: API /api/categories GET hatası: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# 5.2. GET /api/categories/count - Get Category Count
+# 5.2. GET /api/categories/count - Toplam Kategori Sayısını Getirir
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories/count', methods=['GET'])
 @admin_login_required
 def api_get_category_count():
-    """API endpoint to get the total number of categories."""
-    categories_data = get_all_categories() 
-    return jsonify({
-        'success': True,
-        'count': len(categories_data)
-    })
+    """Toplam kategori sayısını JSON formatında döndürür."""
+    try:
+        categories = get_all_categories_with_model_counts() # Bu zaten sayıyı içeriyor olabilir veya ayrı bir servis
+        return jsonify({'success': True, 'count': len(categories)})
+    except Exception as e:
+        # print(f"DEBUG: API /api/categories/count GET hatası: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# 5.3. GET /api/categories/<int:category_id> - Get Specific Category
+# 5.3. GET /api/categories/<int:category_id> - Belirli Bir Kategoriyi Getirir
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories/<int:category_id>', methods=['GET'])
 @admin_login_required
-def api_get_category(category_id: int):
-    """API endpoint to get a specific category with its associated models."""
-    success, data = get_category_with_models(category_id)
-    
-    if success:
-        return jsonify({
-            'success': True,
-            'category': data # 'data' here is expected to be the category dictionary
-        })
-    else:
-        return jsonify({
-            'success': False,
-            'error': data.get('error', 'Failed to get category details.') # Provide a default error message
-        }), 404 # Not Found
+def api_get_category_by_id(category_id: int):
+    """Belirli bir kategoriyi (modelleriyle birlikte) JSON formatında döndürür."""
+    try:
+        category_details = get_category_details_with_models(category_id)
+        if category_details:
+            return jsonify({'success': True, 'category': category_details})
+        else:
+            return jsonify({'success': False, 'error': 'Kategori bulunamadı.'}), 404
+    except Exception as e:
+        # print(f"DEBUG: API /api/categories/{category_id} GET hatası: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# 5.4. POST /api/categories - Create New Category
+# 5.4. POST /api/categories - Yeni Bir Kategori Oluşturur
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories', methods=['POST'])
 @admin_login_required
-def api_create_category():
-    """API endpoint to create a new category."""
+def api_create_new_category():
+    """Yeni bir kategori oluşturur ve sonucu JSON formatında döndürür."""
     data = request.json
-    
-    if not data or 'name' not in data or not data['name'].strip(): # Added strip to check for empty names
-        return jsonify({
-            'success': False,
-            'error': 'Missing or invalid required fields: name is required.'
-        }), 400 # Bad Request
-    
-    # Icon can be optional or have a default in the service
-    category_name = data['name'].strip()
-    category_icon = data.get('icon', '') # Use .get for optional fields
+    if not data or not data.get('name') or not data.get('name').strip():
+        return jsonify({'success': False, 'error': 'Kategori adı gereklidir.'}), 400
 
-    success, result = create_new_category(category_name, category_icon)
-    
+    name = data['name'].strip()
+    icon = data.get('icon', '').strip() # İkon opsiyonel, varsayılan boş string
+
+    success, message, category_id = create_new_category(name, icon)
     if success:
-        return jsonify({
-            'success': True,
-            'message': result.get('message', 'Category created successfully.'),
-            'category_id': result.get('id') # Return the new category ID
-        }), 201 # Created
+        return jsonify({'success': True, 'message': message, 'category_id': category_id}), 201
     else:
-        return jsonify({
-            'success': False,
-            'error': result.get('error', 'Failed to create category.')
-        }), 400 # Bad Request (or 409 Conflict if name exists, 500 for server error)
+        # Servis katmanı hatayı daha detaylı dönebilir (örn: zaten var)
+        status_code = 409 if "zaten mevcut" in message.lower() else 400
+        return jsonify({'success': False, 'error': message}), status_code
 
-# 5.5. PUT /api/categories/<int:category_id> - Update Category
+# 5.5. PUT /api/categories/<int:category_id> - Bir Kategoriyi Günceller
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories/<int:category_id>', methods=['PUT'])
 @admin_login_required
-def api_update_category(category_id: int):
-    """API endpoint to update an existing category."""
+def api_update_existing_category(category_id: int):
+    """Mevcut bir kategoriyi günceller ve sonucu JSON formatında döndürür."""
     data = request.json
-    
-    if not data or 'name' not in data or not data['name'].strip():
-        return jsonify({
-            'success': False,
-            'error': 'Missing or invalid required fields: name is required.'
-        }), 400 # Bad Request
-        
-    category_name = data['name'].strip()
-    category_icon = data.get('icon', '') # Icon can be optional
+    if not data or not data.get('name') or not data.get('name').strip(): # İkon güncellenmeyebilir
+        return jsonify({'success': False, 'error': 'Kategori adı gereklidir.'}), 400
 
-    success, result = update_existing_category(category_id, category_name, category_icon)
-    
+    name = data['name'].strip()
+    icon = data.get('icon', '').strip() # Eğer ikon gönderilmezse mevcut ikon korunmalı (servis katmanında)
+
+    success, message = update_existing_category(category_id, name, icon)
     if success:
-        return jsonify({
-            'success': True,
-            'message': result.get('message', 'Category updated successfully.')
-        }) # Default 200 OK
+        return jsonify({'success': True, 'message': message})
     else:
-        # Distinguish between 404 Not Found and 400 Bad Request/500 Server Error
-        error_message = result.get('error', 'Failed to update category.')
-        status_code = 400
-        if "not found" in error_message.lower():
-            status_code = 404
-        return jsonify({
-            'success': False,
-            'error': error_message
-        }), status_code
+        status_code = 404 if "bulunamadı" in message.lower() else 400
+        status_code = 409 if "zaten mevcut" in message.lower() else status_code
+        return jsonify({'success': False, 'error': message}), status_code
 
+# 5.6. DELETE /api/categories/<int:category_id> - Bir Kategoriyi Siler
+# -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories/<int:category_id>', methods=['DELETE'])
 @admin_login_required
-def api_delete_category(category_id: int):
-    """API endpoint to delete a category."""
-    success, result = delete_existing_category(category_id)
-    
+def api_delete_existing_category(category_id: int):
+    """Bir kategoriyi siler ve sonucu JSON formatında döndürür."""
+    success, message = delete_existing_category(category_id)
     if success:
-        return jsonify({
-            'success': True,
-            'message': result.get('message', 'Category deleted successfully.')
-        }) # Default 200 OK
+        return jsonify({'success': True, 'message': message})
     else:
-        error_message = result.get('error', 'Failed to delete category.')
-        status_code = 400
-        if "not found" in error_message.lower():
-            status_code = 404
-        return jsonify({
-            'success': False,
-            'error': error_message
-        }), status_code
+        status_code = 404 if "bulunamadı" in message.lower() else 400
+        return jsonify({'success': False, 'error': message}), status_code
 
-# -----------------------------------------------------------------------------
-# 6. Model API Routes (JSON)
-# -----------------------------------------------------------------------------
 
-# 6.1. GET /api/models - Get All Models
+# 6. Model API Rotaları (Model API Routes - JSON)
+# =============================================================================
+
+# 6.1. GET /api/models - Tüm Modelleri Getirir
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models', methods=['GET'])
 @admin_login_required
-def api_get_models():
-    """API endpoint to get all models."""
-    models = get_all_models() # This service likely returns a list of model dicts
-    return jsonify({
-        'success': True,
-        'models': models
-    })
+def api_get_all_models():
+    """Tüm modelleri (kategori bilgileriyle birlikte) JSON formatında döndürür."""
+    try:
+        models = get_all_models_with_category_info() # Servis fonksiyonu
+        return jsonify({'success': True, 'models': models})
+    except Exception as e:
+        # print(f"DEBUG: API /api/models GET hatası: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# 6.2. GET /api/models/count - Get Model Count
+# 6.2. GET /api/models/count - Toplam Model Sayısını Getirir
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/count', methods=['GET'])
 @admin_login_required
 def api_get_model_count():
-    """API endpoint to get the total number of models."""
-    models = get_all_models()
-    return jsonify({
-        'success': True,
-        'count': len(models)
-    })
+    """Toplam model sayısını JSON formatında döndürür."""
+    try:
+        models = get_all_models_with_category_info()
+        return jsonify({'success': True, 'count': len(models)})
+    except Exception as e:
+        # print(f"DEBUG: API /api/models/count GET hatası: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# 6.3. GET /api/models/<int:model_id> - Get Specific Model
+# 6.3. GET /api/models/<int:model_id> - Belirli Bir Modeli Getirir
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/<int:model_id>', methods=['GET'])
 @admin_login_required
-def api_get_model(model_id: int):
-    """API endpoint to get a specific model by its ID."""
-    success, data = get_model_details(model_id)
-    
-    if success:
-        return jsonify({
-            'success': True,
-            'model': data # 'data' here is the model dictionary
-        })
-    else:
-        return jsonify({
-            'success': False,
-            'error': data.get('error', 'Failed to get model details.')
-        }), 404 # Not Found
+def api_get_model_by_id(model_id: int):
+    """Belirli bir modeli (kategori bilgisiyle) JSON formatında döndürür."""
+    try:
+        model_details = get_model_details_with_category(model_id)
+        if model_details:
+            return jsonify({'success': True, 'model': model_details})
+        else:
+            return jsonify({'success': False, 'error': 'Model bulunamadı.'}), 404
+    except Exception as e:
+        # print(f"DEBUG: API /api/models/{model_id} GET hatası: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# 6.4. POST /api/models - Create New Model
+# 6.4. POST /api/models - Yeni Bir Model Oluşturur
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models', methods=['POST'])
 @admin_login_required
-def api_create_model():
-    """API endpoint to create a new model."""
+def api_create_new_model():
+    """Yeni bir AI modeli oluşturur ve sonucu JSON formatında döndürür."""
     data = request.json
-    
-    # Basic validation for required fields
-    required_fields = ['name', 'category_id', 'api_url', 'description', 'details']
-    if not data or not all(field in data and data[field] for field in required_fields):
-        missing_or_empty = [field for field in required_fields if not data or field not in data or not data[field]]
-        return jsonify({
-            'success': False,
-            'error': f'Missing or empty required fields: {", ".join(missing_or_empty)}.'
-        }), 400 # Bad Request
+    required_fields = ['name', 'category_id'] # Temel zorunlu alanlar
+    if not data or not all(field in data for field in required_fields) or \
+       not data['name'].strip() or not isinstance(data['category_id'], int):
+        return jsonify({'success': False, 'error': 'Model adı ve kategori ID zorunludur ve geçerli olmalıdır.'}), 400
 
-    model_name = data['name'].strip()
-    category_id = data['category_id'] # Should be validated as int by the service or here
-    api_url = data['api_url'].strip()
-    description = data['description'].strip()
-    details = data['details'] # Can be complex, service should handle its structure
-    
-    # Optional fields
-    icon = data.get('icon', '') # Default to empty string if not provided
-    image_filename = data.get('image_filename', '')
+    name = data['name'].strip()
+    category_id = data['category_id']
+    # Opsiyonel alanlar
+    icon = data.get('icon', '').strip()
+    api_url = data.get('api_url', '').strip()
+    data_ai_index = data.get('data_ai_index', '').strip()
+    description = data.get('description', '').strip()
+    details = data.get('details') # Bu bir sözlük olmalı, servis katmanı doğrular
+    image_filename = data.get('image_filename', '').strip()
 
-    success, result = create_new_model(
-        name=model_name,
-        category_id=category_id,
-        api_url=api_url,
-        description=description,
-        details=details,
-        icon=icon,
-        image_filename=image_filename
+    success, message, model_id = create_new_model(
+        category_id=category_id, name=name, icon=icon, api_url=api_url,
+        data_ai_index=data_ai_index if data_ai_index else None, # Boşsa None gönder
+        description=description, details=details, image_filename=image_filename
     )
-    
     if success:
-        return jsonify({
-            'success': True,
-            'message': result.get('message', 'Model created successfully.'),
-            'model_id': result.get('id') # Return the new model ID
-        }), 201 # Created
+        return jsonify({'success': True, 'message': message, 'model_id': model_id}), 201
     else:
-        error_message = result.get('error', 'Failed to create model.')
-        status_code = 400 # Default bad request
-        if "already exists" in error_message.lower():
-            status_code = 409 # Conflict
-        elif "category not found" in error_message.lower():
-            status_code = 400 # Or 404 if category_id is the only issue
-        return jsonify({
-            'success': False,
-            'error': error_message
-        }), status_code
+        status_code = 400
+        if "bulunamadı" in message.lower(): status_code = 404 # Kategori bulunamadı gibi
+        if "zaten mevcut" in message.lower(): status_code = 409 # data_ai_index çakışması gibi
+        return jsonify({'success': False, 'error': message}), status_code
 
-# 6.5. PUT /api/models/<int:model_id> - Update Model
+# 6.5. PUT /api/models/<int:model_id> - Bir Modeli Günceller
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/<int:model_id>', methods=['PUT'])
 @admin_login_required
-def api_update_model(model_id: int):
-    """API endpoint to update an existing model."""
+def api_update_existing_model(model_id: int):
+    """Mevcut bir AI modelini günceller ve sonucu JSON formatında döndürür."""
     data = request.json
-    
-    if not data:
-        return jsonify({
-            'success': False,
-            'error': 'Request body cannot be empty.'
-        }), 400
+    if not data: # En az bir alan güncellenmeli
+        return jsonify({'success': False, 'error': 'Güncellenecek veri bulunamadı.'}), 400
 
-    # Fields that can be updated (all are optional in PUT, but at least one should be present)
-    # Service layer should handle partial updates correctly.
-    name = data.get('name', '').strip() if data.get('name') else None
+    # Servis katmanı None olan değerleri dikkate almayacak şekilde tasarlanmalı
+    name = data.get('name')
     category_id = data.get('category_id')
-    api_url = data.get('api_url', '').strip() if data.get('api_url') else None
-    description = data.get('description', '').strip() if data.get('description') else None
+    icon = data.get('icon')
+    api_url = data.get('api_url')
+    data_ai_index = data.get('data_ai_index')
+    description = data.get('description')
     details = data.get('details')
-    icon = data.get('icon', '').strip() if data.get('icon') else None
-    image_filename = data.get('image_filename', '').strip() if data.get('image_filename') else None
+    image_filename = data.get('image_filename')
 
-    # Check if any data was actually provided for update
-    if all(val is None for val in [name, category_id, api_url, description, details, icon, image_filename]):
-        return jsonify({
-            'success': False,
-            'error': 'No fields provided for update.'
-        }), 400
-
-    success, result = update_existing_model(
-        model_id=model_id,
-        name=name,
-        category_id=category_id,
-        api_url=api_url,
-        description=description,
-        details=details,
-        icon=icon,
-        image_filename=image_filename
+    success, message = update_existing_model(
+        model_id=model_id, name=name, category_id=category_id, icon=icon,
+        api_url=api_url, data_ai_index=data_ai_index, description=description,
+        details=details, image_filename=image_filename
     )
-    
     if success:
-        return jsonify({
-            'success': True,
-            'message': result.get('message', 'Model updated successfully.')
-        }) # Default 200 OK
+        return jsonify({'success': True, 'message': message})
     else:
-        error_message = result.get('error', 'Failed to update model.')
-        status_code = 400
-        if "not found" in error_message.lower():
-            status_code = 404
-        elif "category not found" in error_message.lower():
-            status_code = 400
-        return jsonify({
-            'success': False,
-            'error': error_message
-        }), status_code
+        status_code = 404 if "bulunamadı" in message.lower() else 400
+        status_code = 409 if "zaten mevcut" in message.lower() else status_code
+        return jsonify({'success': False, 'error': message}), status_code
 
-# 6.6. DELETE /api/models/<int:model_id> - Delete Model
+# 6.6. DELETE /api/models/<int:model_id> - Bir Modeli Siler
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/<int:model_id>', methods=['DELETE'])
 @admin_login_required
-def api_delete_model(model_id: int):
-    """API endpoint to delete a model."""
-    success, data = delete_existing_model(model_id)
-    
+def api_delete_existing_model(model_id: int):
+    """Bir AI modelini siler ve sonucu JSON formatında döndürür."""
+    success, message = delete_existing_model(model_id)
     if success:
-        return jsonify({
-            'success': True,
-            'message': data.get('message', 'Model deleted successfully')
-        })
+        return jsonify({'success': True, 'message': message})
     else:
-        return jsonify({
-            'success': False,
-            'error': data.get('error', 'Failed to delete model')
-        }), 400 # Bad Request
+        status_code = 404 if "bulunamadı" in message.lower() else 400
+        return jsonify({'success': False, 'error': message}), status_code
 
-# 6.7. POST /api/models/<int:model_id>/duplicate - Duplicate Model
+# 6.7. POST /api/models/<int:model_id>/duplicate - Bir Modeli Çoğaltır
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/<int:model_id>/duplicate', methods=['POST'])
 @admin_login_required
-def api_duplicate_model(model_id: int):
-    """API endpoint to duplicate a model."""
-    admin_repo = AdminRepository()
-    success, message, new_model_id = admin_repo.model_repo.duplicate_model(model_id)
-    
-    if success:
-        return jsonify({
-            'success': True,
-            'message': message,
-            'id': new_model_id
-        })
-    else:
-        return jsonify({
-            'success': False,
-            'error': message
-        }), 400
+def api_duplicate_existing_model(model_id: int):
+    """Mevcut bir AI modelini çoğaltır."""
+    try:
+        success, message, new_model_id = duplicate_existing_model(model_id)
+        if success:
+            return jsonify({'success': True, 'message': message, 'new_model_id': new_model_id}), 201
+        else:
+            status_code = 404 if "bulunamadı" in message.lower() else 400
+            return jsonify({'success': False, 'error': message}), status_code
+    except Exception as e:
+        # print(f"DEBUG: Model çoğaltma API hatası: {e}")
+        return jsonify({'success': False, 'error': f"Model çoğaltılırken bir hata oluştu: {str(e)}"}), 500
 
-# -----------------------------------------------------------------------------
-# 7. Utility API Routes (JSON)
-# -----------------------------------------------------------------------------
 
-# 7.1. GET /api/icons - Get Available Icons
+# 7. Yardımcı API Rotaları (Utility API Routes - JSON)
+# =============================================================================
+
+# 7.1. GET /api/icons - Kullanılabilir İkonları Listeler
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/icons', methods=['GET'])
 @admin_login_required
-def api_get_icons():
-    """API endpoint to get a list of available icons."""
-    success, data = get_available_icons()
-    
-    if success:
-        return jsonify({
-            'success': True,
-            'icons': data['icons']
-        })
-    else:
-        return jsonify({
-            'success': False,
-            'error': data.get('error', 'Failed to retrieve icon list.')
-        }), 500
+def api_get_available_icons():
+    """Kullanılabilir ikonların listesini JSON formatında döndürür."""
+    try:
+        icons = get_available_icons_list() # Servis fonksiyonu
+        return jsonify({'success': True, 'icons': icons})
+    except Exception as e:
+        # print(f"DEBUG: API /api/icons GET hatası: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-# 7.2. POST /api/logout - AJAX Logout (Alternative to view logout)
+# 7.2. POST /api/logout - AJAX ile Admin Çıkış İşlemi
 # -----------------------------------------------------------------------------
-@admin_bp.route('/api/logout', methods=['POST']) # Changed to POST as it changes state
+@admin_bp.route('/api/logout', methods=['POST']) # State değiştirdiği için POST
 @admin_login_required
-def api_logout():
-    """API endpoint for AJAX logout."""
+def api_admin_logout():
+    """AJAX istekleri için admin çıkış işlemini gerçekleştirir."""
     session.pop('is_admin', None)
-    return jsonify({
-        'success': True,
-        'message': 'You have been successfully logged out.'
-    })
+    return jsonify({'success': True, 'message': 'Başarıyla çıkış yapıldı.'})
+
+# Blueprint'i Flask uygulamasına kaydetmek için bu dosyanın __init__.py'da
+# veya ana uygulama dosyasında import edilmesi ve register_blueprint() ile kaydedilmesi gerekir.
+# Örnek: from .admin_routes import admin_bp; app.register_blueprint(admin_bp)

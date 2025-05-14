@@ -1,460 +1,401 @@
 # =============================================================================
-# Main Routes Module
+# Ana Rotalar Modülü (Main Routes Module)
 # =============================================================================
-# Contents:
-# 1. Imports
-# 2. Blueprint Definition
-# 3. Utility Functions
-# 4. View Routes (HTML Rendering)
-#    4.1. / (GET) - Main Index Page
-# 5. API Routes (JSON)
-#    5.1. POST /chat - Handle Chat Message
-#    5.2. POST /mock-gemini - Mock Gemini Content Generation
+# Bu modül, uygulamanın ana kullanıcı arayüzü ve temel API rotalarını tanımlar.
+# Ana sayfa gösterimi ve sohbet API'si gibi işlevleri içerir.
+#
+# İçindekiler:
+# 1. İçe Aktarmalar (Imports)
+# 2. Blueprint Tanımı (Blueprint Definition)
+# 3. Yardımcı Fonksiyonlar (Utility Functions)
+#    3.1. generate_mock_response         : Sahte (mock) AI yanıtı üretir.
+#    3.2. extract_response_by_path       : JSON yanıtından belirli bir yola göre veri çıkarır.
+# 4. Arayüz Rotaları (View Routes - HTML Rendering)
+#    4.1. / (GET)                        : Ana sayfa (index.html).
+# 5. API Rotaları (API Routes - JSON)
+#    5.1. POST /api/chat/send            : Sohbet mesajlarını işler ve AI yanıtı döndürür.
+#    5.2. POST /mock_gemini_api/...      : (Geliştirme/Test) Sahte Gemini API yanıtı üretir.
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# 1. Imports
-# -----------------------------------------------------------------------------
+# 1. İçe Aktarmalar (Imports)
+# =============================================================================
 from flask import Blueprint, render_template, request, jsonify
-import requests # requests importu eklendi
-import json
-import os
-from services.ai_model_service import get_ai_model_api_details, fetch_ai_categories_from_db # Birleşik import
-from app.models.database import AIModelRepository # Veritabanı deposunu import et
+import requests # Harici API istekleri için
+import json     # JSON işleme için
+import os       # Ortam değişkenlerini okumak için
+from typing import Dict, Any, Optional, List  # Type hints için
 
-# -----------------------------------------------------------------------------
-# 2. Blueprint Definition
-# -----------------------------------------------------------------------------
-main_bp = Blueprint('main_bp', __name__)
+# Servis katmanı ve model importları
+from app.services.ai_model_service import (
+    get_ai_model_api_details,  # Model API detaylarını getirmek için
+    fetch_ai_categories_from_db,  # Tüm AI kategorilerini getirmek için
+    get_all_available_models  # Tüm modelleri getirmek için
+)
+from app.repositories import UserMessageRepository  # Mesajları loglamak için
 
-# -----------------------------------------------------------------------------
-# 3. Utility Functions
-# -----------------------------------------------------------------------------
+# 2. Blueprint Tanımı (Blueprint Definition)
+# =============================================================================
+main_bp = Blueprint(
+    'main',  # Blueprint adı 'main_bp' yerine 'main' olarak kısaltılabilir veya projenize uygun bir ad verilebilir.
+    __name__,
+    template_folder='templates', # Ana şablonların bulunduğu klasör (varsayılan)
+    static_folder='static'       # Ana statik dosyaların bulunduğu klasör (varsayılan)
+)
+# print("DEBUG: Main Blueprint oluşturuldu.")
 
-def generate_mock_response(user_message):
+# 3. Yardımcı Fonksiyonlar (Utility Functions)
+# =============================================================================
+
+def generate_mock_response(user_message: str) -> str:
     """
-    Generates a mock response for when the real API is unavailable.
-    
+    Gerçek API kullanılamadığında sahte bir yanıt üretir.
     Args:
-        user_message: The user's message to respond to
-        
+        user_message (str): Kullanıcının yanıt verilecek mesajı.
     Returns:
-        A mock response string
+        str: Sahte bir yanıt dizesi.
     """
-    # Create a simple mock response
-    return f"This is a mock response to your message: '{user_message}'. The real AI service is currently unavailable."
+    # print(f"DEBUG: Sahte yanıt üretiliyor: '{user_message}' için")
+    return (f"Bu, mesajınıza sahte bir yanıttır: '{user_message}'. "
+            "Gerçek AI servisi şu anda kullanılamıyor.")
 
-
-def extract_response_by_path(response_json, path):
+def extract_response_by_path(response_json: Dict, path: str) -> Any:
     """
-    Extracts a value from a nested JSON object using a dot-notation path.
-    For array indices, use the format 'key[index]'.
+    İç içe bir JSON nesnesinden nokta notasyonlu bir yol kullanarak bir değer çıkarır.
+    Dizi indeksleri için 'anahtar[indeks]' formatını kullanın.
     Args:
-        response_json: The JSON response to extract from
-        path: The path to the value, e.g., 'candidates[0].content.parts[0].text'
+        response_json (Dict): İçinden veri çıkarılacak JSON yanıtı.
+        path (str): Değere giden yol, örn: 'candidates[0].content.parts[0].text'.
     Returns:
-        The extracted value or a default message if extraction fails
+        Any: Çıkarılan değer veya çıkarma başarısız olursa varsayılan bir mesaj/None.
     """
+    # print(f"DEBUG: Yanıt ayıklanıyor: path='{path}', response_json anahtarları: {list(response_json.keys()) if isinstance(response_json, dict) else 'JSON değil'}")
     try:
-        # Split the path by dots
         parts = path.split('.')
-        result = response_json
+        current_data = response_json
         for part in parts:
-            # Check if we have an array index notation
-            if '[' in part and ']' in part:
-                key, index_str = part.split('[', 1)
-                index = int(index_str.split(']')[0])
-                # Get the array by key, then the element by index
-                if key:
-                    result = result[key][index]
-                else:
-                    result = result[index]
-            else:
-                # Regular key
-                result = result[part]
-        return result
+            if '[' in part and part.endswith(']'):
+                key, index_str_with_bracket = part.split('[', 1)
+                index_str = index_str_with_bracket[:-1] # Son ']' karakterini kaldır
+                if not index_str.isdigit():
+                    # print(f"HATA: Geçersiz indeks formatı: '{part}' yolda: '{path}'")
+                    return f"Yanıt formatı hatası: Geçersiz indeks '{index_str}'."
+                index = int(index_str)
+
+                if key: # Eğer anahtar varsa (örn: 'candidates[0]')
+                    if not isinstance(current_data, dict) or key not in current_data:
+                        # print(f"HATA: Anahtar '{key}' bulunamadı, path: '{path}'")
+                        return f"Yanıt formatı hatası: Anahtar '{key}' bulunamadı."
+                    current_data = current_data[key]
+
+                if not isinstance(current_data, list) or index >= len(current_data):
+                    # print(f"HATA: İndeks {index} liste sınırları dışında, path: '{path}', liste boyutu: {len(current_data) if isinstance(current_data, list) else 'Liste değil'}")
+                    return f"Yanıt formatı hatası: İndeks {index} geçersiz."
+                current_data = current_data[index]
+            else: # Normal anahtar (örn: 'content')
+                if not isinstance(current_data, dict) or part not in current_data:
+                    # print(f"HATA: Anahtar '{part}' bulunamadı, path: '{path}'")
+                    return f"Yanıt formatı hatası: Anahtar '{part}' bulunamadı."
+                current_data = current_data[part]
+        # print(f"DEBUG: Başarıyla ayıklanan değer: {current_data}")
+        return current_data
     except (KeyError, IndexError, TypeError) as e:
-        print(f"Error extracting response using path '{path}': {e}")
-        return f"Error processing AI response: {str(e)}"
+        # print(f"HATA: Yanıt '{path}' yolu kullanılarak ayıklanırken hata: {e}")
+        return f"AI yanıtı işlenirken hata (format uyumsuzluğu): {str(e)}"
     except Exception as e:
-        print(f"Unexpected error extracting response: {e}")
+        # print(f"HATA: Yanıt ayıklanırken beklenmedik hata: {e}")
+        return "AI yanıtı işlenirken beklenmedik bir hata oluştu."
 
+
+# 4. Arayüz Rotaları (View Routes - HTML Rendering)
+# =============================================================================
+
+# 4.1. / (GET) - Ana Sayfa
 # -----------------------------------------------------------------------------
-# 4. View Routes (HTML Rendering)
-# -----------------------------------------------------------------------------
-
-        return "An unexpected error occurred processing the AI response."
-
-
 @main_bp.route('/')
-def index():
-    ai_categories = fetch_ai_categories_from_db()
-    if not ai_categories:
-        # Fallback or error message if data couldn't be fetched
-        print("Warning: Could not fetch AI categories from the database. Using sample data.")
-        # You could provide some default static data here if needed, or an error message
-        # For now, let's use the previous sample data as a fallback for demonstration
-        ai_categories = [
-            {"name": "Error Fetching Categories", "icon": "bi-exclamation-triangle", "models": []}
-        ]
-    return render_template('index.html', ai_categories=ai_categories)
+def index_page(): # Fonksiyon adı index -> index_page
+    """Ana sayfayı (index.html) AI kategorileriyle birlikte gösterir."""
+    # print("DEBUG: Ana sayfa (/) isteği alındı.")
+    try:
+        # ai_categories = get_all_active_categories_with_models() # Önerilen servis fonksiyonu
+        ai_categories = fetch_ai_categories_from_db() # Orijinaldeki gibi bırakıldı
+        if not ai_categories:
+            # print("UYARI: Veritabanından AI kategorileri alınamadı. Örnek veri kullanılacak veya hata mesajı gösterilecek.")
+            flash("AI kategorileri yüklenirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.", "warning")
+            ai_categories = [{"name": "Kategoriler Yüklenemedi", "icon": "bi-exclamation-triangle", "models": []}]
+    except Exception as e:
+        # print(f"HATA: Ana sayfa için kategoriler alınırken: {e}")
+        flash("Sayfa yüklenirken beklenmedik bir hata oluştu.", "danger")
+        ai_categories = [{"name": "Sunucu Hatası", "icon": "bi-server", "models": []}]
 
+    return render_template('index.html', ai_categories=ai_categories, title="Ana Sayfa")
 
-# YENİ CHAT API ROUTE'U
+# 5. API Rotaları (API Routes - JSON)
+# =============================================================================
+
+# 5.1. POST /api/chat/send - Sohbet Mesajlarını İşler
+# -----------------------------------------------------------------------------
 @main_bp.route('/api/chat/send', methods=['POST'])
-def handle_chat_message():
+def handle_chat_message_api(): # Fonksiyon adı handle_chat_message -> handle_chat_message_api
+    """
+    Kullanıcıdan gelen sohbet mesajını alır, ilgili AI modeline gönderir,
+    yanıtı alır ve kullanıcıya JSON formatında döndürür. Etkileşimi veritabanına kaydeder.
+    """
+    # print("DEBUG: /api/chat/send isteği alındı.")
     data = request.json
+    if not data:
+        return jsonify({"error": "İstek gövdesi boş olamaz (JSON bekleniyor)."}), 400
+
     user_message = data.get('message')
-    ai_model_id = data.get('aiModelId')
-    chat_id = data.get('chatId')
-    conversation_history = data.get('history', []) # Konuşma geçmişini al, yoksa boş liste
+    ai_model_id_str = data.get('aiModelId') # Frontend'den string olarak gelebilir
+    chat_id = data.get('chatId') # Oturum/konuşma takibi için
+    conversation_history = data.get('history', [])
 
-    # --- History Normalization Start ---
+    # print(f"DEBUG: Gelen veri: user_message='{user_message}', aiModelId='{ai_model_id_str}', chatId='{chat_id}', history_len={len(conversation_history)}")
+
+    if not user_message and not conversation_history: # En azından bir mesaj veya geçmiş olmalı
+        return jsonify({"error": "Kullanıcı mesajı veya konuşma geçmişi eksik."}), 400
+    if not ai_model_id_str:
+        return jsonify({"error": "AI Model ID'si eksik."}), 400
+    if not chat_id:
+        return jsonify({"error": "Sohbet ID'si eksik."}), 400
+
+    # --- Konuşma Geçmişi Normalleştirme Başlangıcı ---
     normalized_history = []
-    for msg in conversation_history:
-        role = msg.get('role')
-        content = None
-        # Try to extract content from 'content' key first
-        if 'content' in msg:
-            content = msg['content']
-        # If not found, try extracting from 'parts[0].text' (Gemini format)
-        elif 'parts' in msg and isinstance(msg['parts'], list) and len(msg['parts']) > 0 and 'text' in msg['parts'][0]:
-            content = msg['parts'][0]['text']
-        # Add other potential legacy formats here if needed
-        
-        # Only add message if role and content are valid
-        if role and content is not None:
-            normalized_history.append({'role': role, 'content': content})
-        else:
-            print(f"WARN: Skipping malformed history message: {msg}")
-    # --- History Normalization End ---
+    if isinstance(conversation_history, list):
+        for msg in conversation_history:
+            if isinstance(msg, dict):
+                role = msg.get('role')
+                content = None
+                if 'content' in msg: # Doğrudan content anahtarı
+                    content = msg['content']
+                elif 'parts' in msg and isinstance(msg.get('parts'), list) and \
+                     len(msg['parts']) > 0 and isinstance(msg['parts'][0], dict) and \
+                     'text' in msg['parts'][0]: # Gemini formatı
+                    content = msg['parts'][0]['text']
+                # Diğer olası formatlar buraya eklenebilir
+
+                if role and content is not None: # Hem rol hem de içerik geçerli olmalı
+                    normalized_history.append({'role': str(role), 'content': str(content)})
+                else:
+                    pass # print(f"UYARI: Geçersiz formatta geçmiş mesajı atlanıyor: {msg}")
+    # --- Konuşma Geçmişi Normalleştirme Sonu ---
+    # print(f"DEBUG: Normalleştirilmiş geçmiş: {normalized_history}")
 
 
-    if not user_message:
-        return jsonify({"error": "User message is missing"}), 400
-    if not ai_model_id:
-        return jsonify({"error": "AI Model ID is missing"}), 400
-
-    print(f"Received message for AI Model {ai_model_id} (Chat ID: {chat_id}): {user_message}")
-    if conversation_history:
-        print(f"Received conversation history with {len(conversation_history)} messages.")
-
-    # Gemini modeli için data_ai_index "5" olarak varsayıyoruz (database.py'deki gibi)
-    GEMINI_MODEL_DATA_AI_INDEX = "5"
+    # Ortam değişkeninden mock API kullanımını kontrol et
+    use_mock_api = os.environ.get('USE_MOCK_API', 'false').lower() == 'true'
+    ai_response_text = ""
+    model_name_for_log = "Bilinmeyen Model"
+    request_payload_for_log = {}
+    response_json_for_log = {}
+    api_status_code = 200 # Başarılı API çağrısı için varsayılan
 
     try:
-        # Get model details from database
-        model_details = get_ai_model_api_details(ai_model_id)
+        # model_details = get_ai_model_api_details_by_id(ai_model_id_str) # Önerilen servis
+        model_details = get_ai_model_api_details(ai_model_id_str) # Orijinaldeki gibi
         if not model_details or not model_details.get('api_url'):
-            print(f"Error: Could not retrieve API details for model ID: {ai_model_id}")
-            return jsonify({"error": f"Configuration not found for AI model ID: {ai_model_id}"}), 500 
-            
-        # Check if we should use the mock API (for testing or when real API is down)
-        use_mock_api = os.environ.get('USE_MOCK_API', 'false').lower() == 'true'
-
-        # Extract API details
+            # print(f"HATA: Model ID için API detayları alınamadı: {ai_model_id_str}")
+            return jsonify({"error": f"AI modeli için yapılandırma bulunamadı: {ai_model_id_str}"}), 500
+        
+        model_name_for_log = model_details.get('name', 'Yapılandırma Hatası Modeli')
         api_url = model_details.get('api_url')
-        request_method = model_details.get('request_method', 'POST')
-        
-        # Parse request headers
+        request_method = model_details.get('request_method', 'POST').upper()
+        response_path = model_details.get('response_path', 'candidates[0].content.parts[0].text') # Varsayılan Gemini yolu
+
         try:
-            import json
-            headers = json.loads(model_details.get('request_headers', '{"Content-Type": "application/json"}'))
-        except json.JSONDecodeError as e:
-            print(f"Error parsing request headers: {e}")
-            headers = {"Content-Type": "application/json"}
+            headers = json.loads(model_details.get('request_headers', '{}'))
+            if not isinstance(headers, dict): headers = {}
+        except json.JSONDecodeError:
+            headers = {"Content-Type": "application/json"} # Varsayılan
+        if not headers.get("Content-Type"): # Eğer Content-Type yoksa ekle
+             headers["Content-Type"] = "application/json"
+
+
+        # --- İstek Gövdesi (Payload) Oluşturma Mantığı ---
+        request_body_template_str = model_details.get('request_body_template', '{"contents": [{"parts":[{"text": "$message"}]}]}')
+        # print(f"DEBUG: Kullanılan istek şablonu: {request_body_template_str}")
         
-        # Prepare request body using template
-        request_body_template = model_details.get('request_body_template', '{"contents": [{"parts":[{"text": "$message"}]}]}')
-        
-        # --- Payload Construction Logic ---
-        payload = None
-        # Identify Gemini model (using a simple check on the default template for now)
-        # TODO: A more robust way would be to add a flag to the database or check a specific part of the api_url
-        is_gemini_model = (request_body_template == '{"contents": [{"parts":[{"text": "$message"}]}]}') 
+        # Son kullanıcı mesajını geçmişe ekle (eğer zaten ekli değilse)
+        current_turn_user_message_obj = {'role': 'user', 'content': user_message}
+        if user_message and (not normalized_history or normalized_history[-1] != current_turn_user_message_obj) :
+            final_history_for_payload = normalized_history + [current_turn_user_message_obj]
+        else:
+            final_history_for_payload = normalized_history # Kullanıcı mesajı zaten geçmişin sonundaysa tekrar ekleme
+            if user_message:
+                 pass # print("UYARI: Mevcut kullanıcı mesajı zaten konuşma geçmişinin sonunda. Tekrar eklenmiyor.")
 
-        if is_gemini_model and conversation_history: # Special handling for Gemini with history, even if template is simple
-            print("Handling Gemini model with history using manual payload construction.")
-            gemini_contents_list = []
-            for msg in normalized_history:
-                gemini_contents_list.append({"role": msg['role'], "parts": [{"text": msg['content']}]})
-            # Check if the last message in history is the same as the current user message
-            # Avoid adding the current user message if it's already the last item in history
-            if not normalized_history or normalized_history[-1].get('role') != 'user' or normalized_history[-1].get('content') != user_message:
-                 gemini_contents_list.append({"role": "user", "parts": [{"text": user_message}]})
-            else:
-                 print("WARN: Current user message seems to be already included in the history received from frontend. Not adding it again for Gemini.")
 
-            payload = {"contents": gemini_contents_list} # Construct payload directly
-            print(f"Constructed payload for Gemini (manual history): {payload}")
-
-        elif '"$messages"' in request_body_template: # OpenRouter String Replacement
-            print("Template uses $messages placeholder (string replacement).")
-            # Check if the last message in history is the same as the current user message
-            if not normalized_history or normalized_history[-1].get('role') != 'user' or normalized_history[-1].get('content') != user_message:
-                messages_list = normalized_history + [{"role": "user", "content": user_message}]
-            else:
-                print("WARN: Current user message seems to be already included in the history received from frontend. Not adding it again for OpenRouter (String).")
-                messages_list = normalized_history # Use history as is
-
-            messages_json_string = json.dumps(messages_list)
-            final_payload_string = request_body_template.replace('"$messages"', messages_json_string)
-            try:
-                payload = json.loads(final_payload_string)
-                print(f"Constructed payload with history (string replacement): {payload}")
-            except json.JSONDecodeError as e:
-                print(f"Error parsing final payload string after $messages replacement: {e}")
-                return jsonify({"error": "Failed to construct payload with history"}), 500
-        
-        elif '$messages' in request_body_template: # OpenRouter Object Replacement (value is "$messages")
-            print("Template uses $messages placeholder (object replacement).")
-            # Check if the last message in history is the same as the current user message
-            if not normalized_history or normalized_history[-1].get('role') != 'user' or normalized_history[-1].get('content') != user_message:
-                messages_list = normalized_history + [{'role': 'user', 'content': user_message}]
-            else:
-                print("WARN: Current user message seems to be already included in the history received from frontend. Not adding it again for OpenRouter (Object).")
-                messages_list = normalized_history # Use history as is
-                
-            try:
-                payload_template = json.loads(request_body_template)
-                payload = payload_template
-                found_placeholder = False
-                for key, value in payload.items():
+        try:
+            payload_template = json.loads(request_body_template_str)
+            # $messages (liste olarak) veya $message (string olarak) değiştirme
+            if "$messages" in request_body_template_str: # "$messages" (tırnak içinde) ise string replace
+                messages_json_string = json.dumps(final_history_for_payload)
+                # print(f"DEBUG: $messages için JSON dizesi: {messages_json_string}")
+                temp_payload_str = request_body_template_str.replace('"$messages"', messages_json_string)
+                request_payload_for_log = json.loads(temp_payload_str)
+            elif isinstance(payload_template, dict) and \
+                 any(isinstance(v, str) and v == '$messages' for v in payload_template.values()): # Değer olarak $messages ise
+                for key, value in payload_template.items():
                     if isinstance(value, str) and value == '$messages':
-                        payload[key] = messages_list
-                        found_placeholder = True
+                        payload_template[key] = final_history_for_payload
                         break
-                if not found_placeholder:
-                     print("Warning: $messages placeholder logic failed. Using basic fallback.")
-                     payload = {"messages": messages_list} 
-                print(f"Constructed payload with history (object replacement): {payload}")
-            except json.JSONDecodeError as e:
-                print(f"Error parsing request body template with $messages: {e}")
-                return jsonify({"error": "Invalid request body template format"}), 500
+                request_payload_for_log = payload_template
+            elif "$message" in request_body_template_str: # Sadece son mesajı kullan
+                 # Eğer user_message boşsa ve geçmiş varsa, geçmişteki son kullanıcı mesajını al
+                message_to_send = user_message
+                if not message_to_send and final_history_for_payload:
+                    # Geçmişteki son 'user' rolündeki mesajı bul
+                    for i in range(len(final_history_for_payload) - 1, -1, -1):
+                        if final_history_for_payload[i].get('role') == 'user':
+                            message_to_send = final_history_for_payload[i].get('content')
+                            break
+                if not message_to_send: # Hala mesaj yoksa hata ver
+                    return jsonify({"error": "Gönderilecek mesaj bulunamadı (ne yeni mesaj ne de geçmişte kullanıcı mesajı)."}), 400
 
-        elif '$message' in request_body_template: # Fallback for simple $message placeholder (used by Gemini if no history or handled above)
-            print("Template uses $message placeholder.")
-            try:
-                # This will now also apply to Gemini when the special history case isn't met
-                payload = json.loads(request_body_template.replace('$message', user_message))
-                print(f"Constructed payload with single message: {payload}")
-            except json.JSONDecodeError as e:
-                print(f"Error parsing request body template with $message: {e}")
-                payload = {"contents": [{"parts":[{"text": user_message}]}]} # Default Gemini-like fallback
-                print(f"Using fallback payload for single message: {payload}")
-        else:
-            # Default payload if no known placeholder is found 
-            print("No known placeholder found in template. Using default structure.")
-            payload = {"contents": [{"parts":[{"text": user_message}]}]}
-            print(f"Constructed default payload: {payload}")
+                temp_payload_str = request_body_template_str.replace('$message', json.dumps(message_to_send)) # Mesajı JSON string olarak ekle
+                request_payload_for_log = json.loads(temp_payload_str)
+            else: # Bilinmeyen şablon, varsayılan Gemini yapısını kullanmaya çalış
+                # print("UYARI: Şablonda bilinen bir yer tutucu ($message veya $messages) bulunamadı. Varsayılan yapı kullanılıyor.")
+                request_payload_for_log = {"contents": final_history_for_payload} # Gemini formatına uygun
 
-        if payload is None:
-             print("Error: Payload could not be constructed.")
-             return jsonify({"error": "Failed to construct request payload"}), 500
-        
-        # Check if we should use the mock API
+        except json.JSONDecodeError as template_err:
+            # print(f"HATA: İstek gövdesi şablonu JSON formatında değil: {template_err}")
+            return jsonify({"error": "AI modeli için geçersiz istek şablonu yapılandırması."}), 500
+        # --- İstek Gövdesi Oluşturma Sonu ---
+        # print(f"DEBUG: Oluşturulan istek gövdesi: {request_payload_for_log}")
+
         if use_mock_api:
-            print("Using mock API as requested by environment variable...")
-            ai_response_text = generate_mock_response(user_message)
+            # print("DEBUG: Mock API kullanılıyor...")
+            ai_response_text = generate_mock_response(user_message if user_message else "geçmişten bir mesaj")
+            response_json_for_log = {"mock_response": ai_response_text} # Mock yanıt için log
         else:
-            # Make the real API request
-            print(f"Sending request to API: {api_url} with method: {request_method}, headers: {headers}, payload: {payload}")
-            
-            try:
-                if request_method.upper() == 'POST':
-                    response = requests.post(api_url, json=payload, headers=headers)
-                elif request_method.upper() == 'GET':
-                    response = requests.get(api_url, params=payload, headers=headers)
-                else:
-                    return jsonify({"error": f"Unsupported request method: {request_method}"}), 400
-                    
-                response.raise_for_status()
-                response_json = response.json()
-                print(f"Received response from API: {response_json}")
-                
-                # Extract response using the response path
-                response_path = model_details.get('response_path', 'candidates[0].content.parts[0].text')
-                ai_response_text = extract_response_by_path(response_json, response_path)
-            except Exception as api_err:
-                print(f"Error with real API, falling back to mock: {api_err}")
-                ai_response_text = generate_mock_response(user_message)
+            # print(f"DEBUG: Gerçek API'ye istek gönderiliyor: URL={api_url}, Metot={request_method}")
+            api_response = None
+            if request_method == 'POST':
+                api_response = requests.post(api_url, json=request_payload_for_log, headers=headers, timeout=30)
+            elif request_method == 'GET': # GET için payload params olarak gönderilmeli
+                api_response = requests.get(api_url, params=request_payload_for_log, headers=headers, timeout=30)
+            else:
+                return jsonify({"error": f"Desteklenmeyen istek metodu: {request_method}"}), 400
 
-        # Prepare the final response structure
-        response_data = {"response": ai_response_text, "chatId": chat_id}
+            api_status_code = api_response.status_code
+            api_response.raise_for_status() # HTTP hataları için exception fırlatır (4xx, 5xx)
+            response_json_for_log = api_response.json()
+            # print(f"DEBUG: API'den gelen yanıt (JSON): {response_json_for_log}")
+            ai_response_text = extract_response_by_path(response_json_for_log, response_path)
+            if not isinstance(ai_response_text, str): # Eğer extract_response_by_path hata mesajı döndürdüyse
+                 # print(f"UYARI: Yanıt ayıklama başarısız oldu, ham yanıt kullanılacak veya hata mesajı: {ai_response_text}")
+                 # Bu durumda ai_response_text zaten bir hata mesajı içeriyor olabilir.
+                 # Eğer API'den başarılı bir yanıt alındı ama path yanlışsa, bu durumu loglamak önemli.
+                 if api_status_code < 300 : # Başarılı API çağrısı ama path hatası
+                      pass # ai_response_text zaten hata mesajını içeriyor.
+                 else: # API hatası ve path hatası (bu durum pek olası değil, raise_for_status öncesinde yakalanırdı)
+                      ai_response_text = f"API Hatası ({api_status_code}) ve Yanıt Ayrıştırma Hatası: {ai_response_text}"
 
-        # --- Log to Database ---
-        try:
-            ai_repo = AIModelRepository() # Assumes default constructor works
-            ai_repo.insert_user_message(
-                session_id=chat_id, # Using chat_id as session identifier
-                user_message=user_message,
-                ai_response=ai_response_text,
-                ai_model_name=model_details.get('name', 'Unknown Model') if model_details else 'Config Error Model'
-            )
-            print(f"Successfully logged message for chat {chat_id} to database.")
-        except Exception as db_err:
-            print(f"DATABASE LOGGING ERROR for chat {chat_id}: {db_err}")
-            # Decide if failure to log should prevent the user response. Probably not.
-        # --- End Log to Database ---
-
-        return jsonify(response_data)
 
     except requests.exceptions.HTTPError as http_err:
-        error_response = http_err.response.text if http_err.response else 'No response text available'
-        print(f"API HTTP error: {http_err} - Response status: {http_err.response.status_code if http_err.response else 'N/A'} - Response text: {error_response}")
-        print(f"Request URL: {api_url}")
-        print(f"Request method: {request_method}")
-        print(f"Request headers: {headers}")
-        print(f"Request payload: {payload}")
-        
-        # Try to use mock API as fallback
-        try:
-            print("Attempting to use mock API as fallback...")
-            mock_response = generate_mock_response(user_message)
-            return jsonify({"aiResponse": mock_response, "usedMockApi": True})
-        except Exception as mock_err:
-            print(f"Mock API fallback also failed: {mock_err}")
-            ai_response = f"Error calling external API: {str(http_err)}" # Define ai_response here for logging
+        # print(f"HATA: API HTTP Hatası: {http_err}, Durum Kodu: {api_status_code}")
+        # print(f"HATA: İstek Detayları: URL='{api_url}', Metot='{request_method}', Payload='{request_payload_for_log}'")
+        # print(f"HATA: Yanıt Başlıkları: {http_err.response.headers if http_err.response else 'Yok'}")
+        # print(f"HATA: Yanıt İçeriği: {http_err.response.text if http_err.response else 'Yok'}")
+        ai_response_text = f"AI servisinden hata alındı (Kod: {api_status_code}). Detay: {http_err.response.text if http_err.response and http_err.response.text else str(http_err)}"
+        response_json_for_log = {"error": ai_response_text, "status_code": api_status_code}
+        # Mock API fallback denemesi (opsiyonel)
+        # ai_response_text = generate_mock_response(user_message if user_message else "geçmişten bir mesaj")
+        # response_json_for_log = {"mock_error_fallback": ai_response_text}
+    except requests.exceptions.RequestException as req_err: # Bağlantı hatası, timeout vb.
+        # print(f"HATA: API İstek Hatası: {req_err}")
+        api_status_code = 503 # Service Unavailable gibi
+        ai_response_text = f"AI servisine ulaşılamadı: {str(req_err)}"
+        response_json_for_log = {"error": ai_response_text, "status_code": api_status_code}
+    except Exception as e:
+        # print(f"HATA: Sohbet işleyicide beklenmedik genel hata: {e}")
+        api_status_code = 500 # Internal Server Error
+        ai_response_text = f"Beklenmedik bir sunucu hatası oluştu: {str(e)}"
+        response_json_for_log = {"error": ai_response_text, "status_code": api_status_code}
 
-            # --- Log Error to Database ---
-            try:
-                ai_repo = AIModelRepository()
-                # Try to get model name even on error if model_details was fetched earlier
-                model_name = model_details.get('name', 'Unknown Model') if 'model_details' in locals() and model_details else 'Config Error Model'
-                ai_repo.insert_user_message(
-                    session_id=chat_id,
-                    user_message=user_message,
-                    ai_response=ai_response, # Log the error message
-                    ai_model_name=model_name
-                )
-                print(f"Successfully logged ERROR message for chat {chat_id} to database.")
-            except Exception as db_err:
-                print(f"DATABASE LOGGING ERROR (during API error) for chat {chat_id}: {db_err}")
-            # --- End Log Error to Database ---
-
-            return jsonify({"error": ai_response}), 500 # Return the error message
-
-    except requests.exceptions.RequestException as req_err: 
-        print(f"API Request error: {req_err}")
-        print(f"Request URL: {api_url}")
-        print(f"Request method: {request_method}")
-        print(f"Request headers: {headers}")
-        print(f"Request payload: {payload}")
-        
-        ai_response = f"Failed to communicate with AI service: {str(req_err)}" # Define ai_response here for logging
-
-        # --- Log Error to Database ---
-        try:
-            ai_repo = AIModelRepository()
-            # Try to get model name even on error if model_details was fetched earlier
-            model_name = model_details.get('name', 'Unknown Model') if 'model_details' in locals() and model_details else 'Config Error Model'
-            ai_repo.insert_user_message(
-                session_id=chat_id,
-                user_message=user_message,
-                ai_response=ai_response, # Log the error message
-                ai_model_name=model_name
-            )
-            print(f"Successfully logged ERROR message for chat {chat_id} to database.")
-        except Exception as db_err:
-            print(f"DATABASE LOGGING ERROR (during API error) for chat {chat_id}: {db_err}")
-        # --- End Log Error to Database ---
-
-        return jsonify({"error": ai_response}), 500 # Return the error message
-
-    except (KeyError, IndexError) as e: 
-        print(f"Error parsing ACTUAL Gemini API response: {e} - JSON response might not be available or was malformed.")
-        ai_response = f"Error processing AI response format: {str(e)}" # Define ai_response here for logging
-
-        # --- Log Error to Database ---
-        try:
-            ai_repo = AIModelRepository()
-            # Try to get model name even on error if model_details was fetched earlier
-            model_name = model_details.get('name', 'Unknown Model') if 'model_details' in locals() and model_details else 'Config Error Model'
-            ai_repo.insert_user_message(
-                session_id=chat_id,
-                user_message=user_message,
-                ai_response=ai_response, # Log the error message
-                ai_model_name=model_name
-            )
-            print(f"Successfully logged ERROR message for chat {chat_id} to database.")
-        except Exception as db_err:
-            print(f"DATABASE LOGGING ERROR (during API error) for chat {chat_id}: {db_err}")
-        # --- End Log Error to Database ---
-
-        return jsonify({"error": ai_response}), 500 # Return the error message
-
-    except Exception as e: 
-        print(f"An unexpected error occurred in chat handler: {e}")
-        ai_response = f"An unexpected error occurred: {str(e)}" # Define ai_response here for logging
-
-        # --- Log Error to Database ---
-        try:
-            ai_repo = AIModelRepository()
-            # Try to get model name even on error if model_details was fetched earlier
-            model_name = model_details.get('name', 'Unknown Model') if 'model_details' in locals() and model_details else 'Config Error Model'
-            ai_repo.insert_user_message(
-                session_id=chat_id,
-                user_message=user_message,
-                ai_response=ai_response, # Log the error message
-                ai_model_name=model_name
-            )
-            print(f"Successfully logged UNEXPECTED ERROR message for chat {chat_id} to database.")
-        except Exception as db_err:
-            print(f"DATABASE LOGGING ERROR (during unexpected error) for chat {chat_id}: {db_err}")
-        # --- End Log Error to Database ---
-
-        return jsonify({"error": ai_response}), 500 # Return the error message
-
-# 5.2. POST /mock-gemini - Mock Gemini Content Generation
-# -----------------------------------------------------------------------------
-# Returns a mock Gemini API response for development/testing purposes.
-
-@main_bp.route('/mock_gemini_api/v1beta/models/gemini-2.0-flash:generateContent', methods=['POST'])
-def mock_gemini_generate_content():
-    # ... (existing code remains the same)
-
-    data = request.json
-    
+    # --- Veritabanına Loglama ---
     try:
-        # Gelen payload'dan metni ayıkla
-        user_text = data["contents"][0]["parts"][0]["text"]
-        
-        # Sahte bir yanıt oluştur
-        mock_response_text = f"This is a MOCK response from Gemini (gemini-2.0-flash) to your message: '{user_text}'"
-        
+        # UserMessageRepository doğrudan kullanılıyor. Servis katmanı üzerinden yapılması daha iyi olabilir.
+        user_msg_repo = UserMessageRepository()
+        user_msg_repo.insert_user_message(
+            session_id=chat_id,
+            user_message=user_message if user_message else " ", # Boş string yerine bir boşluk
+            ai_response=ai_response_text if ai_response_text else " ",
+            ai_model_name=model_name_for_log,
+            prompt=json.dumps(final_history_for_payload) if final_history_for_payload else None, # Tam prompt/geçmiş
+            request_json=json.dumps(request_payload_for_log) if request_payload_for_log else None,
+            response_json=json.dumps(response_json_for_log) if response_json_for_log else None,
+            status='error' if api_status_code >= 400 else 'success',
+            error_message=ai_response_text if api_status_code >=400 and not use_mock_api else None
+            # tokens ve duration gibi alanlar API yanıtından alınabilirse eklenebilir.
+        )
+        # print(f"DEBUG: Mesaj '{chat_id}' ID'li sohbete loglandı. Durum: {'error' if api_status_code >= 400 else 'success'}")
+    except Exception as db_err:
+        # print(f"HATA: Veritabanına loglama sırasında hata (Sohbet ID: {chat_id}): {db_err}")
+        # Bu hata kullanıcıya yansıtılmamalı, sadece sunucu tarafında loglanmalı.
+        pass
+    # --- Veritabanına Loglama Sonu ---
+
+    if api_status_code >= 400 and not use_mock_api : # Eğer API hatası varsa ve mock kullanılmıyorsa
+        return jsonify({"error": ai_response_text, "chatId": chat_id}), api_status_code
+
+    return jsonify({"response": ai_response_text, "chatId": chat_id})
+
+
+# 5.2. POST /mock_gemini_api/... - Sahte Gemini API Yanıtı
+# -----------------------------------------------------------------------------
+@main_bp.route('/mock_gemini_api/v1beta/models/gemini-2.0-flash:generateContent', methods=['POST'])
+def mock_gemini_generate_content_route(): # Fonksiyon adı mock_gemini_generate_content -> ..._route
+    """
+    Geliştirme ve test amaçlı sahte bir Gemini API endpoint'i.
+    Gelen isteğe göre standart bir Gemini API yanıt formatında sahte içerik üretir.
+    """
+    # print("DEBUG: Sahte Gemini API (/mock_gemini_api/...) isteği alındı.")
+    data = request.json
+    if not data:
+        return jsonify({"error": "İstek gövdesi boş olamaz (JSON bekleniyor)."}), 400
+
+    try:
+        # Gelen payload'dan metni ayıkla (basit bir varsayım)
+        user_text = "bir mesaj" # Varsayılan
+        if "contents" in data and isinstance(data["contents"], list) and \
+           len(data["contents"]) > 0 and "parts" in data["contents"][0] and \
+           isinstance(data["contents"][0]["parts"], list) and \
+           len(data["contents"][0]["parts"]) > 0 and "text" in data["contents"][0]["parts"][0]:
+            user_text = data["contents"][0]["parts"][0]["text"]
+
+        mock_response_text = f"Bu, Gemini (gemini-2.0-flash modeli - SAHTE YANIT) tarafından mesajınıza verilen sahte bir yanıttır: '{user_text}'"
+
         gemini_like_response = {
-            "candidates": [
-                {
-                    "content": {
-                        "parts": [
-                            {"text": mock_response_text}
-                        ],
-                        "role": "model"
-                    },
-                    "finishReason": "STOP",
-                    "index": 0,
-                    "safetyRatings": [
-                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "probability": "NEGLIGIBLE"},
-                        {"category": "HARM_CATEGORY_HATE_SPEECH", "probability": "NEGLIGIBLE"},
-                        {"category": "HARM_CATEGORY_HARASSMENT", "probability": "NEGLIGIBLE"},
-                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "probability": "NEGLIGIBLE"}
-                    ]
-                }
-            ],
-            "promptFeedback": {
+            "candidates": [{
+                "content": {"parts": [{"text": mock_response_text}], "role": "model"},
+                "finishReason": "STOP", "index": 0,
                 "safetyRatings": [
                     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "probability": "NEGLIGIBLE"},
                     {"category": "HARM_CATEGORY_HATE_SPEECH", "probability": "NEGLIGIBLE"},
                     {"category": "HARM_CATEGORY_HARASSMENT", "probability": "NEGLIGIBLE"},
                     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "probability": "NEGLIGIBLE"}
                 ]
-            }
+            }],
+            "promptFeedback": {"safetyRatings": [
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "probability": "NEGLIGIBLE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "probability": "NEGLIGIBLE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "probability": "NEGLIGIBLE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "probability": "NEGLIGIBLE"}
+            ]}
         }
+        # print(f"DEBUG: Sahte Gemini API yanıtı: {gemini_like_response}")
         return jsonify(gemini_like_response)
 
     except (KeyError, IndexError, TypeError) as e:
-        print(f"Mock Gemini API: Invalid payload format - {e}")
-        return jsonify({"error": "Invalid payload format. Expected {'contents': [{'parts':[{'text': '...'}]}]}"}), 400
+        # print(f"HATA: Sahte Gemini API - Geçersiz payload formatı: {e}")
+        return jsonify({"error": "Geçersiz payload formatı. Beklenen: {'contents': [{'parts':[{'text': '...'}]}]}"}), 400
     except Exception as e:
-        print(f"Mock Gemini API: An unexpected error occurred - {e}")
-        return jsonify({"error": "An unexpected error occurred in mock Gemini API."}), 500
+        # print(f"HATA: Sahte Gemini API - Beklenmedik hata: {e}")
+        return jsonify({"error": "Sahte Gemini API'sinde beklenmedik bir hata oluştu."}), 500
+
+# Blueprint'i Flask uygulamasına kaydetmek için bu dosyanın __init__.py'da
+# veya ana uygulama dosyasında import edilmesi ve register_blueprint() ile kaydedilmesi gerekir.
+# Örnek: from .main_routes import main_bp; app.register_blueprint(main_bp)
+

@@ -1,77 +1,198 @@
 /*
-BASE RESET & GLOBAL STYLES
---------------------------------------------------
-TABLE OF CONTENTS:
---------------------------------------------------
-1.0 RESET STYLES
-    1.1 Box Sizing
-    1.2 Basic Element Resets (Body, Headings)
-2.0 GLOBAL ELEMENT STYLES
-    2.1 Links (<a>)
-    2.2 Images (<img>)
-3.0 ACCESSIBILITY
-    3.1 Focus Styles
---------------------------------------------------
+ * TEMEL SIFIRLAMA VE GLOBAL STİLLER (BASE RESET & GLOBAL STYLES)
+ * ============================================================================
+ * Bu dosya, tarayıcı varsayılan stillerini sıfırlamak ve uygulama genelinde
+ * tutarlı bir temel görünüm sağlamak için temel CSS kurallarını içerir.
+ *
+ * İÇİNDEKİLER:
+ * ----------------------------------------------------------------------------
+ * 1.0 SIFIRLAMA STİLLERİ (RESET STYLES)
+ * 1.1. Kutu Boyutlandırması (Box Sizing)
+ * 1.2. Temel Element Sıfırlamaları (Body, Başlıklar vb.)
+ * 1.3. Liste Sıfırlamaları (ul, ol, li)
+ * 1.4. Form Elementi Sıfırlamaları (button, input vb. - temel)
+ *
+ * 2.0 GLOBAL ELEMENT STİLLERİ (GLOBAL ELEMENT STYLES)
+ * 2.1. Bağlantılar (<a>)
+ * 2.2. Resimler (<img>)
+ * 2.3. Paragraflar (<p>)
+ * 2.4. Yatay Çizgi (<hr>)
+ *
+ * 3.0 ERİŞİLEBİLİRLİK (ACCESSIBILITY)
+ * 3.1. Odak Stilleri (:focus, :focus-visible)
+ *
+ * 4.0 YARDIMCI SINIFLAR (UTILITY CLASSES - Opsiyonel, genellikle ayrı bir dosyada)
+ * 4.1. Ekran Okuyucu İçin Gizleme (.sr-only)
+ * ============================================================================
+ */
+
+/* ============================================================================
+   1.0 SIFIRLAMA STİLLERİ (RESET STYLES)
+   ============================================================================ */
+
+/* 1.1. Kutu Boyutlandırması (Box Sizing)
+   ----------------------------------------------------------------------------
+   Tüm elementlerin `box-sizing` özelliğini `border-box` olarak ayarlar.
+   Bu, padding ve border değerlerinin elementin toplam genişlik ve yüksekliğine
+   dahil edilmesini sağlar, böylece layout hesaplamaları kolaylaşır.
 */
-
-/* ==================================================
-   1.0 RESET STYLES
-   ================================================== */
-
-/* 1.1 Box Sizing
-   -------------------------------------------------- */
-*, *::before, *::after {
-    box-sizing: border-box;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0; /* Tarayıcı varsayılan margin'lerini sıfırla */
+  padding: 0; /* Tarayıcı varsayılan padding'lerini sıfırla */
+  border: 0; /* Tarayıcı varsayılan border'larını sıfırla (opsiyonel, ihtiyaca göre) */
+  font-size: 100%; /* Tarayıcı varsayılan font boyutunu koru */
+  font: inherit; /* Font özelliklerini miras al */
+  vertical-align: baseline; /* Dikey hizalamayı sıfırla */
 }
 
-/* 1.2 Basic Element Resets (Body, Headings)
-   -------------------------------------------------- */
+/* 1.2. Temel Element Sıfırlamaları (Body, Başlıklar vb.)
+   ---------------------------------------------------------------------------- */
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: var(--light);
-    color: var(--gray-800);
-    overflow: hidden;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    letter-spacing: 0.01em;
+  font-family: 'Inter', sans-serif; /* variables.css'den gelmeli veya burada tanımlanmalı */
+  background-color: var(--light, #F8FAFC); /* variables.css'den --light değişkeni */
+  color: var(--gray-800, #1E293B); /* variables.css'den --gray-800 değişkeni */
+  overflow-x: hidden; /* Yatay scrollbar'ı engelle (genellikle istenir) */
+  overflow-y: auto;   /* Dikey scrollbar gerektiğinde görünsün (body için hidden yerine auto daha iyi) */
+  font-size: 0.9375rem; /* 15px (16px temelinde) */
+  line-height: 1.6; /* Satır yüksekliği (1.5'ten biraz daha fazla okunabilirlik için) */
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased; /* Font yumuşatma (macOS/iOS) */
+  -moz-osx-font-smoothing: grayscale;  /* Font yumuşatma (Firefox) */
 }
 
 h1, h2, h3, h4, h5, h6 {
-    margin-top: 0;
-    font-weight: var(--font-weight-semibold);
+  /* margin-top: 0; zaten *,*::before,*::after ile sıfırlandı */
+  /* margin-bottom: 0.5rem; Temel bir alt boşluk eklenebilir (opsiyonel) */
+  font-weight: var(--font-weight-semibold, 600); /* variables.css'den */
+  line-height: 1.2; /* Başlıklar için daha sıkı bir satır yüksekliği */
 }
 
-/* ==================================================
-   2.0 GLOBAL ELEMENT STYLES
-   ================================================== */
+/* 1.3. Liste Sıfırlamaları (ul, ol, li)
+   ---------------------------------------------------------------------------- */
+ul,
+ol {
+  list-style: none; /* Liste işaretlerini kaldır */
+}
 
-/* 2.1 Links (<a>)
-   -------------------------------------------------- */
+/* 1.4. Form Elementi Sıfırlamaları (button, input vb. - temel)
+   ---------------------------------------------------------------------------- */
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit; /* body'den font ailesini miras al */
+  font-size: inherit; /* body'den font boyutunu miras al */
+  line-height: inherit; /* body'den satır yüksekliğini miras al */
+  color: inherit; /* body'den renk miras al */
+  /* margin: 0; zaten *,*::before,*::after ile sıfırlandı */
+}
+
+button,
+select {
+  text-transform: none; /* Buton ve select için metin dönüşümünü sıfırla */
+}
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+  -webkit-appearance: button; /* Butonların varsayılan görünümünü ayarla */
+  background-color: transparent;
+  background-image: none;
+  cursor: pointer; /* Butonlara tıklanabilir imleci ekle */
+}
+
+/* ============================================================================
+   2.0 GLOBAL ELEMENT STİLLERİ (GLOBAL ELEMENT STYLES)
+   ============================================================================ */
+
+/* 2.1. Bağlantılar (<a>)
+   ---------------------------------------------------------------------------- */
 a {
-    color: var(--primary);
-    text-decoration: none;
-    transition: var(--transition);
+  color: var(--primary, #3E63DD); /* variables.css'den */
+  text-decoration: none; /* Alt çizgiyi kaldır */
+  transition: color var(--transition-duration, 0.2s) ease-in-out; /* variables.css'den --transition alınabilir */
+                                                                /* Sadece renk geçişi için daha spesifik */
 }
 
 a:hover {
-    color: var(--primary-dark);
+  color: var(--primary-dark, #2F4FB0); /* variables.css'den */
+  text-decoration: underline; /* Hover durumunda alt çizgi eklenebilir (opsiyonel) */
 }
 
-/* 2.2 Images (<img>)
-   -------------------------------------------------- */
-img {
-    max-width: 100%;
-    height: auto;
-    display: block;
+/* 2.2. Resimler (<img>) ve Diğer Medya Elementleri
+   ---------------------------------------------------------------------------- */
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block; /* Satır içi boşlukları önler */
+  max-width: 100%; /* Kapsayıcısına sığmasını sağlar */
+  height: auto; /* En-boy oranını korur (max-width ile birlikte) */
 }
 
-/* ==================================================
-   3.0 ACCESSIBILITY
-   ================================================== */
+/* 2.3. Paragraflar (<p>)
+   ---------------------------------------------------------------------------- */
+p {
+  /* margin-top: 0; zaten sıfırlandı */
+  /* margin-bottom: 1rem; Paragraflar arasına varsayılan bir boşluk eklenebilir */
+}
 
-/* 3.1 Focus Styles
-   -------------------------------------------------- */
+/* 2.4. Yatay Çizgi (<hr>)
+   ---------------------------------------------------------------------------- */
+hr {
+  /* box-sizing: content-box; zaten * ile border-box yapıldı */
+  height: 0; /* Yüksekliği sıfırla */
+  overflow: visible; /* Taşmaları görünür yap */
+  border-top: 1px solid var(--gray-300, #CBD5E1); /* variables.css'den, temel bir çizgi stili */
+  margin: 1rem 0; /* Üst ve alt boşluk */
+}
+
+
+/* ============================================================================
+   3.0 ERİŞİLEBİLİRLİK (ACCESSIBILITY)
+   ============================================================================ */
+
+/* 3.1. Odak Stilleri (:focus, :focus-visible)
+   ----------------------------------------------------------------------------
+   Klavye ile gezinen kullanıcılar için odaklanılan elementleri belirginleştirir.
+   :focus-visible, sadece klavye ile odaklanıldığında stil uygular, fare ile
+   tıklandığında değil (tarayıcı desteğine bağlı).
+*/
 :focus {
-    outline: 2px solid var(--primary-light);
-    outline-offset: 2px;
+  outline: 2px solid var(--primary-light, #5D7DF5); /* variables.css'den */
+  outline-offset: 2px;
+  /* Daha modern bir yaklaşım için :focus-visible kullanılabilir */
+}
+
+:focus:not(:focus-visible) {
+  outline: none; /* Fare ile tıklandığında outline'ı kaldır (eğer :focus-visible destekleniyorsa) */
+}
+
+/* ============================================================================
+   4.0 YARDIMCI SINIFLAR (UTILITY CLASSES - Opsiyonel)
+   ============================================================================ */
+
+/* 4.1. Ekran Okuyucu İçin Gizleme (.sr-only)
+   ----------------------------------------------------------------------------
+   Elementi görsel olarak gizler ancak ekran okuyucular için erişilebilir tutar.
+*/
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

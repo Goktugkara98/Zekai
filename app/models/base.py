@@ -1,115 +1,118 @@
 # =============================================================================
-# Database Base Module
+# Temel Veritabanı Modülü (Database Base Module)
 # =============================================================================
-# Contents:
-# 1. Imports
-# 2. DatabaseConnection Class
-#    2.1. __init__
-#    2.2. connect
-#    2.3. close
-#    2.4. _ensure_connection
-#    2.5. __enter__ (Context Manager)
-#    2.6. __exit__ (Context Manager)
-# 3. BaseRepository Class
-#    3.1. __init__
-#    3.2. _ensure_connection
-#    3.3. _close_if_owned
-#    3.4. execute_query
-#    3.5. fetch_one
-#    3.6. fetch_all
-#    3.7. insert
+# Bu modül, veritabanı bağlantısını yönetmek ve temel veritabanı işlemleri
+# için bir temel depo (repository) sınıfı sağlamak üzere tasarlanmıştır.
+#
+# İçindekiler:
+# 1. İçe Aktarmalar (Imports)
+# 2. DatabaseConnection Sınıfı
+#    2.1. __init__             : Başlatıcı metot.
+#    2.2. connect              : Veritabanı bağlantısı kurar.
+#    2.3. close                : Veritabanı bağlantısını kapatır.
+#    2.4. _ensure_connection   : Bağlantının aktif olduğundan emin olur.
+#    2.5. __enter__            : Context manager için giriş metodu.
+#    2.6. __exit__             : Context manager için çıkış metodu.
+# 3. BaseRepository Sınıfı
+#    3.1. __init__             : Başlatıcı metot.
+#    3.2. _ensure_connection   : Depo için bağlantının aktif olduğundan emin olur.
+#    3.3. _close_if_owned      : Eğer bağlantı bu sınıf tarafından yönetiliyorsa kapatır.
+#    3.4. execute_query        : Veri değiştiren sorguları (UPDATE, DELETE) çalıştırır.
+#    3.5. fetch_one            : Tek bir sonuç getiren sorguyu çalıştırır.
+#    3.6. fetch_all            : Tüm sonuçları getiren sorguyu çalıştırır.
+#    3.7. insert               : INSERT sorgusunu çalıştırır ve son eklenen satırın ID'sini döndürür.
 # =============================================================================
 
-# 1. Imports
+# 1. İçe Aktarmalar (Imports)
 # =============================================================================
 import mysql.connector
-from mysql.connector import Error,pooling
-from app.config import DB_CONFIG
-from typing import Optional, Any, Dict, List, Type
+from mysql.connector import Error, pooling # pooling import edilmiş ancak kullanılmıyor, gerekirse kaldırılabilir.
+from app.config import DB_CONFIG # Uygulama yapılandırmasından veritabanı ayarlarını alır.
+from typing import Optional, Any, Dict, List, Type # Tip ipuçları için.
 
-# 2. DatabaseConnection Class
+# 2. DatabaseConnection Sınıfı
 # =============================================================================
 class DatabaseConnection:
     """
-    Manages a single database connection.
-    Not inherently thread-safe if the same instance is shared across threads
-    without external locking. For multi-threaded applications, consider using
-    a connection pool or creating a new instance per thread/task.
+    Tek bir veritabanı bağlantısını yönetir.
+    Aynı örnek, harici kilitleme olmadan thread'ler arasında paylaşılırsa
+    doğası gereği thread-safe (iş parçacığı güvenli) değildir. Çoklu thread uygulamaları için,
+    bir bağlantı havuzu (connection pool) kullanmayı veya her thread/görev için yeni bir örnek
+    oluşturmayı düşünün.
     """
 
     # 2.1. __init__
     # -------------------------------------------------------------------------
     def __init__(self):
-        """Initializes the DatabaseConnection."""
+        """DatabaseConnection sınıfını başlatır."""
         self.connection: Optional[mysql.connector.MySQLConnection] = None
-        self.cursor: Optional[mysql.connector.cursor.MySQLCursorDict] = None
+        self.cursor: Optional[mysql.connector.cursor.MySQLCursorDict] = None # Sonuçları sözlük olarak almak için MySQLCursorDict
         self.db_config: Dict[str, Any] = DB_CONFIG
-        # Log: "DatabaseConnection instance created."
+        # print("DEBUG: DatabaseConnection örneği oluşturuldu.") # Geliştirme sırasında loglama için
 
     # 2.2. connect
     # -------------------------------------------------------------------------
     def connect(self) -> None:
         """
-        Establishes a connection to the database.
+        Veritabanına bir bağlantı kurar.
         Raises:
-            mysql.connector.Error: If connection fails.
+            mysql.connector.Error: Bağlantı başarısız olursa.
         """
         try:
-            # Log: f"Attempting to connect to database: {self.db_config.get('database')}@{self.db_config.get('host')}"
+            # print(f"DEBUG: Veritabanına bağlanmaya çalışılıyor: {self.db_config.get('database')}@{self.db_config.get('host')}")
             self.connection = mysql.connector.connect(**self.db_config)
             if self.connection.is_connected():
-                self.cursor = self.connection.cursor(dictionary=True)
-                # Log: "Database connection successful."
+                self.cursor = self.connection.cursor(dictionary=True) # Sonuçları sözlük olarak almak için
+                # print("DEBUG: Veritabanı bağlantısı başarılı.")
             else:
-                # Log: "Database connection failed: Connection not established."
-                # This case might be rare as connect() itself would raise Error
-                raise Error("Failed to connect to the database.")
+                # print("DEBUG: Veritabanı bağlantısı başarısız: Bağlantı kurulamadı.")
+                # Bu durum nadirdir çünkü connect() zaten Error fırlatır.
+                raise Error("Veritabanına bağlanılamadı.")
         except Error as e:
-            # Log: f"Database connection error: {e}"
-            self.connection = None # Ensure connection is None if connect fails
+            # print(f"DEBUG: Veritabanı bağlantı hatası: {e}")
+            self.connection = None # Bağlantı başarısız olursa connection'ı None yap
             self.cursor = None
-            raise # Re-raise the exception to be handled by the caller
+            raise # İstisnayı çağıran tarafından işlenmesi için yeniden fırlat
 
     # 2.3. close
     # -------------------------------------------------------------------------
     def close(self) -> None:
-        """Closes the database cursor and connection if they are open."""
+        """Veritabanı cursor'ını ve bağlantısını açıksa kapatır."""
         if self.cursor:
             try:
                 self.cursor.close()
-                # Log: "Database cursor closed."
+                # print("DEBUG: Veritabanı cursor'ı kapatıldı.")
             except Error as e:
-                # Log: f"Error closing cursor: {e}"
-                pass # Ignore cursor close errors, but log them
+                # print(f"DEBUG: Cursor kapatılırken hata: {e}")
+                pass # Cursor kapatma hatalarını yoksay, ancak logla
             self.cursor = None
         if self.connection and self.connection.is_connected():
             try:
                 self.connection.close()
-                # Log: "Database connection closed."
+                # print("DEBUG: Veritabanı bağlantısı kapatıldı.")
             except Error as e:
-                # Log: f"Error closing connection: {e}"
-                pass # Ignore connection close errors, but log them
+                # print(f"DEBUG: Bağlantı kapatılırken hata: {e}")
+                pass # Bağlantı kapatma hatalarını yoksay, ancak logla
             self.connection = None
-        # Log: "DatabaseConnection resources released."
-
+        # print("DEBUG: DatabaseConnection kaynakları serbest bırakıldı.")
 
     # 2.4. _ensure_connection
     # -------------------------------------------------------------------------
     def _ensure_connection(self) -> None:
         """
-        Ensures that an active database connection is available.
-        If not connected, it attempts to establish a new connection.
+        Aktif bir veritabanı bağlantısının mevcut olduğundan emin olur.
+        Bağlı değilse, yeni bir bağlantı kurmaya çalışır.
         """
         if not self.connection or not self.connection.is_connected() or not self.cursor:
-            # Log: "No active connection found or cursor missing. Attempting to reconnect..."
+            # print("DEBUG: Aktif bağlantı bulunamadı veya cursor eksik. Yeniden bağlanmaya çalışılıyor...")
             self.connect()
 
     # 2.5. __enter__ (Context Manager)
     # -------------------------------------------------------------------------
     def __enter__(self) -> 'DatabaseConnection':
         """
-        Context management protocol. Ensures connection on entering.
-        Allows 'with DatabaseConnection() as db:' syntax.
+        Context yönetim protokolü. Girişte bağlantıyı sağlar.
+        'with DatabaseConnection() as db:' sözdizimine izin verir.
         """
         self._ensure_connection()
         return self
@@ -120,96 +123,99 @@ class DatabaseConnection:
                  exc_val: Optional[BaseException],
                  exc_tb: Optional[Any]) -> None:
         """
-        Context management protocol. Closes connection on exiting.
+        Context yönetim protokolü. Çıkışta bağlantıyı kapatır.
         """
         self.close()
         # if exc_type:
-        #     Log: f"Exception occurred within 'with' block: {exc_type}, {exc_val}"
-        # Return None (or False) to propagate exceptions, True to suppress.
+        #     print(f"DEBUG: 'with' bloğu içinde istisna oluştu: {exc_type}, {exc_val}")
+        # İstisnaları yaymak için None (veya False), bastırmak için True döndür.
 
-
-# 3. BaseRepository Class
+# 3. BaseRepository Sınıfı
 # =============================================================================
 class BaseRepository:
     """
-    Base class for all repository classes, providing common database operations.
-    Handles its own database connection lifecycle if one is not provided.
+    Tüm depo (repository) sınıfları için temel sınıf, ortak veritabanı işlemleri sağlar.
+    Eğer bir bağlantı sağlanmazsa kendi veritabanı bağlantı yaşam döngüsünü yönetir.
     """
 
     # 3.1. __init__
     # -------------------------------------------------------------------------
     def __init__(self, db_connection: Optional[DatabaseConnection] = None):
         """
-        Initializes the BaseRepository.
+        BaseRepository sınıfını başlatır.
         Args:
-            db_connection: An optional existing DatabaseConnection instance.
-                           If None, a new connection is created and managed by this repository.
+            db_connection: İsteğe bağlı mevcut bir DatabaseConnection örneği.
+                           Eğer None ise, bu depo tarafından yeni bir bağlantı oluşturulur ve yönetilir.
         """
         if db_connection:
             self.db: DatabaseConnection = db_connection
-            self.own_connection: bool = False # Connection is managed externally
-            # Log: "BaseRepository initialized with an external DatabaseConnection."
+            self.own_connection: bool = False # Bağlantı harici olarak yönetiliyor
+            # print("DEBUG: BaseRepository harici bir DatabaseConnection ile başlatıldı.")
         else:
             self.db: DatabaseConnection = DatabaseConnection()
-            self.own_connection: bool = True # Connection is owned and managed by this instance
-            # Log: "BaseRepository initialized with a new internal DatabaseConnection."
+            self.own_connection: bool = True # Bağlantı bu örnek tarafından sahiplenilir ve yönetilir
+            # print("DEBUG: BaseRepository yeni bir dahili DatabaseConnection ile başlatıldı.")
 
-    # 3.2. _ensure_connection
+    # 3.2. _ensure_connection (Depo için)
     # -------------------------------------------------------------------------
     def _ensure_connection(self) -> None:
-        """Ensures the database connection is active, especially if repository owns it."""
+        """Veritabanı bağlantısının aktif olduğundan emin olur, özellikle depo sahibi ise."""
         try:
-            if not self.db.connection or not self.db.connection.is_connected() or not self.db.cursor:
-                self.db._ensure_connection()
+            # self.db (DatabaseConnection örneği) zaten kendi _ensure_connection metoduna sahip.
+            # Bu metot, self.db.connect() çağrısını içerir, bu yüzden burada doğrudan
+            # self.db._ensure_connection() çağırmak yeterlidir.
+            self.db._ensure_connection()
         except Error as e:
-            # Log: f"Database connection error: {e}"
-            raise Error(f"Failed to ensure database connection: {str(e)}")
-
+            # print(f"DEBUG: BaseRepository._ensure_connection içinde veritabanı bağlantı hatası: {e}")
+            raise Error(f"Veritabanı bağlantısı sağlanamadı: {str(e)}")
 
 
     # 3.3. _close_if_owned
     # -------------------------------------------------------------------------
     def _close_if_owned(self) -> None:
-        """Closes the database connection if it was created and is managed by this repository instance."""
+        """
+        Eğer bu depo örneği tarafından oluşturulmuş ve yönetiliyorsa veritabanı bağlantısını kapatır.
+        Bu metot genellikle finally bloklarında çağrılır.
+        """
         if self.own_connection:
             self.db.close()
-            # Log: "Internal DatabaseConnection closed by BaseRepository."
+            # print("DEBUG: Dahili DatabaseConnection, BaseRepository tarafından kapatıldı.")
 
-    # 3.4. execute_query (e.g., UPDATE, DELETE)
+    # 3.4. execute_query (Örn: UPDATE, DELETE)
     # -------------------------------------------------------------------------
     def execute_query(self, query: str, params: tuple = None) -> int:
         """
-        Executes a query that modifies data (UPDATE, DELETE) or DDL.
+        Veriyi değiştiren bir sorguyu (UPDATE, DELETE) veya DDL (Veri Tanımlama Dili) çalıştırır.
         Args:
-            query: The SQL query string.
-            params: A tuple of parameters to bind to the query.
+            query: SQL sorgu dizesi.
+            params: Sorguya bağlanacak parametrelerden oluşan bir demet (tuple).
         Returns:
-            The number of rows affected by the query.
+            Sorgudan etkilenen satır sayısı.
         Raises:
-            mysql.connector.Error: If the query execution fails.
+            mysql.connector.Error: Sorgu çalıştırılması başarısız olursa.
         """
-        # Log: f"Executing query: {query} with params: {params}"
+        # print(f"DEBUG: Sorgu çalıştırılıyor: {query} parametreler: {params}")
         try:
             self._ensure_connection()
-            # Ensure cursor is valid
             if not self.db.cursor:
-                # Log: "Error: Cursor not available for query execution."
-                raise Error("Cursor not available for query execution.")
+                # print("DEBUG: Hata: Sorgu çalıştırmak için cursor mevcut değil.")
+                raise Error("Sorgu çalıştırmak için cursor mevcut değil.")
             self.db.cursor.execute(query, params or ())
-            self.db.connection.commit()
+            if self.db.connection: # Bağlantının varlığından emin ol
+                 self.db.connection.commit()
             affected_rows = self.db.cursor.rowcount
-            # Log: f"Query executed successfully. Rows affected: {affected_rows}"
+            # print(f"DEBUG: Sorgu başarıyla çalıştırıldı. Etkilenen satır sayısı: {affected_rows}")
             return affected_rows
         except Error as e:
-            # Log: f"Error executing query: {e}. Rolling back transaction."
+            # print(f"DEBUG: Sorgu çalıştırılırken hata: {e}. İşlem geri alınıyor.")
             if self.db.connection and self.db.connection.is_connected():
                 try:
                     self.db.connection.rollback()
-                    # Log: "Transaction rolled back."
+                    # print("DEBUG: İşlem geri alındı.")
                 except Error as rb_error:
-                    # Log: f"Error during rollback: {rb_error}"
+                    # print(f"DEBUG: Geri alma sırasında hata: {rb_error}")
                     pass
-            raise # Re-raise the original error
+            raise # Orijinal hatayı yeniden fırlat
         finally:
             self._close_if_owned()
 
@@ -217,26 +223,28 @@ class BaseRepository:
     # -------------------------------------------------------------------------
     def fetch_one(self, query: str, params: tuple = None) -> Optional[Dict[str, Any]]:
         """
-        Executes a query and fetches a single result.
+        Bir sorgu çalıştırır ve tek bir sonuç getirir.
         Args:
-            query: The SQL query string.
-            params: A tuple of parameters to bind to the query.
+            query: SQL sorgu dizesi.
+            params: Sorguya bağlanacak parametrelerden oluşan bir demet.
         Returns:
-            A dictionary representing the row, or None if no result is found or an error occurs.
+            Satırı temsil eden bir sözlük veya sonuç bulunamazsa ya da hata oluşursa None.
         """
-        # Log: f"Fetching one: {query} with params: {params}"
+        # print(f"DEBUG: Tek sonuç getiriliyor: {query} parametreler: {params}")
         try:
             self._ensure_connection()
             if not self.db.cursor:
-                # Log: "Error: Cursor not available for fetch_one."
-                return None # Or raise Error("Cursor not available")
+                # print("DEBUG: Hata: fetch_one için cursor mevcut değil.")
+                # Davranışa göre None döndür veya Error fırlat:
+                # raise Error("fetch_one için cursor mevcut değil.")
+                return None
             self.db.cursor.execute(query, params or ())
             result = self.db.cursor.fetchone()
-            # Log: f"Fetch one result: {'Found' if result else 'Not found'}"
+            # print(f"DEBUG: fetch_one sonucu: {'Bulundu' if result else 'Bulunamadı'}")
             return result
         except Error as e:
-            # Log: f"Error in fetch_one: {e}"
-            return None # Suppress error and return None as per original behavior
+            # print(f"DEBUG: fetch_one içinde hata: {e}")
+            return None # Hatayı bastır ve orijinal davranışa göre None döndür
         finally:
             self._close_if_owned()
 
@@ -244,27 +252,29 @@ class BaseRepository:
     # -------------------------------------------------------------------------
     def fetch_all(self, query: str, params: tuple = None) -> List[Dict[str, Any]]:
         """
-        Executes a query and fetches all results.
+        Bir sorgu çalıştırır ve tüm sonuçları getirir.
         Args:
-            query: The SQL query string.
-            params: A tuple of parameters to bind to the query.
+            query: SQL sorgu dizesi.
+            params: Sorguya bağlanacak parametrelerden oluşan bir demet.
         Returns:
-            A list of dictionaries, where each dictionary represents a row.
-            Returns an empty list if no results are found or an error occurs.
+            Her biri bir satırı temsil eden sözlüklerden oluşan bir liste.
+            Sonuç bulunamazsa veya hata oluşursa boş bir liste döndürür.
         """
-        # Log: f"Fetching all: {query} with params: {params}"
+        # print(f"DEBUG: Tüm sonuçlar getiriliyor: {query} parametreler: {params}")
         try:
             self._ensure_connection()
             if not self.db.cursor:
-                # Log: "Error: Cursor not available for fetch_all."
-                return [] # Or raise Error("Cursor not available")
+                # print("DEBUG: Hata: fetch_all için cursor mevcut değil.")
+                # Davranışa göre boş liste döndür veya Error fırlat:
+                # raise Error("fetch_all için cursor mevcut değil.")
+                return []
             self.db.cursor.execute(query, params or ())
             results = self.db.cursor.fetchall()
-            # Log: f"Fetch all result: {len(results)} rows found."
+            # print(f"DEBUG: fetch_all sonucu: {len(results)} satır bulundu.")
             return results
         except Error as e:
-            # Log: f"Error in fetch_all: {e}"
-            return [] # Suppress error and return empty list as per original behavior
+            # print(f"DEBUG: fetch_all içinde hata: {e}")
+            return [] # Hatayı bastır ve orijinal davranışa göre boş liste döndür
         finally:
             self._close_if_owned()
 
@@ -272,36 +282,37 @@ class BaseRepository:
     # -------------------------------------------------------------------------
     def insert(self, query: str, params: tuple = None) -> Optional[int]:
         """
-        Executes an INSERT query and returns the ID of the last inserted row.
+        Bir INSERT sorgusu çalıştırır ve son eklenen satırın ID'sini döndürür.
         Args:
-            query: The SQL INSERT query string.
-            params: A tuple of parameters to bind to the query.
+            query: SQL INSERT sorgu dizesi.
+            params: Sorguya bağlanacak parametrelerden oluşan bir demet.
         Returns:
-            The ID of the last inserted row, or None if the query doesn't generate an ID
-            (e.g. multi-row insert without lastrowid support or error).
+            Son eklenen satırın ID'si veya sorgu bir ID üretmiyorsa
+            (örn: lastrowid desteği olmayan çok satırlı ekleme veya hata) None.
         Raises:
-            mysql.connector.Error: If the query execution fails.
+            mysql.connector.Error: Sorgu çalıştırılması başarısız olursa.
         """
-        # Log: f"Inserting: {query} with params: {params}"
+        # print(f"DEBUG: Ekleme yapılıyor: {query} parametreler: {params}")
         try:
             self._ensure_connection()
             if not self.db.cursor:
-                # Log: "Error: Cursor not available for insert."
-                raise Error("Cursor not available for insert operation.")
+                # print("DEBUG: Hata: insert için cursor mevcut değil.")
+                raise Error("Ekleme işlemi için cursor mevcut değil.")
             self.db.cursor.execute(query, params or ())
-            self.db.connection.commit()
+            if self.db.connection: # Bağlantının varlığından emin ol
+                self.db.connection.commit()
             last_row_id = self.db.cursor.lastrowid
-            # Log: f"Insert successful. Last row ID: {last_row_id}"
+            # print(f"DEBUG: Ekleme başarılı. Son satır ID: {last_row_id}")
             return last_row_id
         except Error as e:
-            # Log: f"Error during insert: {e}. Rolling back transaction."
+            # print(f"DEBUG: Ekleme sırasında hata: {e}. İşlem geri alınıyor.")
             if self.db.connection and self.db.connection.is_connected():
                 try:
                     self.db.connection.rollback()
-                    # Log: "Transaction rolled back due to insert error."
+                    # print("DEBUG: Ekleme hatası nedeniyle işlem geri alındı.")
                 except Error as rb_error:
-                    # Log: f"Error during rollback after insert error: {rb_error}"
+                    # print(f"DEBUG: Ekleme hatası sonrası geri alma sırasında hata: {rb_error}")
                     pass
-            raise # Re-raise the original error
+            raise # Orijinal hatayı yeniden fırlat
         finally:
             self._close_if_owned()
