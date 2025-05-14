@@ -32,6 +32,7 @@ def get_ai_model_api_details(model_identifier: str) -> Optional[Dict[str, Any]]:
     """
     try:
         ai_repo = AIModelRepository()
+        model = None
         
         # Önce model_id olarak dene
         try:
@@ -40,6 +41,14 @@ def get_ai_model_api_details(model_identifier: str) -> Optional[Dict[str, Any]]:
         except (ValueError, TypeError):
             # Eğer model_id olarak çevrilemezse, data_ai_index olarak dene
             model = ai_repo.get_ai_model_by_data_ai_index(model_identifier)
+            
+            # Eğer bulunamazsa ve model_identifier sayısal değilse, 'txt_' öneki olmadan dene
+            if not model and model_identifier.startswith('txt_'):
+                try:
+                    model_id = int(model_identifier.replace('txt_', ''))
+                    model = ai_repo.get_ai_model_by_id(model_id)
+                except (ValueError, TypeError):
+                    pass
         
         if not model:
             return None
