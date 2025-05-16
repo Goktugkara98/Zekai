@@ -48,6 +48,13 @@ from werkzeug.utils import secure_filename # Dosya yükleme için (eğer kullan�
 
 # Servis katmanı importları
 from app.services.admin_panel_service import (
+    get_paginated_user_messages, get_total_user_message_count
+)
+
+# Repository importları
+from app.repositories.user_message_repository import UserMessageRepository
+
+from app.services.admin_panel_service import (
     is_admin_authenticated,
     get_admin_dashboard_statistics, # Dashboard için eklendi
     get_all_categories_with_model_counts, # Kategori listesi için güncellendi
@@ -210,7 +217,59 @@ def settings_page():
     return render_template('settings.html', title='Ayarlar', settings=current_settings)
 
 
-# 5. Kategori API Rotaları (Category API Routes - JSON)
+# 5. Kullanıcı Mesajları API Rotaları (User Messages API Routes - JSON)
+# =============================================================================
+# Kullanıcı mesajlarını yönetmek için API endpoint'leri.
+
+# 5.1. GET /api/user_messages - Tüm Kullanıcı Mesajlarını Getir
+# -----------------------------------------------------------------------------
+@admin_bp.route('/api/user_messages', methods=['GET'])
+@admin_login_required
+def api_get_user_messages():
+    """Tüm kullanıcı mesajlarını sayfalamalı olarak JSON formatında döndürür."""
+    try:
+        # Sayfalama parametrelerini al (varsayılan: 1. sayfa, sayfa başına 25 öğe)
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 25, type=int)
+        
+        # Servis katmanından mesajları al
+        messages = get_paginated_user_messages(page=page, per_page=per_page)
+        
+        # Toplam mesaj sayısını al
+        total_messages = get_total_user_message_count()
+        
+        return jsonify({
+            'success': True,
+            'messages': messages,
+            'total': total_messages,
+            'page': page,
+            'per_page': per_page,
+            'total_pages': (total_messages + per_page - 1) // per_page
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# 5.2. DELETE /api/user_messages/<int:message_id> - Bir Kullanıcı Mesajını Sil
+# -----------------------------------------------------------------------------
+@admin_bp.route('/api/user_messages/<int:message_id>', methods=['DELETE'])
+@admin_login_required
+def api_delete_user_message(message_id):
+    """Belirtilen ID'ye sahip kullanıcı mesajını siler."""
+    try:
+        # UserMessageRepository örneği oluştur
+        message_repo = UserMessageRepository()
+        
+        # Mesajı sil
+        success = message_repo.delete_user_message(message_id)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Mesaj başarıyla silindi.'})
+        else:
+            return jsonify({'success': False, 'error': 'Mesaj silinirken bir hata oluştu veya mesaj bulunamadı.'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# 6. Kategori API Rotaları (Category API Routes - JSON)
 # =============================================================================
 # Bu API endpoint'leri genellikle admin panelindeki AJAX istekleri için kullanılır.
 
