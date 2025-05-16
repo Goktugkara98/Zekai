@@ -10,7 +10,7 @@ if PACKAGE_PARENT not in sys.path:
     sys.path.insert(0, PACKAGE_PARENT)
 
 from flask import Flask
-from app.models.database import initialize_database # app. öneki eklendi
+from app.models.migrations import DatabaseMigrations # app. öneki eklendi
 from app.routes.main_routes import main_bp # app. öneki eklendi
 from app.routes.admin_routes import admin_bp # Admin blueprint'i import et
 
@@ -26,5 +26,6 @@ app.register_blueprint(main_bp)
 app.register_blueprint(admin_bp) # Admin blueprint'i kaydet
 
 if __name__ == '__main__':
-    initialize_database() # Call the initializer
+    db_migrations = DatabaseMigrations() # Call the initializer
+    db_migrations.initialize_database()
     app.run(debug=True)

@@ -19,7 +19,7 @@
 
 # 1. İçe Aktarmalar (Imports)
 # =============================================================================
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, flash
 import requests # Harici API istekleri için
 import json     # JSON işleme için
 import os       # Ortam değişkenlerini okumak için

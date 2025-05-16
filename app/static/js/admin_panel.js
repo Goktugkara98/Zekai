@@ -353,15 +353,15 @@
                     name: modelName,
                     icon: modelIcon,
                     api_url: apiUrl,
-                    description: modelName, // Using model name as initial description
-                    details: {
-                        data_ai_index: dataAiIndex,
-                        request_method: requestMethod,
-                        request_headers: requestHeaders,
-                        request_body_template: requestBodyTemplate,
-                        response_path: responsePath
-                    }
+                    data_ai_index: dataAiIndex, // Ayrı bir alan olarak
+                    description: modelName, // Veya formdan ayrı bir açıklama alanı
+                    request_method: requestMethod, // Ayrı bir alan olarak
+                    request_headers: requestHeaders, // Ayrı bir alan olarak
+                    request_body_template: requestBodyTemplate, // Ayrı bir alan olarak
+                    response_path: responsePath, // Ayrı bir alan olarak
+                    details: { /* İleride eklenebilecek diğer tüm ekstra bilgiler için burası kullanılabilir */ } 
                 };
+                
                 // GERÇEK API Entegrasyonu: Aşağıdaki URL'yi kendi backend API'nizle değiştirin
                 fetch('/admin/api/models', {
                     method: 'POST',
