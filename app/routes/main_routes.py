@@ -31,7 +31,7 @@ from app.services.ai_model_service import (
     fetch_ai_categories_from_db,  # Tüm AI kategorilerini getirmek için
     get_all_available_models  # Tüm modelleri getirmek için
 )
-from app.repositories import UserMessageRepository  # Mesajları loglamak için
+
 
 # 2. Blueprint Tanımı (Blueprint Definition)
 # =============================================================================

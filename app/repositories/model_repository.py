@@ -61,7 +61,7 @@ class ModelRepository(BaseRepository):
         Returns:
             Tuple[bool, str, Optional[int]]: (başarı_durumu, mesaj, model_id)
         """
-        # print(f"DEBUG: Model oluşturuluyor: KategoriID={category_id}, Ad='{name}', DataAIIndex='{data_ai_index}'")
+        print(f"DEBUG: Model oluşturuluyor: KategoriID={category_id}, Ad='{name}', DataAIIndex='{data_ai_index}'")
         try:
             # Kategori varlığını kontrol et
             query_check_category = "SELECT id FROM ai_categories WHERE id = %s"
@@ -109,19 +109,19 @@ class ModelRepository(BaseRepository):
 
             model_id = self.insert(query, values)
             if model_id:
-                # print(f"DEBUG: Model '{name}' başarıyla oluşturuldu. ID: {model_id}")
+                print(f"DEBUG: Model '{name}' başarıyla oluşturuldu. ID: {model_id}")
                 return True, f"Model '{name}' başarıyla oluşturuldu.", model_id
             else:
-                # print(f"DEBUG: Model '{name}' oluşturulamadı, insert metodu ID döndürmedi.")
+                print(f"DEBUG: Model '{name}' oluşturulamadı, insert metodu ID döndürmedi.")
                 return False, f"Model '{name}' oluşturulamadı (ID alınamadı).", None
         except MySQLError as e:
-            # print(f"DEBUG: Model oluşturulurken veritabanı hatası: {e}")
+            print(f"DEBUG: Model oluşturulurken veritabanı hatası: {e}")
             # Spesifik MySQL hatalarını burada daha detaylı işleyebilirsiniz (örn: duplicate entry)
             if e.errno == 1062: # Duplicate entry
                  return False, f"Model oluşturulamadı: Benzersiz olması gereken bir alan (örn: data_ai_index veya başka bir UNIQUE kısıtlaması) zaten mevcut. Hata: {str(e)}", None
             return False, f"Veritabanı hatası: {str(e)}", None
         except Exception as ex:
-            # print(f"DEBUG: Model oluşturulurken beklenmedik hata: {ex}")
+            print(f"DEBUG: Model oluşturulurken beklenmedik hata: {ex}")
             return False, f"Beklenmedik bir hata oluştu: {str(ex)}", None
 
     # 2.3. update_model
