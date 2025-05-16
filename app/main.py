@@ -27,5 +27,5 @@ app.register_blueprint(admin_bp) # Admin blueprint'i kaydet
 
 if __name__ == '__main__':
     db_migrations = DatabaseMigrations() # Call the initializer
-    db_migrations.initialize_database()
+    db_migrations.create_all_tables()
     app.run(debug=True)

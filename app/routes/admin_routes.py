@@ -128,7 +128,7 @@ def login_page(): # Fonksiyon adı login_page olarak değiştirildi (login decor
         else:
             flash('Geçersiz kullanıcı adı veya şifre.', 'danger')
 
-    return render_template('login.html', title='Admin Girişi') # Şablon adı login.html varsayıldı
+    return render_template('login_page.html', title='Admin Girişi')  # Updated to use the new login_page.html
 
 # 4.2. /logout (GET) - Admin Çıkış İşlemi
 # -----------------------------------------------------------------------------
@@ -158,7 +158,7 @@ def dashboard_page(): # Fonksiyon adı panel -> dashboard_page olarak değiştir
             'recent_models': [],
             'user_message_stats': {}
         }
-    return render_template('dashboard.html', title='Admin Paneli', stats=stats) # Şablon adı dashboard.html varsayıldı
+    return render_template('admin_dashboard.html', title='Admin Paneli', stats=stats)  # Template is in the root templates directory
 
 # 4.4. /messages (GET) - Kullanıcı Mesajlarını Listeler
 # -----------------------------------------------------------------------------
