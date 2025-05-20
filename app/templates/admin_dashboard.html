@@ -21,7 +21,7 @@
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <a href="{{ url_for('admin_bp.dashboard') }}" class="sidebar-brand">
+                <a href="{{ url_for('admin_bp.dashboard_page') }}" class="sidebar-brand">
                     <i class="fas fa-robot"></i>
                     <span>Zekai Admin</span>
                 </a>
@@ -30,7 +30,7 @@
             <div class="sidebar-menu">
                 <ul>
                     <li>
-                        <a href="{{ url_for('admin_bp.dashboard') }}" class="{% if current_page == 'dashboard' %}active{% endif %}">
+                        <a href="{{ url_for('admin_bp.dashboard_page') }}" class="{% if current_page == 'dashboard' %}active{% endif %}">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
