@@ -16,10 +16,6 @@
 #    2.6. get_model_by_data_ai_index : 'data_ai_index'e göre bir model getirir.
 #    2.7. get_models_by_category_id: Kategori ID'sine göre modelleri getirir.
 #    2.8. get_all_models           : Tüm modelleri getirir.
-#    2.9. _validate_model_input (Özel Yardımcı Metot): Model giriş alanlarını doğrular.
-#                                                    (Bu metot orijinal kodda vardı,
-#                                                     ancak create/update içinde doğrudan doğrulama yapılıyor.
-#                                                     İstenirse ayrı bir metot olarak kullanılabilir.)
 # =============================================================================
 
 # 1. İçe Aktarmalar (Imports)
@@ -332,25 +328,3 @@ class ModelRepository(BaseRepository):
         results = self.fetch_all(query)
         # print(f"DEBUG: get_all_models sonucu: {len(results)} model bulundu.")
         return [Model.from_dict(row) for row in results if row]
-
-    # 2.9. _validate_model_input (Özel Yardımcı Metot)
-    # -------------------------------------------------------------------------
-    # Bu metot orijinal kodda mevcuttu ancak create_model ve update_model içinde
-    # doğrudan doğrulamalar yapıldığı için şu anda aktif olarak kullanılmıyor.
-    # İstenirse, bu doğrulamaları merkezi bir metoda taşımak için tekrar aktifleştirilebilir.
-    # def _validate_model_input(self, category_id: int, name: str, icon: Optional[str],
-    #                           data_ai_index: str, api_url: str) -> Tuple[bool, str]:
-    #     """Model giriş alanlarını doğrular (Örnek)."""
-    #     if not category_id or not isinstance(category_id, int):
-    #         return False, "Geçerli bir kategori ID'si gereklidir."
-    #     if not name or not name.strip() or len(name) > 255:
-    #         return False, "Model adı gereklidir ve 255 karakterden az olmalıdır."
-    #     # ... diğer doğrulamalar ...
-    #     if not data_ai_index or not data_ai_index.strip() or len(data_ai_index) > 255:
-    #         return False, "data_ai_index gereklidir ve 255 karakterden az olmalıdır."
-    #     if data_ai_index and not re.match(r'^[a-zA-Z0-9_.\-]+$', data_ai_index):
-    #          return False, "data_ai_index sadece harf, rakam, alt çizgi, nokta ve tire içerebilir."
-    #     if not api_url or not api_url.strip() or len(api_url) > 2048:
-    #         return False, "API URL'si gereklidir ve 2048 karakterden az olmalıdır."
-    #     return True, ""
-
