@@ -15,6 +15,7 @@
 #    2.5. get_model_by_id          : ID'ye göre bir model getirir.
 #    2.6. get_models_by_category_id: Kategori ID'sine göre modelleri getirir.
 #    2.7. get_all_models           : Tüm modelleri getirir.
+#    2.8. count_all_models         : Tüm modellerin sayısını döndürür.
 # =============================================================================
 
 # 1. İçe Aktarmalar (Imports)
@@ -326,3 +327,13 @@ class ModelRepository(BaseRepository):
             return []
         except Exception:
             return []
+    
+    # 2.8. count_all_models
+    # -------------------------------------------------------------------------
+    def count_all_models(self) -> int:
+        """
+        Tüm AI modellerin sayısını döndürür.
+        """
+        query = "SELECT COUNT(*) as count FROM ai_models"
+        result = self.fetch_one(query)
+        return result['count'] if result else 0

@@ -12,6 +12,7 @@ if PACKAGE_PARENT not in sys.path:
 from flask import Flask
 from app.models.migrations import DatabaseMigrations # app. öneki eklendi
 from app.routes.main_routes import main_bp # app. öneki eklendi
+from app.routes.admin_routes import admin_bp # app. öneki eklendi
 
 app = Flask(__name__)
 
@@ -22,6 +23,7 @@ app.config['SESSION_PERMANENT'] = False
 
 # Register Blueprints
 app.register_blueprint(main_bp)
+app.register_blueprint(admin_bp)
 
 if __name__ == '__main__':
     db_migrations = DatabaseMigrations() # Call the initializer

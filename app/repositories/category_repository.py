@@ -15,6 +15,7 @@
 #    2.5. get_category_by_id   : ID'ye göre bir kategori getirir.
 #    2.6. get_category_by_name : İsme göre bir kategori getirir.
 #    2.7. get_all_categories   : Tüm kategorileri getirir.
+#    2.8. count_all_categories : Tüm kategorilerin sayısını döndürür.
 # =============================================================================
 
 # 1. İçe Aktarmalar (Imports)
@@ -225,3 +226,13 @@ class CategoryRepository(BaseRepository):
         results = self.fetch_all(query)
         # print(f"DEBUG: get_all_categories sonucu: {len(results)} kategori bulundu.")
         return [Category.from_dict(row) for row in results if row] # row kontrolü eklendi
+
+    # 2.8. count_all_categories
+    # -------------------------------------------------------------------------
+    def count_all_categories(self) -> int:
+        """
+        Tüm AI kategorilerinin sayısını döndürür.
+        """
+        query = "SELECT COUNT(*) as count FROM ai_categories"
+        result = self.fetch_one(query)
+        return result['count'] if result else 0
