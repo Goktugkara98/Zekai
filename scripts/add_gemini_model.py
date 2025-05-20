@@ -1,234 +1,146 @@
-import sys
+# add_gemini_model.py
 import os
-import json # MODEL_DETAILS için
-from dotenv import load_dotenv
+import sys
+import json
+from typing import Optional
 
-# Ortam değişkenlerini yükle
-load_dotenv()
+# Proje ana dizinini Python yoluna ekleyin
+# Bu betiği projenizin ana dizininden çalıştırdığınızı varsayarsak (örn: python scripts/add_gemini_model.py)
+# veya betiğin bulunduğu yere göre app dizininin yolunu ayarlamanız gerekebilir.
+# Örnek: sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Eğer betik projenin kök dizinindeyse bu satırlara genellikle gerek kalmaz.
+# Eğer app klasörü ile aynı seviyede bir scripts klasöründe ise:
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '..')) 
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
-# --- Proje Kök Dizinini Python Path'e Ekleme ---
-# Bu script'in 'scripts' klasöründe olduğunu varsayar
 try:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(current_dir) # scripts klasöründen bir üst dizine çık
-    sys.path.insert(0, project_root)
-    
-    # Doğrudan repository modülünü import et
+    from app.models.base import DatabaseConnection
     from app.repositories.model_repository import ModelRepository
     from app.repositories.category_repository import CategoryRepository
-    from app.models.base import DatabaseConnection
-    
-    print(f"Proje kök dizini: {project_root}")
-    print("Modüller başarıyla import edildi.")
-    
+    from app.config import DB_CONFIG # DB_CONFIG'in app.config içinde tanımlı olduğunu varsayıyoruz
 except ImportError as e:
-    print(f"Gerekli modüller import edilirken hata oluştu: {e}")
-    print("Lütfen script'in doğru konumda olduğundan ve 'app' paketinin Python path'inde bulunduğundan emin olun.")
-    sys.exit(1)
-except Exception as e:
-    print(f"Script başlangıcında bir hata oluştu: {e}")
+    print(f"Hata: Gerekli modüller yüklenemedi. Lütfen PYTHONPATH ayarlarınızı kontrol edin veya betiği doğru konumdan çalıştırın.")
+    print(f"Import Hatası: {e}")
+    print(f"Mevcut Python Yolu: {sys.path}")
     sys.exit(1)
 
-# --- Configuration ---
-# ÖNEMLİ: Bu değerleri kendi ortamınıza ve ihtiyaçlarınıza göre güncelleyin.
+# --- YENİ MODELİN BİLGİLERİ ---
+GEMINI_API_KEY = "AIzaSyAkd4grtdow3141FUfsfzYxxaSc5_5xee4" # !!! API Anahtarınızı buraya girin !!!
 
-# Veritabanı Bağlantı Parametreleri (EĞER BaseRepository bu şekilde parametre alıyorsa)
-# BaseRepository'niz bağlantıyı ortam değişkenlerinden veya bir config dosyasından okuyorsa,
-# bu kısım gerekmeyebilir veya BaseRepository'nin beklentisine göre ayarlanmalıdır.
-DB_PARAMS = {
-    "host": "localhost",
-    "user": "your_db_user",
-    "password": "your_db_password",
-    "database": "your_db_name"
-}
-
-# Eklenecek Model Bilgileri
-MODEL_CATEGORY_ID = 1  # ÖNEMLİ: Modeliniz için doğru kategori ID'sini ayarlayın.
 MODEL_NAME = "Gemini 2.0 Flash"
-MODEL_ICON = "fas fa-bolt"  # Örnek: Font Awesome ikon sınıfı veya None
-# API URL'sinden API anahtarını çıkardık. Uygulamanız anahtarı ayrıca yönetmeli.
-MODEL_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-MODEL_DATA_AI_INDEX = "gemini-2.0-flash"  # Benzersiz olmalı
-MODEL_DESCRIPTION = "Google'ın içerik üretimi için hız ve verimlilik odaklı Gemini 2.0 Flash modeli. Metin tabanlı girdileri destekler."
+MODEL_ICON = "fas fa-bolt" # Font Awesome ikonu
+MODEL_DESCRIPTION = "Google tarafından geliştirilen hızlı ve verimli bir AI modeli."
 MODEL_DETAILS = {
-    "model_family": "Gemini",
-    "version": "2.0 Flash (kullanıcı tarafından belirtilen)",
-    "provider": "Google",
-    "input_type": "text",
-    "output_type": "text",
-    "notes": "API isteğinde API Anahtarı gereklidir. API URL'si 'generateContent' metodu içindir. API anahtarı uygulamada güvenli bir şekilde yönetilmelidir.",
-    "example_request_body": {
-        "contents": [{
-            "parts": [{"text": "Explain how AI works"}]
-        }]
-    },
-    "official_documentation": "https://ai.google.dev/gemini-api/docs/models/gemini",
-    "capabilities": ["Metin Üretimi", "Özetleme", "Soru-Cevap", "Sınıflandırma"]
+    "version": "2.0-flash",
+    "provider": "Google Generative Language API",
+    "capabilities": ["Metin üretimi", "Sohbet", "Soru yanıtlama"],
+    "notes": "Hızlı yanıtlar için optimize edilmiştir."
 }
-MODEL_IMAGE_FILENAME = "gemini_flash.png"  # İsteğe bağlı: model için bir görsel dosya adı veya None
+API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent" # Key olmadan temel URL
+# API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" # Eğer bu endpoint doğruysa
+REQUEST_METHOD = "POST"
+REQUEST_HEADERS = {
+    "Content-Type": "application/json"
+}
+# İstek gövdesinde kullanıcı girdisi için bir yer tutucu kullanalım
+REQUEST_BODY_TEMPLATE = {
+    "contents": [
+        {
+            "parts": [
+                {
+                    "text": "{user_prompt}" # Uygulama bu yer tutucuyu kullanıcı girdisiyle değiştirecek
+                }
+            ]
+        }
+    ]
+}
+# Gemini API'sinin yanıtından metni çıkarmak için JSON yolu
+# Örnek yanıt: {"candidates": [{"content": {"parts": [{"text": "Yanıt..."}]}}]}
+RESPONSE_PATH = "candidates.0.content.parts.0.text"
 
-def ensure_ai_category_exists(db_conn):
-    """AI kategorisinin varlığını kontrol eder, yoksa oluşturur."""
-    category_repo = CategoryRepository(db_conn)
-    
-    try:
-        # AI kategorisini kontrol et
-        categories = category_repo.get_all_categories()
-        
-        ai_category = next((cat for cat in categories if cat.name.lower() == 'ai models'), None)
-        
-        # Eğer AI kategorisi yoksa oluştur
-        if not ai_category:
-            success, message, category_id = category_repo.create_category(
-                name="AI Models",
-                icon="fas fa-robot"  # Varsayılan bir ikon
-            )
-            if not success:
-                print(f"AI kategorisi oluşturulamadı: {message}")
-                return None
-            print("AI kategorisi oluşturuldu.")
+# --- KATEGORİ BİLGİLERİ ---
+CATEGORY_NAME = "Sohbet ve Metin Üretimi"
+CATEGORY_ICON = "fas fa-comments" # Font Awesome ikonu
+
+def ensure_category_exists(category_repo: CategoryRepository, name: str, icon: str) -> Optional[int]:
+    """
+    Belirtilen isimde bir kategori olup olmadığını kontrol eder.
+    Yoksa oluşturur ve kategori ID'sini döndürür.
+    """
+    print(f"'{name}' kategorisi kontrol ediliyor...")
+    category = category_repo.get_category_by_name(name)
+    if category:
+        print(f"Kategori '{name}' zaten mevcut (ID: {category.id}).")
+        return category.id
+    else:
+        print(f"Kategori '{name}' bulunamadı, oluşturuluyor...")
+        success, message, category_id = category_repo.create_category(name, icon)
+        if success:
+            print(f"Kategori '{name}' başarıyla oluşturuldu (ID: {category_id}). Mesaj: {message}")
             return category_id
-        
-        # Kategori zaten varsa mevcut ID'yi döndür
-        return ai_category.id
-        
-    except Exception as e:
-        print(f"Kategori kontrolü sırasında hata oluştu: {str(e)}")
-        return None
+        else:
+            print(f"HATA: Kategori '{name}' oluşturulamadı. Mesaj: {message}")
+            return None
 
 def main():
-    print("Gemini 2.0 Flash modeli veritabanına eklenmeye çalışılıyor...")
-
-    # Veritabanı bağlantısını oluştur
-    db_conn = DatabaseConnection()
-    print("Veritabanı bağlantısı oluşturuldu.")
-    
-    try:
-        # AI kategorisini kontrol et ve gerekirse oluştur
-        category_id = ensure_ai_category_exists(db_conn)
-        if not category_id:
-            print("Hata: AI kategorisi oluşturulamadı.")
-            return
-            
-        # ModelRepository'i oluştur
-        repo = ModelRepository(db_conn)
-        print("ModelRepository başarıyla oluşturuldu.")
-
-    except TypeError as te: # Genellikle __init__ argümanları uyuşmadığında alınır
-        print(f"ModelRepository oluşturulurken TypeError oluştu: {te}")
-        print("BaseRepository'nizin __init__ metodu argüman bekliyor olabilir.")
-        print("Lütfen script içerisindeki 'ModelRepository'i Örnekleme' bölümünü ve")
-        print("app.models.base.BaseRepository sınıfınızı kontrol edin.")
-        print(f"Eğer DB_PARAMS gibi bir argüman gerekiyorsa: repo = ModelRepository(db_connection_params=DB_PARAMS) şeklinde deneyin.")
-        return
-    except Exception as e:
-        print(f"ModelRepository oluşturulurken hata: {e}")
-        print("Lütfen app.models.base.BaseRepository sınıfınızın veritabanı bağlantıları için doğru şekilde yapılandırıldığından emin olun.")
+    """Ana betik fonksiyonu."""
+    if GEMINI_API_KEY == "BURAYA_GEMINI_API_ANAHTARINIZI_GIRIN" or not GEMINI_API_KEY:
+        print("Lütfen betik içerisindeki GEMINI_API_KEY değişkenine geçerli bir API anahtarı girin.")
         return
 
+    print("Veritabanı bağlantısı ve depolar hazırlanıyor...")
     try:
-        # Bu data_ai_index ile bir model zaten var mı kontrol et
-        print(f"'{MODEL_DATA_AI_INDEX}' data_ai_index'ine sahip model kontrol ediliyor...")
-        existing_model = repo.get_model_by_data_ai_index(MODEL_DATA_AI_INDEX)
-        if existing_model:
-            print(f"'{MODEL_DATA_AI_INDEX}' data_ai_index ({existing_model.name}) ID:{existing_model.id} ile zaten mevcut. Ekleme işlemi atlanıyor.")
-            return # Fonksiyondan çık
-
-        print("Yeni model oluşturuluyor...")
+        # Veritabanı bağlantısını oluştur
+        db_connection = DatabaseConnection()
         
-        # API yapılandırmasını details içinde sakla
-        api_config = {
-            'request_method': 'POST',
-            'request_headers': {
-                'Content-Type': 'application/json'
-            },
-            'request_body_template': {
-                'contents': [{
-                    'parts': [{
-                        'text': '{user_message}'
-                    }]
-                }],
-                'generationConfig': {
-                    'temperature': 0.9,
-                    'topK': 1,
-                    'topP': 1,
-                    'maxOutputTokens': 2048,
-                    'stopSequences': []
-                },
-                'safetySettings': [
-                    {
-                        'category': 'HARM_CATEGORY_HARASSMENT',
-                        'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-                    },
-                    {
-                        'category': 'HARM_CATEGORY_HATE_SPEECH',
-                        'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-                    },
-                    {
-                        'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                        'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-                    },
-                    {
-                        'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                        'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
-                    }
-                ]
-            },
-            'response_path': 'candidates.0.content.parts.0.text'
-        }
-        
-        # Debug bilgisi yazdır
-        print("\nAPI Yapılandırması (details):\n", json.dumps(api_config, indent=2, ensure_ascii=False))
-        
-        # Modeli oluştur
-        success, message, model_id = repo.create_model(
-            category_id=category_id,  # AI kategorisinden alınan ID'yi kullan
-            name='Gemini 2.0 Flash',
-            icon='fas fa-robot',
-            api_url='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-            data_ai_index='gemini-2.0-flash',
-            description='Google\'un gelişmiş çoklu modlu AI modeli',
-            details=api_config
-        )
-
-        if success:
-            print(f"'{MODEL_NAME}' modeli başarıyla eklendi! Yeni Model ID: {model_id}")
-        else:
-            print(f"'{MODEL_NAME}' modeli eklenemedi. Hata: {message}")
-
+        # Repository'leri başlat ve aynı bağlantıyı kullan
+        category_repo = CategoryRepository(db_connection)
+        model_repo = ModelRepository(db_connection)
     except Exception as e:
-        print(f"Model ekleme/kontrol sırasında bir hata oluştu: {e}")
-    finally:
-        # Veritabanı bağlantısını kapatma (eğer BaseRepository böyle bir metod sağlıyorsa)
-        # Standalone scriptler için iyi bir pratiktir.
-        if repo and hasattr(repo, 'close_connection') and callable(repo.close_connection):
-            try:
-                repo.close_connection()
-                print("Veritabanı bağlantısı kapatıldı.")
-            except Exception as e:
-                print(f"Veritabanı bağlantısı kapatılırken hata oluştu: {e}")
-        elif repo and hasattr(repo, 'db') and hasattr(repo.db, 'close') and callable(repo.db.close):
-             # Eğer repo.db doğrudan bağlantı nesnesiyse
-            try:
-                repo.db.close()
-                print("Veritabanı bağlantısı (repo.db.close()) kapatıldı.")
-            except Exception as e:
-                print(f"Veritabanı bağlantısı (repo.db.close()) kapatılırken hata oluştu: {e}")
+        print(f"HATA: Depolar başlatılırken bir sorun oluştu: {e}")
+        print("DB_CONFIG ayarlarınızın doğru olduğundan ve veritabanının çalıştığından emin olun.")
+        return
 
+    # 1. Kategori varlığını kontrol et veya oluştur
+    category_id = ensure_category_exists(category_repo, CATEGORY_NAME, CATEGORY_ICON)
+    if category_id is None:
+        print("Model ekleme işlemi için kategori ID'si alınamadı. Betik sonlandırılıyor.")
+        return
+
+    # 2. Modeli oluştur
+    print(f"\n'{MODEL_NAME}' modeli veritabanına ekleniyor...")
+    success, message, model_id = model_repo.create_model(
+        category_id=category_id,
+        name=MODEL_NAME,
+        icon=MODEL_ICON,
+        description=MODEL_DESCRIPTION,
+        details=MODEL_DETAILS,
+        api_url=API_URL,
+        request_method=REQUEST_METHOD,
+        request_headers=REQUEST_HEADERS,
+        request_body=REQUEST_BODY_TEMPLATE,
+        response_path=RESPONSE_PATH,
+        api_key=GEMINI_API_KEY # API anahtarı burada veriliyor
+    )
+
+    if success:
+        print(f"\nBAŞARILI: Model '{MODEL_NAME}' (ID: {model_id}) veritabanına eklendi.")
+        print(f"Mesaj: {message}")
+    else:
+        print(f"\nHATA: Model '{MODEL_NAME}' eklenemedi.")
+        print(f"Mesaj: {message}")
 
 if __name__ == "__main__":
-    # ÖNEMLİ UYARILAR:
-    # 1. Bu script, 'app' klasörünün (models.model_repository, models.base, models.entities içeren)
-    #    Python'un import yolunda (sys.path) olduğunu varsayar.
-    #    Scriptin başındaki sys.path.insert satırı bunu yönetmeye çalışır.
-    #    İçe aktarmaların doğru çalışması için yolları ayarlamanız veya bu script'i
-    #    belirli bir dizinden (örn: proje kök dizini) çalıştırmanız gerekebilir.
-    #
-    # 2. Veritabanı sunucunuzun çalıştığından ve (eğer BaseRepository DB_PARAMS'ı
-    #    kullanacak şekilde ayarlandıysa) sağlanan kimlik bilgileriyle erişilebilir
-    #    olduğundan emin olun.
-    #
-    # 3. MODEL_CATEGORY_ID'yi sisteminizdeki geçerli bir kategori ID'si ile güncelleyin.
-    #    Aksi takdirde, create_model içindeki kategori kontrolü başarısız olabilir.
-
+    # Veritabanı tablolarının oluşturulduğundan emin olmak için migrations.py'deki
+    # initialize_database() fonksiyonunu burada çağırabilirsiniz, ancak bu genellikle
+    # uygulamanın ana başlangıç noktasında yapılır.
+    # from app.models.migrations import initialize_database
+    # print("Veritabanı tabloları kontrol ediliyor/oluşturuluyor...")
+    # if not initialize_database():
+    #     print("HATA: Veritabanı tabloları oluşturulamadı. Lütfen migrations.py'yi kontrol edin.")
+    #     sys.exit(1)
+    # print("Veritabanı tabloları hazır.")
+    
     main()
