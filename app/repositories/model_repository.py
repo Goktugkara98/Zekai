@@ -7,14 +7,16 @@
 #
 # İçindekiler:
 # 1. İçe Aktarmalar (Imports)
-# 2. ModelRepository Sınıfı
-#    2.1. __init__                 : Başlatıcı metot (BaseRepository'den miras alınır).
-#    2.2. create_model             : Yeni bir model oluşturur.
-#    2.3. update_model             : Mevcut bir modeli günceller.
-#    2.4. delete_model             : Bir modeli siler.
-#    2.5. get_model_by_id          : ID'ye göre bir model getirir.
-#    2.6. get_models_by_category_id: Kategori ID'sine göre modelleri getirir.
-#    2.7. get_all_models           : Tüm modelleri getirir.
+# 2. Logger Yapılandırması (Logger Configuration)
+# 3. Çağrı Bilgisi Yardımcı Fonksiyonu (Caller Info Helper)
+# 4. ModelRepository Sınıfı
+#    4.1. __init__                 : Başlatıcı metot (BaseRepository'den miras alınır).
+#    4.2. create_model             : Yeni bir model oluşturur.
+#    4.3. update_model             : Mevcut bir modeli günceller.
+#    4.4. delete_model             : Bir modeli siler.
+#    4.5. get_model_by_id          : ID'ye göre bir model getirir.
+#    4.6. get_models_by_category_id: Kategori ID'sine göre modelleri getirir.
+#    4.7. get_all_models           : Tüm modelleri getirir.
 # =============================================================================
 
 # 1. İçe Aktarmalar (Imports)
@@ -25,11 +27,73 @@ from typing import List, Optional, Tuple, Dict, Any # Tip ipuçları için
 from mysql.connector import Error as MySQLError # MySQL'e özgü hata tipi
 import json # JSON alanlarını işlemek için
 from datetime import datetime # Tarih/saat işlemleri için
+import logging # Logging modülü
+import inspect # Çağrı yığınını incelemek için
 
-# 2. ModelRepository Sınıfı
+# 2. Logger Yapılandırması (Logger Configuration)
+# =============================================================================
+# Temel logger yapılandırması
+# Log formatı: ZAMAN DAMGASI - LOGGER ADI - LOG SEVİYESİ - MESAJ
+# Tarih formatı: YYYY-AA-GG SS:DD:ss
+logging.basicConfig(
+    level=logging.DEBUG, # Loglanacak minimum seviye (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# Bu modül için özel bir logger oluşturuluyor
+logger = logging.getLogger(__name__) # __name__ mevcut modülün adını alır (örn: app.repositories.model_repository)
+
+# 3. Çağrı Bilgisi Yardımcı Fonksiyonu (Caller Info Helper)
+# =============================================================================
+def log_caller_info(class_name: str, func_name: str, params_summary: Optional[Dict[str, Any]] = None):
+    """
+    Bir metodun çağrıldığını '----' ayırıcıları ile loglar ve çağrı kaynağı
+    hakkında detayları içerir. İsteğe bağlı olarak parametre özeti de loglanabilir.
+    """
+    method_qualname = f"{class_name}.{func_name}"
+    caller_info_log_str = ""
+    try:
+        # inspect.stack()[0] -> log_caller_info
+        # inspect.stack()[1] -> çağıran metot (örn: create_model)
+        # inspect.stack()[2] -> çağıran metodu çağıran yer (örn: bir servis katmanı)
+        caller_frame = inspect.stack()[2]
+        caller_function_name = caller_frame.function
+        caller_filename = caller_frame.filename
+        caller_lineno = caller_frame.lineno
+        caller_info_log_str = f"  └── Called from: {caller_filename} -> {caller_function_name}() -> line {caller_lineno}"
+    except IndexError:
+        caller_info_log_str = "  └── Caller info: Not available (possibly top-level or direct script call)."
+    except Exception as e:
+        caller_info_log_str = f"  └── Caller info: Error retrieving - {e}."
+
+    params_log_str = ""
+    if params_summary:
+        try:
+            # Parametrelerin logda çok uzun olmasını engellemek için basit formatlama
+            formatted_params = {
+                k: (str(v)[:75] + '...' if isinstance(v, str) and len(v) > 75 else v)
+                for k, v in params_summary.items()
+            }
+            params_log_str = f"\n  └── Params: {formatted_params}"
+        except Exception as e:
+            params_log_str = f"\n  └── Params: Error formatting - {e}"
+
+    logger.debug(
+        f"---- Method Invoked: {method_qualname}() ----{params_log_str}\n{caller_info_log_str}\n"
+    )
+
+
+# 4. ModelRepository Sınıfı
 # =============================================================================
 class ModelRepository(BaseRepository):
     """Model işlemleri için depo (repository) sınıfı."""
+
+    # __init__ metodu BaseRepository'den miras alınır, gerekirse burada override edilebilir.
+    # def __init__(self, db_config: Dict[str, Any]):
+    #     super().__init__(db_config)
+    #     # Sınıf başlatıldığında loglama
+    #     logger.info(f"==== {self.__class__.__name__} Initialized ====\n  └── DB Config Keys: {list(db_config.keys()) if db_config else 'None'}\n")
 
     # 2.2. create_model
     # -------------------------------------------------------------------------
@@ -47,187 +111,197 @@ class ModelRepository(BaseRepository):
                      api_key: Optional[str] = None) -> Tuple[bool, str, Optional[int]]:
         """
         Yeni bir AI modeli oluşturur.
-        
-        Args:
-            category_id (int): Modelin ait olduğu kategori ID'si.
-            name (str): Modelin adı (zorunlu).
-            icon (str, optional): Model ikonu (örn: 'fas fa-robot').
-            description (str, optional): Modelin açıklaması.
-            details (dict, optional): Model hakkında ek JSON detayları.
-            api_url (str, optional): API endpoint URL'si.
-            request_method (str, optional): HTTP istek metodu (varsayılan: 'POST').
-            request_headers (dict, optional): İstek başlıkları (JSON formatında).
-            request_body (dict, optional): İstek gövdesi şablonu (JSON formatında).
-            response_path (str, optional): JSON yanıtından veri çıkarma yolu.
-            api_key (str, optional): API anahtarı.
-            
-        Returns:
-            Tuple[bool, str, Optional[int]]: (başarı_durumu, mesaj, model_id)
         """
-        # print(f"DEBUG: Model oluşturuluyor: Ad='{name}', KategoriID='{category_id}'")
+        current_method_name = inspect.currentframe().f_code.co_name
+        log_caller_info(self.__class__.__name__, current_method_name,
+                        params_summary={"category_id": category_id, "name": name, "api_url": api_url})
+
+        logger.info(f"==== Operation: Create AI Model ====\n  └── Name='{name}', CategoryID='{category_id}'\n")
         try:
             # Giriş doğrulamaları
             if not name or not name.strip():
+                logger.warning("Model adı boş olamaz.\n")
+                logger.warning(f"==== Result: Create AI Model - Validation Failed ====\n  └── Reason: Model name cannot be empty.\n")
                 return False, "Model adı boş olamaz.", None
             if not isinstance(category_id, int) or category_id <= 0:
-                 return False, "Geçerli bir kategori ID'si gereklidir.", None
+                logger.warning("Geçersiz kategori ID'si sağlandı.\n")
+                logger.warning(f"==== Result: Create AI Model - Validation Failed ====\n  └── Reason: Invalid category ID ({category_id}).\n")
+                return False, "Geçerli bir kategori ID'si gereklidir.", None
             if len(name.strip()) > 255:
+                logger.warning(f"Model adı çok uzun: {len(name.strip())} karakter.\n")
+                logger.warning(f"==== Result: Create AI Model - Validation Failed ====\n  └── Reason: Model name too long.\n")
                 return False, "Model adı 255 karakterden uzun olamaz.", None
+            # Diğer doğrulamalar için benzer loglama eklenebilir
             if api_url and len(api_url) > 2048:
+                logger.warning("API URL'si çok uzun.\n")
+                logger.warning(f"==== Result: Create AI Model - Validation Failed ====\n  └── Reason: API URL too long.\n")
                 return False, "API URL'si 2048 karakterden uzun olamaz.", None
-            if api_key and len(api_key) > 512: # migrations.py'deki VARCHAR(512) ile uyumlu
+            if api_key and len(api_key) > 512:
+                logger.warning("API anahtarı çok uzun.\n")
+                logger.warning(f"==== Result: Create AI Model - Validation Failed ====\n  └── Reason: API key too long.\n")
                 return False, "API anahtarı 512 karakterden uzun olamaz.", None
             if request_method and len(request_method) > 10:
+                logger.warning("İstek metodu çok uzun.\n")
+                logger.warning(f"==== Result: Create AI Model - Validation Failed ====\n  └── Reason: Request method too long.\n")
                 return False, "İstek metodu 10 karakterden uzun olamaz.", None
             if response_path and len(response_path) > 255:
+                logger.warning("Yanıt yolu çok uzun.\n")
+                logger.warning(f"==== Result: Create AI Model - Validation Failed ====\n  └── Reason: Response path too long.\n")
                 return False, "Yanıt yolu 255 karakterden uzun olamaz.", None
 
 
-            # Kategori varlığını kontrol et (isteğe bağlı, foreign key kısıtlaması zaten bunu yapar)
-            # query_check_category = "SELECT id FROM ai_categories WHERE id = %s"
-            # category = self.fetch_one(query_check_category, (category_id,))
-            # if not category:
-            #     return False, f"ID'si {category_id} olan kategori bulunamadı.", None
-
             query = """
                 INSERT INTO ai_models (
-                    category_id, name, icon, description, details, 
-                    api_url, request_method, request_headers, 
+                    category_id, name, icon, description, details,
+                    api_url, request_method, request_headers,
                     request_body, response_path, api_key
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
-            
-            # JSON alanlarını stringe çevir
+
             details_str = json.dumps(details) if details is not None else None
             request_headers_str = json.dumps(request_headers) if request_headers is not None else None
             request_body_str = json.dumps(request_body) if request_body is not None else None
-            
+
             values = (
-                category_id,
-                name.strip(),
+                category_id, name.strip(),
                 icon.strip() if icon else None,
                 description.strip() if description else None,
                 details_str,
                 api_url.strip() if api_url else None,
                 request_method.strip().upper() if request_method else 'POST',
-                request_headers_str,
-                request_body_str,
+                request_headers_str, request_body_str,
                 response_path.strip() if response_path else None,
-                api_key # API anahtarı doğrudan saklanıyor (geliştirme için)
+                api_key
             )
 
+            logger.debug(f"Executing INSERT query for model '{name}'.\n")
             model_id = self.insert(query, values)
+
             if model_id:
-                # print(f"DEBUG: Model '{name}' başarıyla oluşturuldu. ID: {model_id}")
+                logger.info(f"Model '{name}' başarıyla oluşturuldu. ID: {model_id}\n")
+                logger.info(f"==== Result: Create AI Model - Success ====\n  └── Model ID: {model_id}\n")
                 return True, f"Model '{name}' başarıyla oluşturuldu.", model_id
             else:
-                # print(f"DEBUG: Model '{name}' oluşturulamadı, insert metodu ID döndürmedi.")
+                logger.error(f"Model '{name}' oluşturulamadı, insert metodu ID döndürmedi.\n")
+                logger.error(f"==== Result: Create AI Model - Failure ====\n  └── Reason: No ID returned from insert operation.\n")
                 return False, f"Model '{name}' oluşturulamadı (ID alınamadı).", None
         except MySQLError as e:
-            # print(f"DEBUG: Model oluşturulurken veritabanı hatası: {e}")
-            if e.errno == 1062: # Duplicate entry (örn: UNIQUE kısıtlaması olan bir alan için)
-                 return False, f"Model oluşturulamadı: Benzersiz bir alan zaten mevcut. Hata: {str(e)}", None
-            if e.errno == 1452: # Cannot add or update a child row: a foreign key constraint fails
-                 return False, f"Model oluşturulamadı: Belirtilen kategori ID ({category_id}) 'ai_categories' tablosunda bulunamadı. Hata: {str(e)}", None
-            return False, f"Veritabanı hatası: {str(e)}", None
-        except Exception as ex: # Beklenmedik diğer hatalar
-            # print(f"DEBUG: Model oluşturulurken beklenmedik hata: {ex}")
+            logger.error(f"Model oluşturulurken veritabanı hatası (errno: {e.errno}): {e}\n", exc_info=False) # exc_info=False to avoid duplicate stack trace if not needed here
+            error_message = f"Veritabanı hatası: {str(e)}"
+            if e.errno == 1062:
+                 error_message = f"Model oluşturulamadı: Benzersiz bir alan zaten mevcut. Hata: {str(e)}"
+            if e.errno == 1452:
+                 error_message = f"Model oluşturulamadı: Belirtilen kategori ID ({category_id}) 'ai_categories' tablosunda bulunamadı. Hata: {str(e)}"
+            logger.error(f"==== Result: Create AI Model - Database Error ====\n  └── MySQL ErrorNo {e.errno}: {e.msg}\n")
+            return False, error_message, None
+        except Exception as ex:
+            logger.critical(f"Model oluşturulurken beklenmedik kritik hata: {ex}\n", exc_info=True)
+            logger.critical(f"==== Result: Create AI Model - Unexpected Critical Error ====\n  └── Error: {str(ex)}\n")
             return False, f"Beklenmedik bir hata oluştu: {str(ex)}", None
 
     # 2.3. update_model
     # -------------------------------------------------------------------------
-    def update_model(self, model_id: int, 
+    def update_model(self, model_id: int,
                      updates: Dict[str, Any]) -> Tuple[bool, str]:
         """
-        Mevcut bir AI modelini günceller. Sadece 'updates' sözlüğünde belirtilen alanlar güncellenir.
-        
-        Args:
-            model_id (int): Güncellenecek modelin ID'si.
-            updates (Dict[str, Any]): Güncellenecek alanları ve yeni değerlerini içeren sözlük.
-                                      Örn: {'name': 'Yeni Model Adı', 'api_key': 'yeni_anahtar'}
-                                      JSON alanları (details, request_headers, request_body) dict olarak verilmeli.
-            
-        Returns:
-            Tuple[bool, str]: (başarı_durumu, mesaj)
+        Mevcut bir AI modelini günceller.
         """
-        # print(f"DEBUG: Model güncelleniyor: ID={model_id}, Güncellemeler={updates}")
+        current_method_name = inspect.currentframe().f_code.co_name
+        log_caller_info(self.__class__.__name__, current_method_name,
+                        params_summary={"model_id": model_id, "update_keys": list(updates.keys())})
+
+        logger.info(f"==== Operation: Update AI Model ====\n  └── ID={model_id}, Updates='{list(updates.keys())}'\n")
         try:
             if not model_id or not isinstance(model_id, int) or model_id <= 0:
+                logger.warning("Geçersiz model ID'si sağlandı.\n")
+                logger.warning(f"==== Result: Update AI Model - Validation Failed ====\n  └── Reason: Invalid model ID ({model_id}).\n")
                 return False, "Geçerli bir model ID'si gereklidir."
             if not updates or not isinstance(updates, dict):
+                logger.info("Güncellenecek herhangi bir alan sağlanmadı.\n")
+                # Bu bir hata durumu değil, işlem yapılmadı olarak kabul edilebilir.
+                logger.info(f"==== Result: Update AI Model - No Action ====\n  └── Reason: No fields provided for update.\n")
                 return True, "Güncellenecek herhangi bir alan sağlanmadı."
-
-            # Modelin var olup olmadığını kontrol et (isteğe bağlı, execute_query zaten satır sayısını döner)
-            # current_model = self.get_model_by_id(model_id) # Bu, API anahtarını çözer, gereksiz olabilir
-            # if not current_model:
-            #     return False, f"ID'si {model_id} olan model bulunamadı."
 
             update_fields_parts = []
             params = []
-            
             allowed_fields = [
-                "category_id", "name", "icon", "description", "details", 
-                "api_url", "request_method", "request_headers", 
+                "category_id", "name", "icon", "description", "details",
+                "api_url", "request_method", "request_headers",
                 "request_body", "response_path", "api_key"
             ]
 
             for field, value in updates.items():
                 if field not in allowed_fields:
-                    # print(f"UYARI: '{field}' alanı güncellenemez, yoksayılıyor.")
+                    logger.warning(f"'{field}' alanı güncellenemez, yoksayılıyor.\n")
                     continue
 
-                # Alan bazlı doğrulamalar ve dönüşümler
+                # Alan bazlı doğrulamalar (create_model'deki gibi)
+                # Örnek: name alanı için
                 if field == "name":
-                    if not value or not str(value).strip(): return False, "Model adı boş olamaz."
-                    if len(str(value).strip()) > 255: return False, "Model adı 255 karakterden uzun olamaz."
+                    if not value or not str(value).strip():
+                        logger.warning("Model adı güncellenirken boş bırakılamaz.\n")
+                        logger.warning(f"==== Result: Update AI Model - Validation Failed ====\n  └── Reason: Model name cannot be empty during update.\n")
+                        return False, "Model adı boş olamaz."
+                    if len(str(value).strip()) > 255:
+                         logger.warning(f"Model adı güncellenirken çok uzun: {len(str(value).strip())} karakter.\n")
+                         logger.warning(f"==== Result: Update AI Model - Validation Failed ====\n  └── Reason: Model name too long for update.\n")
+                         return False, "Model adı 255 karakterden uzun olamaz."
                     update_fields_parts.append("name = %s")
                     params.append(str(value).strip())
                 elif field == "category_id":
-                    if not isinstance(value, int) or value <= 0: return False, "Geçerli bir kategori ID'si gereklidir."
-                    # Kategori varlığını kontrol et (isteğe bağlı)
-                    # query_check_category = "SELECT id FROM ai_categories WHERE id = %s"
-                    # category = self.fetch_one(query_check_category, (value,))
-                    # if not category: return False, f"ID'si {value} olan kategori bulunamadı."
+                    if not isinstance(value, int) or value <= 0:
+                        logger.warning("Geçersiz kategori ID'si sağlandı.\n")
+                        logger.warning(f"==== Result: Update AI Model - Validation Failed ====\n  └── Reason: Invalid category ID ({value}) for update.\n")
+                        return False, "Geçerli bir kategori ID'si gereklidir."
                     update_fields_parts.append("category_id = %s")
                     params.append(value)
-                elif field in ["icon", "description", "api_url", "request_method", "response_path", "api_key"]:
-                    if field == "api_url" and value and len(str(value)) > 2048: return False, "API URL'si 2048 karakterden uzun olamaz."
-                    if field == "api_key" and value and len(str(value)) > 512: return False, "API anahtarı 512 karakterden uzun olamaz."
-                    if field == "request_method" and value and len(str(value)) > 10: return False, "İstek metodu 10 karakterden uzun olamaz."
-                    if field == "response_path" and value and len(str(value)) > 255: return False, "Yanıt yolu 255 karakterden uzun olamaz."
-                    
+                elif field == "api_url" and value and len(str(value)) > 2048:
+                    logger.warning("API URL'si güncellenirken çok uzun.\n")
+                    logger.warning(f"==== Result: Update AI Model - Validation Failed ====\n  └── Reason: API URL too long for update.\n")
+                    return False, "API URL'si 2048 karakterden uzun olamaz."
+                # Diğer alanlar için benzer doğrulamalar eklenebilir.
+                elif field in ["icon", "description", "request_method", "response_path", "api_key"]:
                     update_fields_parts.append(f"{field} = %s")
                     params.append(str(value).strip() if value is not None else None)
                 elif field in ["details", "request_headers", "request_body"]:
                     update_fields_parts.append(f"{field} = %s")
                     params.append(json.dumps(value) if value is not None else None)
-            
+
             if not update_fields_parts:
+                logger.info("Güncellenecek geçerli alan bulunamadı veya sağlanmadı.\n")
+                logger.info(f"==== Result: Update AI Model - No Action ====\n  └── Reason: No valid fields found for update.\n")
                 return True, "Güncellenecek geçerli alan bulunamadı veya sağlanmadı."
 
-            params.append(model_id) # WHERE koşulu için model_id'yi sona ekle
-
-            query = f"UPDATE ai_models SET {', '.join(update_fields_parts)} WHERE id = %s"
+            params.append(model_id) # WHERE clause için model_id
+            query = f"UPDATE ai_models SET {', '.join(update_fields_parts)}, updated_at = CURRENT_TIMESTAMP WHERE id = %s"
+            logger.debug(f"Executing UPDATE query for model ID {model_id} with fields: {update_fields_parts}.\n")
             rows_affected = self.execute_query(query, tuple(params))
 
             if rows_affected > 0:
-                # print(f"DEBUG: Model ID {model_id} başarıyla güncellendi.")
+                logger.info(f"Model ID {model_id} başarıyla güncellendi. Etkilenen satır: {rows_affected}\n")
+                logger.info(f"==== Result: Update AI Model - Success ====\n  └── Model ID: {model_id}, Rows Affected: {rows_affected}\n")
                 return True, f"Model başarıyla güncellendi."
             else:
-                # print(f"DEBUG: Model ID {model_id} güncellenirken değişiklik yapılmadı (veriler aynı olabilir veya model bulunamadı).")
-                # Modelin var olup olmadığını kontrol etmek için ayrı bir sorgu yapılabilir.
                 check_exists_query = "SELECT id FROM ai_models WHERE id = %s"
                 exists = self.fetch_one(check_exists_query, (model_id,))
                 if not exists:
+                    logger.warning(f"Güncellenmek istenen model ID {model_id} bulunamadı.\n")
+                    logger.warning(f"==== Result: Update AI Model - Failure ====\n  └── Reason: Model ID {model_id} not found.\n")
                     return False, f"ID'si {model_id} olan model bulunamadı."
+
+                logger.info(f"Model ID {model_id} güncellenirken değişiklik yapılmadı (veriler aynı olabilir).\n")
+                logger.info(f"==== Result: Update AI Model - No Change ====\n  └── Model ID: {model_id} (data might be identical).\n")
                 return True, "Modelde herhangi bir değişiklik yapılmadı (veriler aynı olabilir)."
         except MySQLError as e:
-            # print(f"DEBUG: Model güncellenirken veritabanı hatası: {e}")
-            if e.errno == 1062: return False, f"Model güncellenemedi: Benzersiz bir alan zaten mevcut. Hata: {str(e)}"
-            if e.errno == 1452: return False, f"Model güncellenemedi: Belirtilen kategori ID geçersiz. Hata: {str(e)}"
-            return False, f"Veritabanı hatası: {str(e)}"
+            logger.error(f"Model güncellenirken veritabanı hatası (errno: {e.errno}): {e}\n", exc_info=False)
+            error_message = f"Veritabanı hatası: {str(e)}"
+            if e.errno == 1062: error_message = f"Model güncellenemedi: Benzersiz bir alan zaten mevcut. Hata: {str(e)}"
+            if e.errno == 1452: error_message = f"Model güncellenemedi: Belirtilen kategori ID geçersiz. Hata: {str(e)}"
+            logger.error(f"==== Result: Update AI Model - Database Error ====\n  └── MySQL ErrorNo {e.errno}: {e.msg}\n")
+            return False, error_message
         except Exception as ex:
-            # print(f"DEBUG: Model güncellenirken beklenmedik hata: {ex}")
+            logger.critical(f"Model güncellenirken beklenmedik kritik hata: {ex}\n", exc_info=True)
+            logger.critical(f"==== Result: Update AI Model - Unexpected Critical Error ====\n  └── Error: {str(ex)}\n")
             return False, f"Beklenmedik bir hata oluştu: {str(ex)}"
 
     # 2.4. delete_model
@@ -235,42 +309,47 @@ class ModelRepository(BaseRepository):
     def delete_model(self, model_id: int) -> Tuple[bool, str]:
         """
         Bir AI modelini siler.
-        Args:
-            model_id (int): Silinecek modelin ID'si.
-        Returns:
-            Tuple[bool, str]: (başarı_durumu, mesaj)
         """
-        # print(f"DEBUG: Model siliniyor: ID={model_id}")
+        current_method_name = inspect.currentframe().f_code.co_name
+        log_caller_info(self.__class__.__name__, current_method_name, params_summary={"model_id": model_id})
+
+        logger.info(f"==== Operation: Delete AI Model ====\n  └── ID={model_id}\n")
         try:
             if not model_id or not isinstance(model_id, int) or model_id <= 0:
+                logger.warning("Geçersiz model ID'si sağlandı.\n")
+                logger.warning(f"==== Result: Delete AI Model - Validation Failed ====\n  └── Reason: Invalid model ID ({model_id}).\n")
                 return False, "Geçerli bir model ID'si gereklidir."
 
-            # Modelin adını almak için önce modeli çek (isteğe bağlı, mesaj için)
-            # model_data = self.get_model_by_id(model_id) # Bu API key'i de çözer, gereksiz olabilir
-            # model_name = model_data['name'] if model_data else f"ID {model_id}"
-            
             query_select_name = "SELECT name FROM ai_models WHERE id = %s"
+            logger.debug(f"Checking existence of model ID {model_id} before deletion.\n")
             model_info = self.fetch_one(query_select_name, (model_id,))
             if not model_info:
+                 logger.warning(f"Silinmek istenen model ID {model_id} bulunamadı.\n")
+                 logger.warning(f"==== Result: Delete AI Model - Failure ====\n  └── Reason: Model ID {model_id} not found.\n")
                  return False, f"ID'si {model_id} olan model bulunamadı."
             model_name = model_info['name']
-
+            logger.info(f"Model '{model_name}' (ID: {model_id}) silinmek üzere bulundu.\n")
 
             query_delete = "DELETE FROM ai_models WHERE id = %s"
+            logger.debug(f"Executing DELETE query for model ID {model_id}.\n")
             rows_affected = self.execute_query(query_delete, (model_id,))
 
             if rows_affected > 0:
-                # print(f"DEBUG: Model '{model_name}' (ID: {model_id}) başarıyla silindi.")
+                logger.info(f"Model '{model_name}' (ID: {model_id}) başarıyla silindi.\n")
+                logger.info(f"==== Result: Delete AI Model - Success ====\n  └── Model '{model_name}' (ID: {model_id}) deleted.\n")
                 return True, f"Model '{model_name}' başarıyla silindi."
             else:
-                # print(f"DEBUG: Model '{model_name}' (ID: {model_id}) silinemedi veya zaten yoktu.")
-                # Bu durum genellikle yukarıdaki model_info kontrolü ile yakalanır.
+                # Bu durum fetch_one kontrolü ile yakalanmış olmalı ama ek bir güvenlik.
+                logger.warning(f"Model '{model_name}' (ID: {model_id}) silinemedi veya zaten yoktu (etkilenen satır: 0).\n")
+                logger.warning(f"==== Result: Delete AI Model - No Action ====\n  └── Reason: Model ID {model_id} not deleted (possibly already gone, rows_affected: 0).\n")
                 return False, f"Model '{model_name}' silinemedi (muhtemelen zaten silinmiş)."
         except MySQLError as e:
-            # print(f"DEBUG: Model silinirken veritabanı hatası: {e}")
+            logger.error(f"Model silinirken veritabanı hatası: {e}\n", exc_info=True)
+            logger.error(f"==== Result: Delete AI Model - Database Error ====\n  └── MySQL Error: {str(e)}\n")
             return False, f"Veritabanı hatası: {str(e)}"
         except Exception as ex:
-            # print(f"DEBUG: Model silinirken beklenmedik hata: {ex}")
+            logger.critical(f"Model silinirken beklenmedik kritik hata: {ex}\n", exc_info=True)
+            logger.critical(f"==== Result: Delete AI Model - Unexpected Critical Error ====\n  └── Error: {str(ex)}\n")
             return False, f"Beklenmedik bir hata oluştu: {str(ex)}"
 
     # 2.5. get_model_by_id
@@ -278,99 +357,164 @@ class ModelRepository(BaseRepository):
     def get_model_by_id(self, model_id: int, include_api_key: bool = False) -> Optional[Model]:
         """
         Belirtilen ID'ye sahip modeli getirir.
-        
-        Args:
-            model_id (int): Getirilecek modelin ID'si.
-            include_api_key (bool): API anahtarının sonuca dahil edilip edilmeyeceği.
-                                    Varsayılan olarak False (güvenlik için).
-            
-        Returns:
-            Optional[Model]: Model nesnesi veya None (bulunamazsa).
         """
+        current_method_name = inspect.currentframe().f_code.co_name
+        log_caller_info(self.__class__.__name__, current_method_name,
+                        params_summary={"model_id": model_id, "include_api_key": include_api_key})
+
+        logger.info(f"==== Operation: Get Model by ID ====\n  └── ID={model_id}, IncludeAPIKey={include_api_key}\n")
         if not model_id or not isinstance(model_id, int) or model_id <= 0:
+            logger.warning("Geçersiz model ID'si sağlandı.\n")
+            logger.warning(f"==== Result: Get Model by ID - Validation Failed ====\n  └── Reason: Invalid model ID ({model_id}).\n")
             return None
-            
+
         query = """
-            SELECT 
-                id, category_id, name, icon, description, details,
-                api_url, request_method, request_headers, 
-                request_body, response_path, api_key,
-                created_at, updated_at
-            FROM ai_models
-            WHERE id = %s
+            SELECT id, category_id, name, icon, description, details,
+                   api_url, request_method, request_headers,
+                   request_body, response_path, api_key,
+                   created_at, updated_at
+            FROM ai_models WHERE id = %s
         """
-        row = self.fetch_one(query, (model_id,))
-        
-        if row:
-            model_data = dict(row) # Satırı sözlüğe çevir
-            if not include_api_key:
-                model_data['api_key'] = None # API anahtarını gizle
-            return Model.from_dict(model_data)
-        return None
+        try:
+            logger.debug(f"Executing SELECT query for model ID {model_id}.\n")
+            row = self.fetch_one(query, (model_id,))
+            if row:
+                model_data = dict(row)
+                if not include_api_key:
+                    if model_data.get('api_key'):
+                        model_data['api_key'] = "***GİZLİ***"
+                        logger.debug(f"API key for model ID {model_id} is being masked.\n")
+                else:
+                    if model_data.get('api_key'):
+                        logger.warning(f"API key for model ID {model_id} is being included in the result.\n")
+
+                for field in ['details', 'request_headers', 'request_body']:
+                    if isinstance(model_data.get(field), str):
+                        try:
+                            model_data[field] = json.loads(model_data[field])
+                        except json.JSONDecodeError:
+                            logger.warning(f"Model ID {model_id}, alan '{field}' için JSON parse hatası. Ham veri: {model_data[field]}\n")
+                            model_data[field] = None
+
+                logger.info(f"Model ID {model_id} bulundu: {model_data['name']}\n")
+                logger.info(f"==== Result: Get Model by ID - Success ====\n  └── Model '{model_data['name']}' found.\n")
+                return Model.from_dict(model_data)
+            else:
+                logger.info(f"Model ID {model_id} bulunamadı.\n")
+                logger.info(f"==== Result: Get Model by ID - Not Found ====\n  └── Model ID {model_id} does not exist.\n")
+                return None
+        except MySQLError as e:
+            logger.error(f"Model ID {model_id} getirilirken veritabanı hatası: {e}\n", exc_info=True)
+            logger.error(f"==== Result: Get Model by ID - Database Error ====\n  └── MySQL Error: {str(e)}\n")
+            return None
+        except Exception as ex:
+            logger.critical(f"Model ID {model_id} getirilirken beklenmedik hata: {ex}\n", exc_info=True)
+            logger.critical(f"==== Result: Get Model by ID - Unexpected Critical Error ====\n  └── Error: {str(ex)}\n")
+            return None
 
     # 2.6. get_models_by_category_id
     # -------------------------------------------------------------------------
     def get_models_by_category_id(self, category_id: int, include_api_keys: bool = False) -> List[Model]:
         """
         Belirtilen kategoriye ait tüm modelleri getirir.
-        
-        Args:
-            category_id (int): Kategori ID'si.
-            include_api_keys (bool): API anahtarlarının sonuca dahil edilip edilmeyeceği.
-                                     Varsayılan olarak False.
-            
-        Returns:
-            List[Model]: Model nesnelerinin listesi.
         """
+        current_method_name = inspect.currentframe().f_code.co_name
+        log_caller_info(self.__class__.__name__, current_method_name,
+                        params_summary={"category_id": category_id, "include_api_keys": include_api_keys})
+
+        logger.info(f"==== Operation: Get Models by Category ID ====\n  └── CategoryID={category_id}, IncludeAPIKeys={include_api_keys}\n")
         if not isinstance(category_id, int) or category_id <= 0:
+            logger.warning("Geçersiz kategori ID'si sağlandı.\n")
+            logger.warning(f"==== Result: Get Models by Category ID - Validation Failed ====\n  └── Reason: Invalid category ID ({category_id}).\n")
             return []
 
         query = """
-            SELECT 
-                id, category_id, name, icon, description, details,
-                api_url, request_method, request_headers, 
-                request_body, response_path, api_key,
-                created_at, updated_at
-            FROM ai_models
-            WHERE category_id = %s
-            ORDER BY name
+            SELECT id, category_id, name, icon, description, details,
+                   api_url, request_method, request_headers,
+                   request_body, response_path, api_key,
+                   created_at, updated_at
+            FROM ai_models WHERE category_id = %s ORDER BY name
         """
-        rows = self.fetch_all(query, (category_id,))
-        
         models = []
-        for row_dict in rows:
-            if not include_api_keys:
-                row_dict['api_key'] = None # API anahtarını gizle
-            models.append(Model.from_dict(row_dict))
-        return models
+        try:
+            logger.debug(f"Executing SELECT query for models in category ID {category_id}.\n")
+            rows = self.fetch_all(query, (category_id,))
+            for row_dict in rows:
+                if not include_api_keys:
+                    if row_dict.get('api_key'):
+                        row_dict['api_key'] = "***GİZLİ***"
+                else:
+                    if row_dict.get('api_key'):
+                         logger.warning(f"API key for model ID {row_dict['id']} is being included in the results for category {category_id}.\n")
+
+                for field in ['details', 'request_headers', 'request_body']:
+                    if isinstance(row_dict.get(field), str):
+                        try:
+                            row_dict[field] = json.loads(row_dict[field])
+                        except json.JSONDecodeError:
+                            logger.warning(f"Model ID {row_dict['id']}, alan '{field}' için JSON parse hatası. Ham veri: {row_dict[field]}\n")
+                            row_dict[field] = None
+                models.append(Model.from_dict(row_dict))
+
+            logger.info(f"Kategori ID {category_id} için {len(models)} model bulundu.\n")
+            logger.info(f"==== Result: Get Models by Category ID - Success ====\n  └── Found {len(models)} models for Category ID {category_id}.\n")
+            return models
+        except MySQLError as e:
+            logger.error(f"Kategori ID {category_id} için modeller getirilirken veritabanı hatası: {e}\n", exc_info=True)
+            logger.error(f"==== Result: Get Models by Category ID - Database Error ====\n  └── MySQL Error: {str(e)}\n")
+            return []
+        except Exception as ex:
+            logger.critical(f"Kategori ID {category_id} için modeller getirilirken beklenmedik hata: {ex}\n", exc_info=True)
+            logger.critical(f"==== Result: Get Models by Category ID - Unexpected Critical Error ====\n  └── Error: {str(ex)}\n")
+            return []
 
     # 2.7. get_all_models
     # -------------------------------------------------------------------------
     def get_all_models(self, include_api_keys: bool = False) -> List[Model]:
         """
-        Tüm AI modellerini kategori ID'si ve model ID'sine göre sıralanmış olarak getirir.
-        
-        Args:
-            include_api_keys (bool): API anahtarlarının sonuca dahil edilip edilmeyeceği.
-                                     Varsayılan olarak False.
-        Returns:
-            List[Model]: Model nesnelerinin listesi.
+        Tüm AI modellerini getirir.
         """
-        query = """
-            SELECT 
-                id, category_id, name, icon, description, details,
-                api_url, request_method, request_headers, 
-                request_body, response_path, api_key,
-                created_at, updated_at
-            FROM ai_models
-            ORDER BY category_id, id
-        """
-        rows = self.fetch_all(query)
-        
-        models = []
-        for row_dict in rows:
-            if not include_api_keys:
-                row_dict['api_key'] = None # API anahtarını gizle
-            models.append(Model.from_dict(row_dict))
-        return models
+        current_method_name = inspect.currentframe().f_code.co_name
+        log_caller_info(self.__class__.__name__, current_method_name,
+                        params_summary={"include_api_keys": include_api_keys})
 
+        logger.info(f"==== Operation: Get All Models ====\n  └── IncludeAPIKeys={include_api_keys}\n")
+        query = """
+            SELECT id, category_id, name, icon, description, details,
+                   api_url, request_method, request_headers,
+                   request_body, response_path, api_key,
+                   created_at, updated_at
+            FROM ai_models ORDER BY category_id, id
+        """
+        models = []
+        try:
+            logger.debug("Executing SELECT query to fetch all models.\n")
+            rows = self.fetch_all(query)
+            for row_dict in rows:
+                if not include_api_keys:
+                    if row_dict.get('api_key'):
+                        row_dict['api_key'] = "***GİZLİ***"
+                else:
+                    if row_dict.get('api_key'):
+                        logger.warning(f"API key for model ID {row_dict['id']} is being included in 'get_all_models' result.\n")
+
+                for field in ['details', 'request_headers', 'request_body']:
+                    if isinstance(row_dict.get(field), str):
+                        try:
+                            row_dict[field] = json.loads(row_dict[field])
+                        except json.JSONDecodeError:
+                            logger.warning(f"Model ID {row_dict['id']}, alan '{field}' için JSON parse hatası. Ham veri: {row_dict[field]}\n")
+                            row_dict[field] = None
+                models.append(Model.from_dict(row_dict))
+
+            logger.info(f"Toplam {len(models)} model bulundu.\n")
+            logger.info(f"==== Result: Get All Models - Success ====\n  └── Found {len(models)} models in total.\n")
+            return models
+        except MySQLError as e:
+            logger.error(f"Tüm modeller getirilirken veritabanı hatası: {e}\n", exc_info=True)
+            logger.error(f"==== Result: Get All Models - Database Error ====\n  └── MySQL Error: {str(e)}\n")
+            return []
+        except Exception as ex:
+            logger.critical(f"Tüm modeller getirilirken beklenmedik hata: {ex}\n", exc_info=True)
+            logger.critical(f"==== Result: Get All Models - Unexpected Critical Error ====\n  └── Error: {str(ex)}\n")
+            return []

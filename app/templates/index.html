@@ -59,7 +59,7 @@
                             <div class="collapse" id="collapse{{ category.name|replace(' ', '') }}" data-bs-parent="#aiCategoriesAccordion">
                                 <ul class="list-group list-group-flush">
                                     {% for model in category.models %}
-                                    <li class="list-group-item list-group-item-action ai-model-selector-item" data-ai-index="{{ model.data_ai_index }}">
+                                    <li class="list-group-item list-group-item-action ai-model-selector-item" data-ai-index="{{ model.id }}">
                                         <span class="ai-icon me-2"><i class="bi {{ model.icon }}"></i></span>
                                         <span class="ai-name">{{ model.name }}</span>
                                     </li>
@@ -170,21 +170,25 @@
     parsedAiCategories = []; // Fallback to empty
   }
 
-  window.state.aiTypes = [];
-  if (Array.isArray(parsedAiCategories)) {
-    parsedAiCategories.forEach(category => {
-      if (category && Array.isArray(category.models)) {
-        category.models.forEach(model => {
-          window.state.aiTypes.push({
-            name: model.name,
-            icon: model.icon,
-            id: model.data_ai_index
-            // defaultPrompt: "You are " + model.name
-          });
+  // ...
+window.state.aiTypes = [];
+if (Array.isArray(parsedAiCategories)) {
+  parsedAiCategories.forEach(category => {
+    if (category && Array.isArray(category.models)) {
+      category.models.forEach(model => {
+        // model objesi backend'den "id" (DB primary key) ve "data_ai_index" içeriyor olmalı.
+        // Biz burada AI modelini unique olarak tanımlamak için DB primary key'i olan "id"yi kullanacağız.
+        window.state.aiTypes.push({
+          name: model.name,
+          icon: model.icon,
+          id: model.id // <-- model.data_ai_index yerine model.id KULLANILDI
+          // defaultPrompt: "You are " + model.name
         });
-      }
-    });
-  }
+      });
+    }
+  });
+}
+// ...
   
   window.state.allAiCategories = parsedAiCategories;
 
