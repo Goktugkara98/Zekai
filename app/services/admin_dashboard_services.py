@@ -86,7 +86,7 @@ class CategoryService:
 
     def delete_category(self, category_id):
         """Bir kategoriyi siler. Kategoriye bağlı model varsa silmeyi engeller."""
-        category_to_delete = self.category_repo.get_by_id(category_id)
+        category_to_delete = self.category_repo.get_category_by_id(category_id)
         if not category_to_delete:
             raise ValueError("Kategori bulunamadı.") # Veya özel bir exception
         
@@ -105,7 +105,7 @@ class CategoryService:
             
     def update_category(self, category_id, name, description=None):
         """Var olan bir kategoriyi günceller."""
-        category_to_update = self.category_repo.get_by_id(category_id)
+        category_to_update = self.category_repo.get_category_by_id(category_id)
         if not category_to_update:
             raise ValueError("Güncellenecek kategori bulunamadı.")
         
@@ -160,36 +160,88 @@ class AIModelService:
             models_data.append(model_dict)
         return models_data
 
-    def add_model(self, name, category_id, description=None, api_url=None, status='active'):
-        """Yeni bir AI modeli ekler."""
-        category = self.category_repo.get_by_id(category_id)
+    def add_model(self, name, category_id, description=None, api_url=None, api_method='POST', api_key=None, 
+                request_headers=None, request_body=None, response_path=None, status='active', icon=None):
+        """Yeni bir AI modeli ekler.
+        
+        Args:
+            name: Model adı
+            category_id: Bağlı olduğu kategori ID'si
+            description: Model açıklaması (opsiyonel)
+            api_url: API endpoint URL'i (opsiyonel)
+            api_method: HTTP metodu (varsayılan: 'POST')
+            api_key: API anahtarı (opsiyonel)
+            request_headers: İstek başlıkları (JSON string veya dict)
+            request_body: İstek gövdesi (JSON string veya dict)
+            response_path: Yanıttan veri çıkarmak için JSON Path ifadesi (opsiyonel)
+            status: Model durumu (varsayılan: 'active')
+            icon: Model ikonu (Bootstrap Icons) (opsiyonel)
+            
+        Returns:
+            dict: Eklenen modelin sözlük temsili
+            
+        Raises:
+            ValueError: Kategori bulunamazsa veya geçersiz veri sağlanırsa
+            Exception: Veritabanı işlemi başarısız olursa
+        """
+        # Kategori varlığını kontrol et
+        category = self.category_repo.get_category_by_id(category_id)
         if not category:
             raise ValueError("Belirtilen kategori bulunamadı.")
         
+        # JSON alanlarını işle
+        headers = request_headers
+        if isinstance(headers, str):
+            try:
+                headers = json.loads(headers) if headers else {}
+            except json.JSONDecodeError:
+                raise ValueError("Geçersiz istek başlığı formatı. JSON formatında olmalıdır.")
+        
+        body = request_body
+        if isinstance(body, str):
+            try:
+                body = json.loads(body) if body else {}
+            except json.JSONDecodeError:
+                raise ValueError("Geçersiz istek gövdesi formatı. JSON formatında olmalıdır.")
+        
         try:
-            new_model = self.model_repo.add(
-                name=name, 
-                category_id=category_id, 
-                description=description, 
-                api_url=api_url, 
-                status=status
+            # Modeli ekle - create_model bir tuple döndürür: (success, message, model_id)
+            success, message, model_id = self.model_repo.create_model(
+                name=name,
+                category_id=category_id,
+                icon=icon,
+                description=description,
+                api_url=api_url,
+                request_method=api_method,
+                api_key=api_key,
+                request_headers=headers,
+                request_body=body,
+                response_path=response_path
             )
-            db_session.commit()
-            return simple_model_to_dict(new_model) # Tüm alanları dönebilir
+            
+            if not success:
+                raise ValueError(message)
+            
+            # Başarılı ise, model_id ile modeli getir
+            model = self.model_repo.get_model_by_id(model_id)
+            if not model:
+                raise ValueError(f"Model oluşturuldu ancak getirilemedi. ID: {model_id}")
+                
+            # Model nesnesini sözlüğe dönüştür
+            return simple_model_to_dict(model)
+            
         except Exception as e:
-            db_session.rollback()
-            raise e
-        finally:
-            db_session.remove()
+            # Hata durumunda hatayı yukarı fırlat
+            raise Exception(f"Model eklenirken bir hata oluştu: {str(e)}")
 
     def delete_model(self, model_id):
         """Bir AI modelini siler."""
-        model_to_delete = self.model_repo.get_by_id(model_id)
+        model_to_delete = self.model_repo.get_model_by_id(model_id)
         if not model_to_delete:
             raise ValueError("Model bulunamadı.")
         
         try:
-            self.model_repo.delete(model_id)
+            self.model_repo.delete_model(model_id)
             db_session.commit()
             return True
         except Exception as e:
@@ -200,12 +252,12 @@ class AIModelService:
             
     def update_model(self, model_id, data):
         """Var olan bir AI modelini günceller. `data` bir sözlük olmalıdır."""
-        model_to_update = self.model_repo.get_by_id(model_id)
+        model_to_update = self.model_repo.get_model_by_id(model_id)
         if not model_to_update:
             raise ValueError("Güncellenecek model bulunamadı.")
 
         if 'category_id' in data:
-            category = self.category_repo.get_by_id(data['category_id'])
+            category = self.category_repo.get_category_by_id(data['category_id'])
             if not category:
                 raise ValueError("Belirtilen yeni kategori bulunamadı.")
         

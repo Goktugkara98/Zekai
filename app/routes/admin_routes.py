@@ -145,12 +145,23 @@ def api_add_model():
         if not data or not data.get('name') or data.get('category_id') is None:
             return jsonify({'success': False, 'message': 'Model adı ve kategori ID gerekli.'}), 400
         
+        # API URL kontrolü
+        if data.get('api_url') is None or not data.get('api_url').strip():
+            return jsonify({'success': False, 'message': 'API URL alanı gereklidir.'}), 400
+        
+        # Tüm alanları model servisine gönder
         new_model = model_service.add_model(
             name=data['name'],
             category_id=data['category_id'],
             description=data.get('description'),
             api_url=data.get('api_url'),
-            status=data.get('status', 'active')
+            api_method=data.get('api_method', 'POST'),
+            api_key=data.get('api_key'),
+            request_headers=data.get('request_headers', {}),
+            request_body=data.get('request_body', {}),
+            response_path=data.get('response_path'),
+            status=data.get('status', 'active'),
+            icon=data.get('icon')
         )
         return jsonify({'success': True, 'message': 'AI Modeli başarıyla eklendi.', 'model': new_model}), 201
     except ValueError as ve:
