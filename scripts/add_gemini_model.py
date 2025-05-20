@@ -29,16 +29,16 @@ except ImportError as e:
 # --- YENİ MODELİN BİLGİLERİ ---
 GEMINI_API_KEY = "AIzaSyAkd4grtdow3141FUfsfzYxxaSc5_5xee4" # !!! API Anahtarınızı buraya girin !!!
 
-MODEL_NAME = "Gemini 2.0 Flash"
+MODEL_NAME = "Gemini 2.1 Flash"
 MODEL_ICON = "fas fa-bolt" # Font Awesome ikonu
 MODEL_DESCRIPTION = "Google tarafından geliştirilen hızlı ve verimli bir AI modeli."
 MODEL_DETAILS = {
-    "version": "2.0-flash",
+    "version": "2.1-flash",
     "provider": "Google Generative Language API",
     "capabilities": ["Metin üretimi", "Sohbet", "Soru yanıtlama"],
     "notes": "Hızlı yanıtlar için optimize edilmiştir."
 }
-API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent" # Key olmadan temel URL
+API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.1-flash-latest:generateContent" # Key olmadan temel URL
 # API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" # Eğer bu endpoint doğruysa
 REQUEST_METHOD = "POST"
 REQUEST_HEADERS = {
