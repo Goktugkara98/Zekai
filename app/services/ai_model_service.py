@@ -75,39 +75,56 @@ def get_ai_model_api_details(model_identifier: str) -> Optional[Dict[str, Any]]:
 def fetch_ai_categories_from_db() -> List[Dict[str, Any]]:
     """Tüm AI kategorilerini ve ilişkili modellerini getirir."""
     try:
+        print("DEBUG: fetch_ai_categories_from_db başlatılıyor")
         category_repo = CategoryRepository()
         model_repo = ModelRepository()
-        categories = category_repo.get_all_categories()
-        categories_data = []
         
-        for category in categories:
+        categories = category_repo.get_all_categories()
+        print(f"DEBUG: {len(categories)} kategori bulundu")
+        
+        categories_data = []
+        for i, category in enumerate(categories):
+            print(f"DEBUG: Kategori {i+1}/{len(categories)} işleniyor: {category.name} (ID: {category.id})")
+            
             category_dict = {
-                "name": category["name"],
-                "icon": category["icon"],
-                "models": []
+                "id": category.id,
+                "name": category.name,
+                "icon": category.icon,
+                "models": []  # Boş models listesi oluştur
             }
             
             # Fetch models for the current category
-            models = model_repo.get_models_by_category_id(category["id"])
+            models = model_repo.get_models_by_category_id(category.id)
+            print(f"DEBUG: Kategori '{category.name}' için {len(models)} model bulundu")
             
-            for model in models:
+            for j, model in enumerate(models):
+                print(f"DEBUG: Model {j+1}/{len(models)} işleniyor: {model.name} (ID: {model.id})")
+                
                 # Make sure to properly escape any quotes in the API URL to prevent JSON parsing errors
-                api_url = model["api_url"]
+                api_url = model.api_url
                 if api_url and '"' in api_url:
                     api_url = api_url.replace('"', '\\"')  # Escape double quotes for JSON
-                
-                category_dict["models"].append({
-                    "name": model["name"],
-                    "icon": model["icon"],
-                    "data_ai_index": model["data_ai_index"],
+
+                model_dict = {
+                    "id": model.id,
+                    "name": model.name,
+                    "icon": model.icon,
                     "api_url": api_url
-                })
+                }
+                
+                print(f"DEBUG: Model verisi: {model_dict}")
+                category_dict["models"].append(model_dict)
                 
             categories_data.append(category_dict)
+            print(f"DEBUG: Kategori '{category.name}' verisi: {category_dict}")
             
+        print(f"DEBUG: Toplam {len(categories_data)} kategori verisi döndürülüyor")
         return categories_data
         
-    except Exception:
+    except Exception as e:
+        print(f"HATA: fetch_ai_categories_from_db içinde: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
         return []
 
 # -----------------------------------------------------------------------------
