@@ -1,7 +1,7 @@
 # app/services/__init__.py
 from typing import Optional, Dict, Any
 from app.services.base_ai_service import BaseAIService
-from app.services.google_ai_service import GoogleAIService
+from app.services.openai_service import OpenAIService
 from app.services.openrouter_ai_service import OpenRouterAIService
 # Import other services as you create them
 # from .your_other_ai_service import YourOtherAIService
@@ -10,9 +10,9 @@ from app.services.openrouter_ai_service import OpenRouterAIService
 # Maps a provider_type string (ideally from your database model_details)
 # to the corresponding service class.
 AI_SERVICE_REGISTRY = {
-    "google": GoogleAIService,
+    "openai": OpenAIService,
     "openrouter": OpenRouterAIService,
-    # "openai": OpenAIService, # Example for future
+    # "google": GoogleAIService, # Example for future
     # "anthropic": AnthropicService, # Example for future
 }
 
@@ -33,7 +33,7 @@ def get_ai_service(model_details: Dict[str, Any]) -> Optional[BaseAIService]:
     if not provider_type:
         # Infer provider_type if not explicitly set (less reliable)
         if 'generativelanguage.googleapis.com' in api_url:
-            provider_type = 'google'
+            provider_type = 'openai'
         elif 'openrouter.ai' in api_url:
             provider_type = 'openrouter'
         # Add more inferences here if needed

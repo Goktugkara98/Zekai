@@ -5,24 +5,33 @@
 # rotalarını tanımlar. Kullanıcı, kategori, AI modeli yönetimi ve genel
 # ayarlar gibi işlevleri içerir.
 #
-# Yapı:
-# 1. İçe Aktarmalar (Imports)
-# 2. Blueprint Tanımı (Blueprint Definition)
-# 3. Servis Örnekleri (Service Instances)
-# 4. Yardımcı Fonksiyonlar (Helper Functions - Eğer varsa)
-# 5. Arayüz Rotaları (View Routes - HTML Rendering)
-#    5.1. Dashboard
-#    5.2. Kullanıcı Yönetimi
-#    5.3. Kategori Yönetimi
-#    5.4. AI Model Yönetimi
-#    5.5. Ayarlar
-# 6. API Rotaları (API Routes - JSON)
-#    6.1. Kategori API'leri (Ekle, Sil, Güncelle)
-#    6.2. AI Model API'leri (Ekle, Sil, Güncelle)
-# 7. Veritabanı Oturumu Yönetimi Notları
+# İÇİNDEKİLER:
+# -----------------------------------------------------------------------------
+# 1.0 İÇE AKTARMALAR (IMPORTS)
+# 2.0 BLUEPRINT TANIMI (BLUEPRINT DEFINITION)
+# 3.0 SERVİS ÖRNEKLERİ (SERVICE INSTANCES)
+# 4.0 YARDIMCI FONKSİYONLAR (HELPER FUNCTIONS)
+#     (Bu dosyada özel bir yardımcı fonksiyon bulunmamaktadır)
+# 5.0 ARAYÜZ ROTALARI (VIEW ROUTES - HTML RENDERING)
+#     5.1. dashboard_page         : Yönetici paneli ana sayfasını (dashboard) gösterir.
+#     5.2. users_page             : Kullanıcı yönetimi sayfasını gösterir.
+#     5.3. categories_page        : Kategori yönetimi sayfasını gösterir.
+#     5.4. models_page            : AI Modeli yönetimi sayfasını gösterir.
+#     5.5. settings_page          : Genel ayarlar sayfasını gösterir.
+# 6.0 API ROTALARI (API ROUTES - JSON)
+#     6.1. Kategori API'leri
+#          6.1.1. api_add_category    : Yeni bir kategori ekler.
+#          6.1.2. api_delete_category : Bir kategoriyi siler.
+#          6.1.3. api_update_category : Bir kategoriyi günceller.
+#     6.2. AI Model API'leri
+#          6.2.1. api_add_model       : Yeni bir AI modeli ekler.
+#          6.2.2. api_delete_model    : Bir AI modelini siler.
+#          6.2.3. api_update_model    : Bir AI modelini günceller.
+# 7.0 VERİTABANI OTURUMU YÖNETİMİ NOTLARI (DATABASE SESSION MANAGEMENT NOTES)
 # =============================================================================
 
-# 1. İçe Aktarmalar (Imports)
+# =============================================================================
+# 1.0 İÇE AKTARMALAR (IMPORTS)
 # =============================================================================
 import traceback # Hata ayıklama için
 from typing import Dict, Any, Tuple, Optional, List # Tip ipuçları için
@@ -44,43 +53,40 @@ from app.services.admin_dashboard_services import (
     DashboardService,
     SettingsService
 )
-# Not: db_session'ın doğrudan route'larda kullanılmaması ve servisler
-# aracılığıyla yönetilmesi iyi bir pratiktir. Orijinal koddaki yorum korunmuştur.
-# from app.models.base import db_session
+# from app.models.base import db_session # Servisler aracılığıyla yönetilmesi tercih edilir.
 
-# 2. Blueprint Tanımı (Blueprint Definition)
 # =============================================================================
-# 'admin_bp' blueprint'i, yönetici paneli ile ilgili rotaları gruplar.
+# 2.0 BLUEPRINT TANIMI (BLUEPRINT DEFINITION)
+# =============================================================================
 admin_bp = Blueprint(
-    name='admin_bp',  # Blueprint'in adı
-    import_name=__name__,  # Blueprint'in bulunduğu modül
-    template_folder='../templates', # HTML şablonlarının yolu
-    url_prefix='/admin'  # Bu blueprint'teki tüm rotalar '/admin' ön ekiyle başlar
+    name='admin_bp',
+    import_name=__name__,
+    template_folder='../templates',
+    url_prefix='/admin'
 )
 
-# 3. Servis Örnekleri (Service Instances)
 # =============================================================================
-# İlgili servislerin örnekleri, bu modüldeki rotalar tarafından kullanılmak üzere oluşturulur.
-# Bu, servislerin state-less (durumsuz) olduğu varsayımına dayanır.
-# Eğer servisler request bazlı state tutuyorsa, her request için yeniden oluşturulmaları gerekebilir.
+# 3.0 SERVİS ÖRNEKLERİ (SERVICE INSTANCES)
+# =============================================================================
 category_service = CategoryService()
 model_service = AIModelService()
 user_service = UserService()
 dashboard_service = DashboardService()
 settings_service = SettingsService()
 
-# 4. Yardımcı Fonksiyonlar (Helper Functions)
+# =============================================================================
+# 4.0 YARDIMCI FONKSİYONLAR (HELPER FUNCTIONS)
 # =============================================================================
 # Bu bölümde, bu blueprint'e özel yardımcı fonksiyonlar tanımlanabilir.
 # Şu an için bu dosyada özel bir yardımcı fonksiyon bulunmuyor.
 
-
-# 5. Arayüz Rotaları (View Routes - HTML Rendering)
 # =============================================================================
-# Bu rotalar, yönetici paneli için HTML sayfalarını render eder.
-# Hepsi genellikle aynı 'admin_dashboard.html' şablonunu farklı verilerle kullanır.
+# 5.0 ARAYÜZ ROTALARI (VIEW ROUTES - HTML RENDERING)
+# =============================================================================
 
-# 5.1. Dashboard: /admin/ veya /admin/dashboard (GET)
+# -----------------------------------------------------------------------------
+# 5.1. Yönetici paneli ana sayfasını (dashboard) gösterir (dashboard_page)
+#      Rotalar: /admin/ veya /admin/dashboard (GET)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/')
 @admin_bp.route('/dashboard')
@@ -105,7 +111,9 @@ def dashboard_page() -> str:
                                current_page=current_page_identifier,
                                page_data={})
 
-# 5.2. Kullanıcı Yönetimi: /admin/users (GET)
+# -----------------------------------------------------------------------------
+# 5.2. Kullanıcı yönetimi sayfasını gösterir (users_page)
+#      Rota: /admin/users (GET)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/users')
 def users_page() -> str:
@@ -126,7 +134,9 @@ def users_page() -> str:
                                current_page=current_page_identifier,
                                page_data=[])
 
-# 5.3. Kategori Yönetimi: /admin/categories (GET)
+# -----------------------------------------------------------------------------
+# 5.3. Kategori yönetimi sayfasını gösterir (categories_page)
+#      Rota: /admin/categories (GET)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/categories')
 def categories_page() -> str:
@@ -147,7 +157,9 @@ def categories_page() -> str:
                                current_page=current_page_identifier,
                                page_data=[])
 
-# 5.4. AI Model Yönetimi: /admin/models (GET)
+# -----------------------------------------------------------------------------
+# 5.4. AI Modeli yönetimi sayfasını gösterir (models_page)
+#      Rota: /admin/models (GET)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/models')
 def models_page() -> str:
@@ -156,7 +168,6 @@ def models_page() -> str:
     current_page_identifier: str = "models"
     try:
         models_data: List[Dict[str, Any]] = model_service.get_all_models_for_display()
-        # AI Modeli ekleme/düzenleme formu için kategorileri de gönderelim
         all_categories: List[Dict[str, Any]] = category_service.get_all_categories_for_display()
         page_content_data = {"models": models_data, "categories": all_categories}
         return render_template('admin_dashboard.html',
@@ -171,7 +182,9 @@ def models_page() -> str:
                                current_page=current_page_identifier,
                                page_data={"models": [], "categories": []})
 
-# 5.5. Ayarlar: /admin/settings (GET)
+# -----------------------------------------------------------------------------
+# 5.5. Genel ayarlar sayfasını gösterir (settings_page)
+#      Rota: /admin/settings (GET)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/settings')
 def settings_page() -> str:
@@ -192,22 +205,23 @@ def settings_page() -> str:
                                current_page=current_page_identifier,
                                page_data={})
 
-# 6. API Rotaları (API Routes - JSON)
 # =============================================================================
-# Bu rotalar, yönetici panelindeki CRUD işlemleri için JSON tabanlı API sağlar.
+# 6.0 API ROTALARI (API ROUTES - JSON)
+# =============================================================================
 
+# -----------------------------------------------------------------------------
 # 6.1. Kategori API'leri
 # -----------------------------------------------------------------------------
 
-# 6.1.1. Kategori Ekle: /admin/api/categories (POST)
+# -----------------------------------------------------------------------------
+# 6.1.1. Yeni bir kategori ekler (api_add_category)
+#        Rota: /admin/api/categories (POST)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories', methods=['POST'])
 def api_add_category() -> Tuple[str, int]:
     """
     Yeni bir kategori ekler.
     İstek Formatı (JSON): {"name": "Kategori Adı", "description": "Açıklama (opsiyonel)"}
-    Başarılı Yanıt (JSON, 201): {"success": true, "message": "...", "category": {...}}
-    Hata Yanıtı (JSON, 400/409/500): {"success": false, "message": "..."}
     """
     try:
         data: Optional[Dict[str, Any]] = request.get_json()
@@ -219,183 +233,151 @@ def api_add_category() -> Tuple[str, int]:
             description=str(data.get('description', '')).strip()
         )
         return jsonify({'success': True, 'message': 'Kategori başarıyla eklendi.', 'category': new_category}), 201
-    except ValueError as ve: # Servis tarafından beklenen bir hata (örn: isim zaten var)
-        current_app.logger.warning(f"Kategori eklenirken hata: {str(ve)}. Gelen veri: {data}")
+    except ValueError as ve:
+        current_app.logger.warning(f"Kategori eklenirken hata: {str(ve)}. Gelen veri: {request.data.decode(errors='ignore')}")
         return jsonify({'success': False, 'message': str(ve)}), 409 # Conflict
     except Exception as e:
         current_app.logger.error(f"Kategori eklerken beklenmedik hata: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'message': f'Kategori eklenirken sunucuda bir hata oluştu.'}), 500
+        return jsonify({'success': False, 'message': 'Kategori eklenirken sunucuda bir hata oluştu.'}), 500
 
-# 6.1.2. Kategori Sil: /admin/api/categories/<int:category_id> (DELETE)
+# -----------------------------------------------------------------------------
+# 6.1.2. Bir kategoriyi siler (api_delete_category)
+#        Rota: /admin/api/categories/<int:category_id> (DELETE)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories/<int:category_id>', methods=['DELETE'])
 def api_delete_category(category_id: int) -> Tuple[str, int]:
-    """
-    Belirtilen ID'ye sahip kategoriyi siler.
-    Başarılı Yanıt (JSON, 200): {"success": true, "message": "..."}
-    Hata Yanıtı (JSON, 404/500): {"success": false, "message": "..."}
-    """
+    """Belirtilen ID'ye sahip kategoriyi siler."""
     try:
         category_service.delete_category(category_id)
         return jsonify({'success': True, 'message': 'Kategori başarıyla silindi.'}), 200
-    except ValueError as ve: # Servis tarafından beklenen bir hata (örn: kategori bulunamadı, bağlı modeller var)
+    except ValueError as ve:
         current_app.logger.warning(f"Kategori (ID: {category_id}) silinirken hata: {str(ve)}")
         return jsonify({'success': False, 'message': str(ve)}), 404 # Not Found or Conflict
     except Exception as e:
         current_app.logger.error(f"Kategori (ID: {category_id}) silinirken beklenmedik hata: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'message': f'Kategori silinirken sunucuda bir hata oluştu.'}), 500
+        return jsonify({'success': False, 'message': 'Kategori silinirken sunucuda bir hata oluştu.'}), 500
 
-# 6.1.3. Kategori Güncelle: /admin/api/categories/<int:category_id> (PUT)
+# -----------------------------------------------------------------------------
+# 6.1.3. Bir kategoriyi günceller (api_update_category)
+#        Rota: /admin/api/categories/<int:category_id> (PUT)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/categories/<int:category_id>', methods=['PUT'])
 def api_update_category(category_id: int) -> Tuple[str, int]:
     """
     Belirtilen ID'ye sahip kategoriyi günceller.
     İstek Formatı (JSON): {"name": "Yeni Ad", "description": "Yeni Açıklama (opsiyonel)"}
-    Başarılı Yanıt (JSON, 200): {"success": true, "message": "...", "category": {...}}
-    Hata Yanıtı (JSON, 400/404/409/500): {"success": false, "message": "..."}
     """
     try:
         data: Optional[Dict[str, Any]] = request.get_json()
-        if not data or not data.get('name') or not str(data['name']).strip(): # En azından isim güncellenmeli
+        if not data or not data.get('name') or not str(data['name']).strip():
             return jsonify({'success': False, 'message': 'Kategori adı zorunludur ve boş olamaz.'}), 400
 
         updated_category: Dict[str, Any] = category_service.update_category(
             category_id=category_id,
             name=str(data['name']).strip(),
-            description=str(data.get('description', '')).strip() # None ise boş string
+            description=str(data.get('description', '')).strip()
         )
         return jsonify({'success': True, 'message': 'Kategori başarıyla güncellendi.', 'category': updated_category}), 200
-    except ValueError as ve: # Servis tarafından beklenen hata (örn: bulunamadı, isim zaten var)
-        current_app.logger.warning(f"Kategori (ID: {category_id}) güncellenirken hata: {str(ve)}. Gelen veri: {data}")
-        # Hatanın içeriğine göre 404 veya 409 döndürülebilir
+    except ValueError as ve:
+        current_app.logger.warning(f"Kategori (ID: {category_id}) güncellenirken hata: {str(ve)}. Gelen veri: {request.data.decode(errors='ignore')}")
         status_code = 404 if "bulunamadı" in str(ve).lower() else 409
         return jsonify({'success': False, 'message': str(ve)}), status_code
     except Exception as e:
         current_app.logger.error(f"Kategori (ID: {category_id}) güncellenirken beklenmedik hata: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'message': f'Kategori güncellenirken sunucuda bir hata oluştu.'}), 500
+        return jsonify({'success': False, 'message': 'Kategori güncellenirken sunucuda bir hata oluştu.'}), 500
 
-
+# -----------------------------------------------------------------------------
 # 6.2. AI Model API'leri
 # -----------------------------------------------------------------------------
 
-# 6.2.1. AI Model Ekle: /admin/api/models (POST)
+# -----------------------------------------------------------------------------
+# 6.2.1. Yeni bir AI modeli ekler (api_add_model)
+#        Rota: /admin/api/models (POST)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models', methods=['POST'])
 def api_add_model() -> Tuple[str, int]:
     """
     Yeni bir AI modeli ekler.
-    İstek Formatı (JSON): {
-        "name": "Model Adı", "category_id": 1, "api_url": "http://...",
-        "description": "...", "api_method": "POST", "api_key": "...",
-        "request_headers": {}, "request_body": {}, "response_path": "...",
-        "status": "active", "icon": "bi-..."
-    }
-    Başarılı Yanıt (JSON, 201): {"success": true, "message": "...", "model": {...}}
-    Hata Yanıtı (JSON, 400/500): {"success": false, "message": "..."}
+    İstek Formatı (JSON): Modelin tüm alanlarını içerebilir.
     """
     try:
         data: Optional[Dict[str, Any]] = request.get_json()
         if not data:
             return jsonify({'success': False, 'message': 'İstek gövdesi boş olamaz.'}), 400
 
-        # Zorunlu alanların kontrolü
-        required_fields = ['name', 'category_id', 'api_url']
-        missing_fields = [field for field in required_fields if not data.get(field)]
+        required_fields = ['name', 'category_id', 'service_provider', 'external_model_name'] # Temel zorunlu alanlar
+        missing_fields = [field for field in required_fields if not data.get(field) or (isinstance(data.get(field), str) and not str(data.get(field)).strip())]
+
+        if 'category_id' in data and (not isinstance(data['category_id'], int) or data['category_id'] <=0):
+             missing_fields.append("category_id (geçerli bir sayı olmalı)")
+
+
         if missing_fields:
-            return jsonify({'success': False, 'message': f"Eksik zorunlu alanlar: {', '.join(missing_fields)}"}), 400
-        if not str(data['name']).strip() or not str(data['api_url']).strip():
-             return jsonify({'success': False, 'message': "Model adı ve API URL boş olamaz."}), 400
-        if not isinstance(data['category_id'], int) or data['category_id'] <=0:
-            return jsonify({'success': False, 'message': "Geçerli bir kategori ID'si girilmelidir."}), 400
+            return jsonify({'success': False, 'message': f"Eksik veya geçersiz zorunlu alanlar: {', '.join(missing_fields)}"}), 400
 
-
-        # Servise tüm alanları gönder, servis kendi içinde daha detaylı validasyon yapabilir.
-        new_model: Dict[str, Any] = model_service.add_model(
-            name=str(data['name']).strip(),
-            category_id=data['category_id'],
-            description=str(data.get('description', '')).strip(),
-            api_url=str(data['api_url']).strip(),
-            api_method=str(data.get('api_method', 'POST')).upper().strip(),
-            api_key=data.get('api_key'), # String veya None olabilir
-            request_headers=data.get('request_headers', {}), # Dict olmalı
-            request_body=data.get('request_body', {}),       # Dict olmalı
-            response_path=data.get('response_path'),         # String veya None olabilir
-            status=str(data.get('status', 'active')).lower().strip(),
-            icon=data.get('icon')                            # String veya None olabilir
-        )
+        # Servis tüm data'yı alır ve kendi içinde validasyon yapar.
+        new_model: Dict[str, Any] = model_service.add_model_via_dict(data) # Servis metodunun adı varsayımsal
         return jsonify({'success': True, 'message': 'AI Modeli başarıyla eklendi.', 'model': new_model}), 201
-    except ValueError as ve: # Servisten gelen validasyon hatası (örn: kategori yok, URL geçersiz)
-        current_app.logger.warning(f"AI Modeli eklenirken hata: {str(ve)}. Gelen veri: {data}")
-        return jsonify({'success': False, 'message': str(ve)}), 400 # Bad Request
+    except ValueError as ve:
+        current_app.logger.warning(f"AI Modeli eklenirken hata: {str(ve)}. Gelen veri: {request.data.decode(errors='ignore')}")
+        return jsonify({'success': False, 'message': str(ve)}), 400
     except Exception as e:
         current_app.logger.error(f"AI Modeli eklerken beklenmedik hata: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'message': f'AI Modeli eklenirken sunucuda bir hata oluştu.'}), 500
+        return jsonify({'success': False, 'message': 'AI Modeli eklenirken sunucuda bir hata oluştu.'}), 500
 
-# 6.2.2. AI Model Sil: /admin/api/models/<int:model_id> (DELETE)
+# -----------------------------------------------------------------------------
+# 6.2.2. Bir AI modelini siler (api_delete_model)
+#        Rota: /admin/api/models/<int:model_id> (DELETE)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/<int:model_id>', methods=['DELETE'])
 def api_delete_model(model_id: int) -> Tuple[str, int]:
-    """
-    Belirtilen ID'ye sahip AI modelini siler.
-    Başarılı Yanıt (JSON, 200): {"success": true, "message": "..."}
-    Hata Yanıtı (JSON, 404/500): {"success": false, "message": "..."}
-    """
+    """Belirtilen ID'ye sahip AI modelini siler."""
     try:
         model_service.delete_model(model_id)
         return jsonify({'success': True, 'message': 'AI Modeli başarıyla silindi.'}), 200
-    except ValueError as ve: # Model bulunamadı
+    except ValueError as ve:
         current_app.logger.warning(f"AI Modeli (ID: {model_id}) silinirken hata: {str(ve)}")
-        return jsonify({'success': False, 'message': str(ve)}), 404 # Not Found
+        return jsonify({'success': False, 'message': str(ve)}), 404
     except Exception as e:
         current_app.logger.error(f"AI Modeli (ID: {model_id}) silinirken beklenmedik hata: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'message': f'AI Modeli silinirken sunucuda bir hata oluştu.'}), 500
+        return jsonify({'success': False, 'message': 'AI Modeli silinirken sunucuda bir hata oluştu.'}), 500
 
-# 6.2.3. AI Model Güncelle: /admin/api/models/<int:model_id> (PUT)
+# -----------------------------------------------------------------------------
+# 6.2.3. Bir AI modelini günceller (api_update_model)
+#        Rota: /admin/api/models/<int:model_id> (PUT)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/<int:model_id>', methods=['PUT'])
 def api_update_model(model_id: int) -> Tuple[str, int]:
     """
     Belirtilen ID'ye sahip AI modelini günceller.
     İstek Formatı (JSON): Güncellenmek istenen alanları içeren bir sözlük.
-                         Örn: {"name": "Yeni Model Adı", "description": "Yeni açıklama"}
-    Başarılı Yanıt (JSON, 200): {"success": true, "message": "...", "model": {...}}
-    Hata Yanıtı (JSON, 400/404/500): {"success": false, "message": "..."}
     """
     try:
         data: Optional[Dict[str, Any]] = request.get_json()
-        if not data: # Güncellenecek hiçbir veri gönderilmediyse
+        if not data:
             return jsonify({'success': False, 'message': 'Güncelleme verisi boş olamaz.'}), 400
 
-        # Servis, data içindeki geçerli alanları alıp güncelleme yapacaktır.
-        updated_model: Dict[str, Any] = model_service.update_model(model_id, data)
+        updated_model: Dict[str, Any] = model_service.update_model_via_dict(model_id, data) # Servis metodunun adı varsayımsal
         return jsonify({'success': True, 'message': 'AI Modeli başarıyla güncellendi.', 'model': updated_model}), 200
-    except ValueError as ve: # Model bulunamadı veya geçersiz veri
-        current_app.logger.warning(f"AI Modeli (ID: {model_id}) güncellenirken hata: {str(ve)}. Gelen veri: {data}")
+    except ValueError as ve:
+        current_app.logger.warning(f"AI Modeli (ID: {model_id}) güncellenirken hata: {str(ve)}. Gelen veri: {request.data.decode(errors='ignore')}")
         status_code = 404 if "bulunamadı" in str(ve).lower() else 400
         return jsonify({'success': False, 'message': str(ve)}), status_code
     except Exception as e:
         current_app.logger.error(f"AI Modeli (ID: {model_id}) güncellenirken beklenmedik hata: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'message': f'AI Modeli güncellenirken sunucuda bir hata oluştu.'}), 500
+        return jsonify({'success': False, 'message': 'AI Modeli güncellenirken sunucuda bir hata oluştu.'}), 500
 
-# 7. Veritabanı Oturumu Yönetimi Notları
+# =============================================================================
+# 7.0 VERİTABANI OTURUMU YÖNETİMİ NOTLARI (DATABASE SESSION MANAGEMENT NOTES)
 # =============================================================================
 # Flask uygulamanızda db_session'ın her request sonunda kaldırıldığından emin olun.
 # Bu genellikle ana uygulama dosyanızda (örn: app/main.py veya app/__init__.py)
-# @app.teardown_appcontext dekoratörü ile yapılır:
-#
+# @app.teardown_appcontext dekoratörü ile yapılır.
+# Örnek:
 # @app.teardown_appcontext
 # def shutdown_session(exception=None):
 #     from app.models.base import db_session # Import burada yapılmalı
-#     if db_session: # Oturumun var olup olmadığını kontrol et
+#     if db_session:
 #         db_session.remove()
-#
-# Eğer bu tür bir merkezi oturum yönetimi zaten varsa, servislerdeki
-# db_session.remove() çağrıları gereksiz olabilir veya çakışmalara yol açabilir.
-# Projenizin veritabanı oturum yönetimi stratejisine göre en uygun olanı seçilmelidir.
-# Servislerin kendi oturumlarını yönetmesi (örn: context manager ile) veya
-# merkezi bir oturumun enjekte edilmesi yaygın yaklaşımlardır.
 # Bu koddaki servislerin (CategoryService, AIModelService vb.) veritabanı
-# oturumunu nasıl aldıkları ve yönettikleri önemlidir.
-# Orijinal kodda servislerin örnekleri global olarak oluşturulduğundan,
-# oturum yönetimine özellikle dikkat edilmelidir.
+# oturumunu nasıl aldıkları ve yönettikleri, projenin genel yapısına bağlıdır.

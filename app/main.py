@@ -21,6 +21,9 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 
+# AI Service Configuration
+app.config['USE_MOCK_API'] = 'false'  # Enable mock mode for testing
+
 # Register Blueprints
 app.register_blueprint(main_bp)
 app.register_blueprint(admin_bp)

@@ -792,10 +792,15 @@ const ChatManager = (function() {
                 .map(msg => ({ role: msg.isUser ? 'user' : 'model', parts: [{ text: String(msg.text).trim() }] }));
             
             log('info', 'ChatOps:SendMsg:API', `AI yanıtı için istek gönderiliyor: Model ID ${chat.aiModelId}`); // aiModelId artık DB ID'si
-            const response = await fetch('/api/chat/send', {
+            const response = await fetch('/send_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ chatId: chatId, aiModelId: chat.aiModelId, history: conversationHistoryForAPI }),
+                body: JSON.stringify({ 
+                    chatId: chatId, 
+                    aiModelId: chat.aiModelId, 
+                    chat_message: text, // <<<<< YENİ MESAJI BURADA EKLE
+                    history: conversationHistoryForAPI 
+                }),
             });
 
             if (!response.ok) {
@@ -900,7 +905,7 @@ const ChatManager = (function() {
         const dropdownElement = document.createElement('div'); // Değişken adını farklılaştırdım
         dropdownElement.className = 'model-dropdown';
 
-        // window.state.aiTypes'daki id'nin, veritabanındaki ai_models.id (sayısal) olduğunu varsayıyoruz
+        // window.state.aiTypes'daki id'nin, veritabanındaki ai_models.id olduğunu varsayıyoruz (index.html'deki değişikliklerle)
         // chat.aiModelId de sayısal olmalı
         const optionsHTML = window.state.aiTypes.map(model => `
             <div class="model-option ${model.id === chat.aiModelId ? 'selected active' : ''}" data-model-id="${model.id}" title="${model.description || model.name}">
@@ -1049,7 +1054,7 @@ const ChatManager = (function() {
             if (modal.parentNode) modal.remove();
             document.removeEventListener('keydown', handleEscapeKey);
         };
-        modal.addEventListener('click', (e) => { if (e.target === modal || e.target.    st('button')) closeModal(); });
+        modal.addEventListener('click', (e) => { if (e.target === modal || e.target.classList.contains('image-modal-zk')) closeModal(); });
         const handleEscapeKey = (e) => { if (e.key === 'Escape') closeModal(); };
         document.addEventListener('keydown', handleEscapeKey);
         document.body.appendChild(modal);

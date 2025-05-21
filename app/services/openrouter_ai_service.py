@@ -6,317 +6,305 @@
 # yönlendirilen istekleri işler ve OpenRouter API'sinden yanıtlar alır.
 #
 # ÖNEMLİ NOTLAR:
-# 1. Bu dosya şu anda büyük ölçüde bir placeholder (yer tutucu) implementasyonudur
-#    ve OpenRouter API etkileşim mantığının tamamlanması gerekmektedir.
-# 2. Bu sınıf, `BaseAIService` sınıfından miras almaktadır. Ancak, `handle_chat`
-#    metodu, `BaseAIService`'in alt servislerden beklediği `send_chat_request`
-#    metoduyla aynı imzaya ve dönüş tipine sahip değildir. Entegrasyon için
-#    bu durumun ele alınması gerekir.
-# 3. Bu sınıf, `self._fill_payload_template`, `self._extract_response_by_path` ve
-#    `self._generate_mock_response` gibi metotları çağırmaktadır. Bu metotlar
-#    `BaseAIService`'te tanımlı değildir (GoogleAIService'te özel olarak bulunurlar).
-#    Bu çağrıların çalışabilmesi için bu metotların ya `BaseAIService`'e
-#    taşınması, ya bu sınıfta yeniden implemente edilmesi ya da ortak bir
-#    yardımcı modülden çağrılması gerekmektedir.
+# 1. Bu dosya, OpenRouter API etkileşim mantığının tamamlanması gereken
+#    bir implementasyondur.
+# 2. Bu sınıf, `BaseAIService` sınıfından miras almaktadır. `send_chat_request`
+#    metodu, BaseAIService'in beklediği imzaya ve dönüş tipine uygun hale
+#    getirilmiştir.
+# 3. `_fill_payload_template`, `_extract_response_by_path` ve
+#    `_generate_mock_response` gibi yardımcı metotlar bu sınıfta
+#    tanımlanmıştır. Bu metotlar, BaseAIService'e taşınabilir veya
+#    ortak bir yardımcı modülde yer alabilir.
 #
-# Ana Sınıf:
-#   OpenRouterAIService: OpenRouter API'si ile iletişim kuran servis.
-#
-# İçindekiler:
-# 1. İçe Aktarmalar (Imports)
-# 2. OpenRouterAIService Sınıfı
-#    2.1. __init__: (BaseAIService'ten miras alınır)
-#    2.2. handle_chat: OpenRouter modeline sohbet isteği gönderir (TODO: Tamamlanacak).
+# İÇİNDEKİLER:
+# -----------------------------------------------------------------------------
+# 1.0 İÇE AKTARMALAR (IMPORTS)
+# 2.0 OPENROUTERAISERVICE SINIFI (OPENROUTERAISERVICE CLASS)
+#     2.1. __init__                     : Başlatıcı metot (BaseAIService'ten miras alınır).
+#     2.2. _generate_mock_response      : Test için sahte (mock) yanıt üretir.
+#     2.3. _fill_payload_template       : OpenRouter API'si için istek gövdesini (payload) hazırlar.
+#     2.4. _extract_response_by_path    : JSON yanıttan belirtilen yoldaki veriyi çıkarır.
+#     2.5. send_chat_request            : OpenRouter modeline sohbet isteği gönderir.
 # =============================================================================
 
-# 1. İçe Aktarmalar (Imports)
+# =============================================================================
+# 1.0 İÇE AKTARMALAR (IMPORTS)
 # =============================================================================
 import requests
 import json
 import traceback # Hata ayıklama için
-from typing import Dict, Any, Optional, List, Tuple, TYPE_CHECKING
+from typing import Dict, Any, Optional, List, Union, TYPE_CHECKING
 
 from flask import current_app # Loglama ve uygulama yapılandırmasına erişim için
 
 # BaseAIService'ten miras almak için import.
-# TYPE_CHECKING bloğu dışında bırakıldı çünkü doğrudan miras alınıyor.
-from app.services.base_ai_service import BaseAIService
+from app.services.base_ai_service import BaseAIService # TYPE_CHECKING bloğu dışında
 
 if TYPE_CHECKING:
     from app.models.entities.model import Model as AIModelEntity
-    from app.repositories.model_repository import ModelRepository
-    # config ve model_repository __init__ içinde BaseAIService tarafından alınır.
+    # from app.repositories.model_repository import ModelRepository # Genellikle __init__ içinde alınır
 
-# 2. OpenRouterAIService Sınıfı
+# =============================================================================
+# 2.0 OPENROUTERAISERVICE SINIFI (OPENROUTERAISERVICE CLASS)
 # =============================================================================
 class OpenRouterAIService(BaseAIService):
     """
     OpenRouter API'si üzerinden AI modelleriyle etkileşim kurmak için servis.
     Bu sınıf, `BaseAIService`'ten miras alır ve OpenRouter'a özgü
     API çağrılarını ve yanıt işlemeyi yönetir.
-
-    Not: Bu sınıfın `__init__` metodu `BaseAIService`'ten miras alınır,
-    bu nedenle `config` ve `model_repository` özelliklerine sahiptir.
     """
 
-    # TODO: Eğer OpenRouter için özel başlatma parametreleri veya
-    #       varsayılan değerler gerekiyorsa __init__ metodu override edilebilir.
-    # def __init__(self, config: Dict[str, Any], model_repository: 'ModelRepository'):
-    #     super().__init__(config, model_repository)
-    #     self.openrouter_site_url = self.config.get('OPENROUTER_SITE_URL', 'YOUR_APP_URL') # Örnek
-    #     current_app.logger.info("OpenRouterAIService örneği başarıyla başlatıldı.")
+    # -------------------------------------------------------------------------
+    # 2.1. Başlatıcı metot (__init__)
+    #      BaseAIService'ten miras alındığı için `api_key` ve `config` alır.
+    #      OpenRouter için özel başlatma parametreleri gerekirse override edilebilir.
+    # -------------------------------------------------------------------------
+    def __init__(self, api_key: str, config: Dict[str, Any]):
+        """
+        OpenRouterAIService'i başlatır.
+
+        Args:
+            api_key (str): OpenRouter API için kullanılacak API anahtarı.
+                           Bu, modele özgü veya genel OpenRouter anahtarı olabilir.
+            config (Dict[str, Any]): Flask uygulamasının yapılandırma ayarları.
+        """
+        super().__init__(model_repository=None, config=config) # type: ignore # BaseAIService model_repository bekliyor, ancak bu alt servis için doğrudan gerekli olmayabilir.
+                                                                # BaseAIService._get_service_instance model_repository'yi kullanıyor.
+                                                                # Bu servisin doğrudan model_repository'ye ihtiyacı varsa, __init__ imzası güncellenmeli.
+        self.api_key: str = api_key # Modele özgü API anahtarı
+        # self.openrouter_site_url = self.config.get('OPENROUTER_SITE_URL', self.config.get('APP_SITE_URL')) # Örnek ek konfigürasyon
+        current_app.logger.info(f"OpenRouterAIService örneği başarıyla başlatıldı. API Anahtar Uzunluğu: {len(self.api_key) if self.api_key else 'Yok'}")
 
 
-    # NOT: Aşağıdaki _generate_mock_response, _fill_payload_template ve
-    # _extract_response_by_path metotları BaseAIService'te tanımlı DEĞİLDİR.
-    # Bu metotların ya BaseAIService'e eklenmesi, ya burada implemente edilmesi
-    # ya da OpenRouter'a özel versiyonlarının oluşturulması gerekmektedir.
-    # Geçici olarak, bu metotların var olduğu varsayımıyla kod bırakılmıştır,
-    # ancak bu durum çalışma zamanı hatalarına yol açacaktır.
-
+    # -------------------------------------------------------------------------
+    # 2.2. Test için sahte (mock) yanıt üretir (_generate_mock_response)
+    # -------------------------------------------------------------------------
     def _generate_mock_response(self, user_message: Optional[str], model_name: str) -> str:
         """
         Geliştirme ve test amaçlı sahte (mock) bir AI yanıtı üretir.
-        Bu metodun BaseAIService'e taşınması veya burada implemente edilmesi gerekir.
+        Bu metot, bu sınıfa özgü veya BaseAIService'e taşınabilir.
         """
-        current_app.logger.warning("_generate_mock_response çağrıldı ancak BaseAIService'te tanımlı değil. Bu bir placeholder.")
         message_content = user_message if user_message else "bir mesaj (kullanıcı mesajı boş)"
         return (f"Bu, '{model_name}' (OpenRouter) modelinden mesajınıza ('{message_content}') "
                 f"verilen SAHTE bir yanıttır. Mock mod aktif.")
 
+    # -------------------------------------------------------------------------
+    # 2.3. OpenRouter API'si için istek gövdesini (payload) hazırlar (_fill_payload_template)
+    # -------------------------------------------------------------------------
     def _fill_payload_template(self,
-                               payload_template_str: str,
+                               payload_template_str_or_dict: Union[str, Dict[str, Any]],
                                conversation_history: List[Dict[str, str]],
-                               current_user_message: Optional[str]
+                               current_user_message: Optional[str],
+                               openrouter_model_identifier: Optional[str]
                                ) -> Dict[str, Any]:
         """
-        Payload şablonunu doldurur. OpenRouter için 'messages' formatı beklenir.
-        Bu metodun BaseAIService'e taşınması veya burada implemente edilmesi gerekir.
+        OpenRouter API'si için payload şablonunu doldurur.
+        'messages' formatını ve 'model' adını ayarlar.
+        Bu metot, bu sınıfa özgü veya BaseAIService'e taşınabilir.
         """
-        current_app.logger.warning("_fill_payload_template çağrıldı ancak BaseAIService'te tanımlı değil. Bu bir placeholder.")
         try:
-            payload = json.loads(payload_template_str) if isinstance(payload_template_str, str) else \
-                      (payload_template_str if isinstance(payload_template_str, dict) else {})
+            if isinstance(payload_template_str_or_dict, str) and payload_template_str_or_dict.strip():
+                payload = json.loads(payload_template_str_or_dict)
+            elif isinstance(payload_template_str_or_dict, dict):
+                payload = payload_template_str_or_dict
+            else: # Varsayılan boş şablon veya model adına göre temel şablon
+                payload = {"model": openrouter_model_identifier or "", "messages": []}
         except json.JSONDecodeError as e:
+            current_app.logger.error(f"_fill_payload_template: Payload şablonu geçersiz JSON: {e}. Şablon: {payload_template_str_or_dict}")
             raise ValueError(f"Payload şablonu geçersiz JSON: {e}") from e
 
         messages = []
         for msg in conversation_history:
-            messages.append({"role": msg.get("role"), "content": msg.get("content")})
+            # OpenRouter genellikle 'user' ve 'assistant' rollerini bekler.
+            role = msg.get("role")
+            api_role = "assistant" if role == "model" else role # 'model' -> 'assistant'
+            if api_role in ["user", "assistant", "system"] and msg.get("content"): # OpenRouter 'system' rolünü de destekleyebilir.
+                messages.append({"role": api_role, "content": msg.get("content")})
+
         if current_user_message:
             messages.append({"role": "user", "content": current_user_message})
 
-        # OpenRouter genellikle payload'da "model" ve "messages" alanlarını bekler.
-        # Şablonun bu yapıyı desteklediği varsayılır.
-        # Örnek: payload_template = {"model": "mistralai/mistral-7b-instruct", "messages": []}
-        if "messages" in payload:
-            payload["messages"] = messages
-        elif "contents" in payload: # Gemini tarzı bir şablon varsa OpenRouter'a uyarla
-            payload["messages"] = messages
-            del payload["contents"]
-        else: # Şablonda ne 'messages' ne de 'contents' varsa, 'messages'ı ekle
-            payload["messages"] = messages
+        payload["messages"] = messages
+        if openrouter_model_identifier and ("model" not in payload or not payload.get("model")):
+            payload["model"] = openrouter_model_identifier
+
         return payload
 
-    def _extract_response_by_path(self, response_json: Dict[str, Any], path_str: str) -> Optional[str]:
+    # -------------------------------------------------------------------------
+    # 2.4. JSON yanıttan belirtilen yoldaki veriyi çıkarır (_extract_response_by_path)
+    # -------------------------------------------------------------------------
+    def _extract_response_by_path(self, response_json: Dict[str, Any], path_str: Optional[str]) -> Optional[str]:
         """
-        JSON yanıttan veri çıkarır.
-        Bu metodun BaseAIService'e taşınması veya burada implemente edilmesi gerekir.
+        Verilen JSON yanıtından, nokta ile ayrılmış bir yol (path) kullanarak veri çıkarır.
+        Örn: "choices.0.message.content"
+        Bu metot, bu sınıfa özgü veya BaseAIService'e taşınabilir.
         """
-        current_app.logger.warning("_extract_response_by_path çağrıldı ancak BaseAIService'te tanımlı değil. Bu bir placeholder.")
+        if not path_str: # Yol belirtilmemişse veya boşsa
+            current_app.logger.warning("_extract_response_by_path: Yanıt yolu (path_str) belirtilmemiş.")
+            # Varsayılan olarak, yanıtın kendisini string olarak döndürmeyi deneyebiliriz veya belirli bir anahtarı arayabiliriz.
+            # OpenRouter için sıkça 'choices[0].message.content' kullanılır.
+            # Bu fonksiyonun daha genel olması için, yol boşsa None döndürmek daha güvenli olabilir.
+            return None
         try:
             keys = path_str.split('.')
             current_data: Any = response_json
             for key_part in keys:
-                if key_part.isdigit():
+                if key_part.isdigit(): # Liste indeksi
                     index = int(key_part)
-                    if not isinstance(current_data, list) or index >= len(current_data): return None
+                    if not isinstance(current_data, list) or index >= len(current_data):
+                        current_app.logger.warning(f"_extract_response_by_path: '{path_str}' yolunda '{key_part}' indeksi geçersiz.")
+                        return None
                     current_data = current_data[index]
-                elif isinstance(current_data, dict):
-                    if key_part not in current_data: return None
+                elif isinstance(current_data, dict): # Sözlük anahtarı
+                    if key_part not in current_data:
+                        current_app.logger.warning(f"_extract_response_by_path: '{path_str}' yolunda '{key_part}' anahtarı bulunamadı.")
+                        return None
                     current_data = current_data[key_part]
-                else: return None
+                else: # Beklenmeyen veri tipi
+                    current_app.logger.warning(f"_extract_response_by_path: '{path_str}' yolunda '{key_part}' beklenmeyen veri tipiyle karşılaşıldı: {type(current_data)}")
+                    return None
             return str(current_data) if current_data is not None else None
-        except Exception:
+        except Exception as e:
+            current_app.logger.error(f"_extract_response_by_path: Yanıt yolundan ('{path_str}') veri çıkarılırken hata: {e}", exc_info=True)
             return None
 
-    def handle_chat(self,
-                    user_message: Optional[str],
-                    conversation_history: List[Dict[str, str]],
-                    model_details: Dict[str, Any], # Normalde model_entity olmalı
-                    # chat_id: str, # Bu parametre orijinal kodda vardı, ancak BaseAIService'in arayüzüne uymuyor.
-                    use_mock_api: bool # Bu da config'den gelmeli
-                   ) -> Tuple[str, Dict[str, Any], int, Dict[str, Any], str]:
+    # -------------------------------------------------------------------------
+    # 2.5. OpenRouter modeline sohbet isteği gönderir (send_chat_request)
+    # -------------------------------------------------------------------------
+    def send_chat_request(self,
+                          model_entity: 'AIModelEntity',
+                          chat_message: Optional[str],
+                          chat_history: List[Dict[str, str]]
+                          ) -> Dict[str, Any]:
         """
-        OpenRouter AI modeline bir sohbet isteği gönderir.
-        NOT: Bu metodun imzası ve dönüş tipi, `BaseAIService`'in beklediği
-             `send_chat_request` metodundan farklıdır. Entegrasyon için uyum sağlanmalıdır.
-
-        Args:
-            user_message: Kullanıcının en son mesajı (opsiyonel).
-            conversation_history: Önceki konuşma geçmişi.
-            model_details: Kullanılacak AI modelinin detaylarını içeren sözlük.
-                           Normalde bu bir `AIModelEntity` nesnesi olmalıdır.
-                           `api_url`, `api_key`, `request_body_template`, `response_path`
-                           ve OpenRouter için spesifik model adı (`openrouter_model_name` gibi)
-                           alanlarını içermelidir.
-            use_mock_api: Mock API'nin kullanılıp kullanılmayacağını belirten boolean.
-                          Bu genellikle `self.config` üzerinden yönetilmelidir.
-
-        Returns:
-            Bir tuple: (
-                ai_yanit_metni: str,
-                ham_api_yaniti: Dict[str, Any],
-                http_durum_kodu: int,
-                istek_payload_logu: Dict[str, Any],
-                log_icin_model_adi: str
-            )
-            Bu dönüş tipi, BaseAIService'in beklediği `Dict[str, Any]` formatından farklıdır.
+        OpenRouter API'sine bir sohbet isteği gönderir.
+        BaseAIService tarafından beklenen imzaya ve dönüş tipine uygun hale getirilmiştir.
         """
-        # `model_details` yerine `model_entity: 'AIModelEntity'` kullanılmalı ve
-        # `use_mock_api` `self.config` üzerinden alınmalıdır.
-        # Bu metodun adı `send_chat_request` olmalı ve dönüş tipi
-        # `Dict[str, Any]` (örn: {"response": "...", "status_code": 200}) olmalıdır.
+        model_name_for_log = getattr(model_entity, 'name', 'Bilinmeyen OpenRouter Modeli')
+        model_id_for_log = getattr(model_entity, 'id', 'Bilinmeyen ID')
+        current_app.logger.info(f"OpenRouterAIService.send_chat_request: İstek alındı. Model: {model_name_for_log} (ID: {model_id_for_log})")
 
-        model_name_for_log: str = model_details.get('name', 'OpenRouter Modeli (Yapılandırma Eksik)')
-        # OpenRouter'a gönderilecek gerçek model adı (örn: "mistralai/mistral-7b-instruct")
-        # Bu, `model_details` içinde `openrouter_model_name` gibi özel bir alanda saklanmalı.
-        openrouter_model_identifier: Optional[str] = model_details.get('openrouter_model_name', model_details.get('name'))
+        # API anahtarı __init__ içinde self.api_key olarak ayarlandı.
+        if not self.api_key:
+            current_app.logger.error(f"OpenRouterAIService: Model '{model_name_for_log}' için API anahtarı yapılandırılmamış.")
+            return {"error": "AI modeli için API anahtarı eksik.", "status_code": 500}
+
+        # OpenRouter'a gönderilecek model adı (örn: "mistralai/mistral-7b-instruct")
+        # Bu, model_entity.external_model_name alanında saklanmalıdır.
+        openrouter_model_identifier: Optional[str] = getattr(model_entity, 'external_model_name', None)
+        if not openrouter_model_identifier:
+            current_app.logger.error(f"OpenRouterAIService: Model '{model_name_for_log}' için harici model adı (external_model_name) yapılandırılmamış.")
+            return {"error": "AI modeli için harici model adı (OpenRouter model ID) yapılandırması eksik.", "status_code": 500}
+
+        # OpenRouter API URL'si. Model entity'sinden alınır, yoksa varsayılan kullanılır.
+        api_url: Optional[str] = getattr(model_entity, 'api_url', None)
+        if not api_url: # Varsayılan OpenRouter API URL'si
+            api_url = "https://openrouter.ai/api/v1/chat/completions"
+            current_app.logger.info(f"OpenRouterAIService: Model için api_url belirtilmemiş, varsayılan kullanılıyor: {api_url}")
 
 
-        current_app.logger.info(f"OpenRouterAIService.handle_chat: İstek alındı. Model: {model_name_for_log}")
-
-        # Mock API kullanımı (config'den kontrol edilmeli)
-        # `use_mock_api` parametresi yerine `self.config.get('USE_MOCK_API', 'false').lower() == 'true'` kullanılmalı.
-        if use_mock_api or self.config.get('USE_MOCK_API', 'false').lower() == 'true':
+        use_mock_str: str = self.config.get('USE_MOCK_API', 'false').lower()
+        if use_mock_str == 'true':
             current_app.logger.info(f"OpenRouterAIService: Mock API kullanılıyor. Model: {model_name_for_log}")
-            mock_text_response = self._generate_mock_response(user_message, model_name_for_log)
+            mock_text_response = self._generate_mock_response(chat_message, model_name_for_log)
             mock_raw_api_response = {"mock_response": True, "choices": [{"message": {"content": mock_text_response}}]}
-            # BaseAIService uyumlu dönüş:
-            # return {"response": mock_text_response, "raw_response": mock_raw_api_response, "status_code": 200}
-            return mock_text_response, mock_raw_api_response, 200, {}, model_name_for_log # Orijinal dönüş tipi
+            return {"response": mock_text_response, "raw_response": mock_raw_api_response, "status_code": 200}
 
-        # --- TODO: OpenRouter API Etkileşim Mantığını Tamamla ---
-        current_app.logger.warning(f"OpenRouterAIService.handle_chat: OpenRouter API etkileşim mantığı henüz tam olarak implemente edilmemiştir. Bu bir placeholder'dır. Model: {model_name_for_log}")
-
-        api_url: Optional[str] = model_details.get('api_url') # Örn: "https://openrouter.ai/api/v1/chat/completions"
-        api_key: Optional[str] = model_details.get('api_key') # Model_details'ten veya self.config'den alınabilir
-
-        if not api_url or not api_key:
-            error_msg = "OpenRouter API yapılandırma hatası: API URL veya API Anahtarı eksik."
-            current_app.logger.error(f"OpenRouterAIService: {error_msg} Model: {model_name_for_log}")
-            # BaseAIService uyumlu dönüş:
-            # return {"error": error_msg, "status_code": 500}
-            return error_msg, {"error_details": error_msg}, 500, {}, model_name_for_log # Orijinal dönüş
-
-        # HTTP Başlıklarını Hazırla
         headers: Dict[str, str] = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            # OpenRouter için gerekli olabilecek diğer başlıklar:
-            # "HTTP-Referer": self.config.get('APP_SITE_URL', ''), # Uygulamanızın URL'si
-            # "X-Title": self.config.get('APP_NAME', '') # Uygulamanızın adı
+            "HTTP-Referer": self.config.get('APP_SITE_URL', self.config.get('SERVER_NAME', '')), # Uygulamanızın URL'si
+            "X-Title": self.config.get('APP_NAME', 'ZekaiApp') # Uygulamanızın adı
         }
-        # Modelden gelen özel başlıkları ekle (eğer varsa ve JSON string ise parse et)
-        custom_headers_str: Optional[Union[str, Dict]] = model_details.get('request_headers')
-        if custom_headers_str:
+        custom_headers_raw: Optional[Union[str, Dict]] = getattr(model_entity, 'request_headers', None)
+        if custom_headers_raw:
             try:
-                custom_headers = json.loads(custom_headers_str) if isinstance(custom_headers_str, str) else \
-                                 (custom_headers_str if isinstance(custom_headers_str, dict) else {})
+                custom_headers = json.loads(custom_headers_raw) if isinstance(custom_headers_raw, str) else \
+                                 (custom_headers_raw if isinstance(custom_headers_raw, dict) else {})
                 headers.update(custom_headers)
             except json.JSONDecodeError:
                 current_app.logger.warning(f"OpenRouterAIService: Model '{model_name_for_log}' için request_headers JSON parse hatası. Özel başlıklar yoksayıldı.")
 
-        # İstek Gövdesi Şablonunu (Request Body Template) Hazırla ve Doldur
-        # OpenRouter genellikle payload'da 'model' (örn: "mistralai/mistral-7b-instruct") ve 'messages' alanlarını bekler.
-        # `model_details.request_body_template` bu yapıya uygun olmalıdır.
-        # Örnek şablon: `{"model": "MODEL_PLACEHOLDER", "messages": []}`
-        body_template_raw: Optional[Union[str, Dict]] = model_details.get('request_body_template')
-        body_template_str: str = json.dumps(body_template_raw) if isinstance(body_template_raw, dict) else \
-                                 (body_template_raw if isinstance(body_template_raw, str) else \
-                                  f'{{"model": "{openrouter_model_identifier}", "messages": []}}') # Varsayılan şablon
+        # İstek gövdesi şablonu model_entity.request_body'den alınır.
+        body_template_raw: Optional[Union[str, Dict]] = getattr(model_entity, 'request_body', None)
+        # Eğer request_body boşsa veya tanımlı değilse, temel bir şablon oluşturulur.
+        if not body_template_raw:
+            body_template_raw = {} # Boş dict, _fill_payload_template modeli ve mesajları ekleyecek
 
         request_payload: Dict[str, Any]
         try:
-            # _fill_payload_template, 'messages' anahtarını dolduracak şekilde ayarlanmalı.
-            # Ayrıca, OpenRouter'a gönderilecek 'model' adını da payload'a eklemeli.
-            # Bu, _fill_payload_template içinde veya burada ayrıca yapılabilir.
-            interim_payload = self._fill_payload_template(
-                payload_template_str=body_template_str,
-                conversation_history=conversation_history, # user_message zaten eklenecekse burada None olabilir
-                current_user_message=user_message
+            request_payload = self._fill_payload_template(
+                payload_template_str_or_dict=body_template_raw,
+                conversation_history=chat_history,
+                current_user_message=chat_message,
+                openrouter_model_identifier=openrouter_model_identifier
             )
-            # OpenRouter model tanımlayıcısını payload'a ekle (eğer şablonda yoksa)
-            if "model" not in interim_payload and openrouter_model_identifier:
-                interim_payload["model"] = openrouter_model_identifier
-            elif "model" in interim_payload and not interim_payload["model"] and openrouter_model_identifier:
-                 interim_payload["model"] = openrouter_model_identifier
+            # Modelden gelen `details` içindeki ek parametreleri payload'a ekle
+            # (temperature, max_tokens vb.)
+            model_params = getattr(model_entity, 'details', {})
+            if isinstance(model_params, dict):
+                # Sadece OpenRouter tarafından desteklenen ve güvenli olan parametreleri filtrele
+                allowed_openrouter_params = {"temperature", "max_tokens", "top_p", "top_k", "frequency_penalty", "presence_penalty", "stop", "stream", "seed", "user"}
+                # "messages" ve "model" zaten _fill_payload_template tarafından eklendi/işlendi.
+                for k, v in model_params.items():
+                    if k in allowed_openrouter_params and k not in request_payload:
+                        request_payload[k] = v
+            
+            # Stream parametresi özel ele alınmalı
+            if request_payload.get('stream', False):
+                current_app.logger.warning("OpenRouterAIService: Stream isteği algılandı ancak bu fonksiyon şu anda streaming desteklemiyor. 'stream=False' olarak ayarlanacak.")
+                request_payload['stream'] = False
 
 
-            request_payload = interim_payload
         except ValueError as e:
             error_msg = f"OpenRouter payload oluşturma hatası: {str(e)}"
             current_app.logger.error(f"OpenRouterAIService: {error_msg}. Model: {model_name_for_log}")
-            # BaseAIService uyumlu dönüş:
-            # return {"error": error_msg, "status_code": 500}
-            return error_msg, {"error_details": str(e)}, 500, {}, model_name_for_log # Orijinal dönüş
+            return {"error": error_msg, "details": str(e), "status_code": 500}
 
-        # HTTP POST İsteğini Yap
         current_app.logger.debug(f"OpenRouterAIService: API isteği gönderiliyor. URL: {api_url}, Model ID (OpenRouter): {openrouter_model_identifier}, Payload (ilk 500 krk): {json.dumps(request_payload)[:500]}...")
         try:
-            api_http_response = requests.post(api_url, json=request_payload, headers=headers, timeout=self.config.get("API_TIMEOUT", 45))
+            api_timeout: float = float(self.config.get("API_TIMEOUT_SECONDS", 60.0)) # config'den API_TIMEOUT_SECONDS al
+            api_http_response = requests.post(api_url, json=request_payload, headers=headers, timeout=api_timeout)
             http_status_code = api_http_response.status_code
-            response_content_text = api_http_response.text # Yanıtı bir kere oku
+            response_content_text = api_http_response.text
 
             current_app.logger.debug(f"OpenRouterAIService: API yanıtı alındı. Durum: {http_status_code}, Yanıt (ilk 200 krk): '{response_content_text[:200]}...'")
 
-            if http_status_code >= 400: # İstemci veya sunucu hatası
+            if http_status_code >= 400:
                 current_app.logger.error(f"OpenRouterAIService: API Hatası. Durum: {http_status_code}, Model: {model_name_for_log}, Yanıt: {response_content_text}")
-                # BaseAIService uyumlu dönüş:
-                # return {"error": f"OpenRouter API Hatası (HTTP {http_status_code})", "details": response_content_text, "status_code": http_status_code}
-                return f"OpenRouter API Hatası (HTTP {http_status_code})", {"error_details": response_content_text}, http_status_code, request_payload, model_name_for_log
+                return {"error": f"OpenRouter API Hatası (HTTP {http_status_code})", "details": response_content_text, "status_code": http_status_code}
 
             response_json_data: Dict[str, Any] = json.loads(response_content_text)
 
-            # Yanıt Metnini Çıkar
-            # OpenRouter için yaygın yanıt yolu: "choices[0].message.content"
-            response_path_str: str = model_details.get('response_path', "choices.0.message.content")
+            response_path_str: Optional[str] = getattr(model_entity, 'response_path', "choices.0.message.content")
             ai_response_text: Optional[str] = self._extract_response_by_path(response_json_data, response_path_str)
 
             if ai_response_text is None or not ai_response_text.strip():
                 warning_msg = f"OpenRouter: Yanıt yolundan ('{response_path_str}') anlamlı metin verisi alınamadı veya boş."
                 current_app.logger.warning(f"OpenRouterAIService: {warning_msg} Model: {model_name_for_log}. Tam JSON yanıt: {response_json_data}")
-                ai_response_text = "AI modelinden anlamlı bir yanıt alınamadı." # Kullanıcıya gösterilecek mesaj
-                # BaseAIService uyumlu dönüş:
-                # return {"error": warning_msg, "raw_response": response_json_data, "status_code": 204 if http_status_code < 300 else http_status_code }
-                return ai_response_text, response_json_data, 204 if http_status_code < 300 else http_status_code, request_payload, model_name_for_log
+                # Hata durumu yerine, boş yanıtı veya ham yanıtı döndürebiliriz.
+                # Kullanıcıya "Anlamlı yanıt alınamadı" demek yerine, belki de API'nin döndürdüğü bir şey vardır.
+                return {"response": "", "raw_response": response_json_data, "status_code": 204 if http_status_code < 300 else http_status_code, "details": warning_msg}
 
 
             current_app.logger.info(f"OpenRouterAIService: Başarılı yanıt işlendi. Model: {model_name_for_log}")
-            # BaseAIService uyumlu dönüş:
-            # return {"response": ai_response_text, "raw_response": response_json_data, "status_code": 200}
-            return ai_response_text, response_json_data, 200, request_payload, model_name_for_log
+            # 'usage' verisi varsa ekleyelim
+            usage_data = response_json_data.get('usage')
+            return {"response": ai_response_text, "raw_response": response_json_data, "status_code": 200, "usage": usage_data}
 
-        except requests.exceptions.HTTPError as http_err: # raise_for_status() tarafından fırlatılır
-            error_text = http_err.response.text if http_err.response is not None else "No response body"
-            status_code_from_err = http_err.response.status_code if http_err.response is not None else 500
-            current_app.logger.error(f"OpenRouterAIService: API HTTP Hatası. Durum: {status_code_from_err}, Model: {model_name_for_log}, Hata: {error_text}", exc_info=True)
-            return f"OpenRouter API Hatası (HTTP {status_code_from_err})", {"error_details": error_text}, status_code_from_err, request_payload, model_name_for_log
         except requests.exceptions.Timeout:
             error_msg = "OpenRouter API isteği zaman aşımına uğradı."
             current_app.logger.error(f"OpenRouterAIService: {error_msg} URL: {api_url}, Model: {model_name_for_log}")
-            return error_msg, {"error_details": "Timeout"}, 504, request_payload, model_name_for_log
-        except requests.exceptions.RequestException as req_err: # Diğer bağlantı hataları
+            return {"error": error_msg, "details": "Timeout", "status_code": 504} # Gateway Timeout
+        except requests.exceptions.RequestException as req_err:
             error_msg = f"OpenRouter API bağlantı hatası: {str(req_err)}"
             current_app.logger.error(f"OpenRouterAIService: {error_msg} URL: {api_url}, Model: {model_name_for_log}", exc_info=True)
-            return error_msg, {"error_details": str(req_err)}, 503, request_payload, model_name_for_log
-        except Exception as e: # Diğer beklenmedik hatalar
+            return {"error": error_msg, "details": str(req_err), "status_code": 503} # Service Unavailable
+        except json.JSONDecodeError as json_err: # Yanıt JSON değilse
+            error_msg = f"OpenRouter API yanıtı JSON formatında değil: {str(json_err)}"
+            current_app.logger.error(f"OpenRouterAIService: {error_msg} Model: {model_name_for_log}. Yanıt: {response_content_text[:200] if 'response_content_text' in locals() else 'Yanıt alınamadı.'}")
+            return {"error": error_msg, "details": response_content_text[:200] if 'response_content_text' in locals() else str(json_err) , "status_code": 502} # Bad Gateway
+        except Exception as e:
             error_msg = f"OpenRouter servisinde beklenmedik bir hata oluştu: {str(e)}"
             current_app.logger.error(f"OpenRouterAIService: {error_msg} Model: {model_name_for_log}", exc_info=True)
-            return error_msg, {"error_details": str(e), "trace": traceback.format_exc() if current_app.debug else None}, 500, request_payload, model_name_for_log
-        # --- OpenRouter API Etkileşim Mantığının Sonu ---
-
-# =============================================================================
-# Bu modüle eklenebilecek diğer OpenRouter'a özgü servis fonksiyonları
-# (örn: görüntü oluşturma, embedding vb.) buraya gelebilir.
-# =============================================================================
+            return {"error": error_msg, "details": str(e) if current_app.debug else "Sunucu hatası.", "status_code": 500}

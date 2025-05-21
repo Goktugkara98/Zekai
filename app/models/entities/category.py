@@ -9,9 +9,9 @@
 # 1.0 GEREKLİ İÇE AKTARMALAR (REQUIRED IMPORTS)
 #
 # 2.0 CATEGORY SINIFI TANIMI (CATEGORY CLASS DEFINITION)
-#     2.1. Yapıcı Metot (__init__)
-#     2.2. Sözlükten Nesne Oluşturma (from_dict - Class Method)
-#     2.3. Nesneyi Sözlüğe Dönüştürme (to_dict - Instance Method)
+#     2.1. __init__              : Yapıcı Metot.
+#     2.2. from_dict             : Sözlükten Nesne Oluşturma (Class Method).
+#     2.3. to_dict               : Nesneyi Sözlüğe Dönüştürme (Instance Method).
 # =============================================================================
 
 # =============================================================================

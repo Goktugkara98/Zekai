@@ -1,94 +1,107 @@
 # =============================================================================
-# Veritabanı Geçişleri Modülü (Database Migrations Module)
+# Veritabanı Geçişleri Modülü (Database Migrations Module) - REVİZE EDİLMİŞ
 # =============================================================================
 # Bu modül, veritabanı tablolarının oluşturulması, güncellenmesi (geçişler)
 # ve veritabanı durumunun kontrol edilmesi gibi işlemleri yönetir.
+# `ai_models` tablosu yeni alanları içerecek şekilde güncellenmiştir.
 #
 # İçindekiler:
-# 1. İçe Aktarmalar (Imports)
-# 2. DatabaseMigrations Sınıfı
-#    2.1. __init__                       : Başlatıcı metot.
-#    2.2. create_all_tables              : Gerekli tüm veritabanı tablolarını oluşturur.
-#    2.3. create_categories_table        : 'ai_categories' tablosunu oluşturur.
-#    2.4. create_models_table            : 'ai_models' tablosunu oluşturur.
-#    2.5. create_user_messages_table     : 'user_messages' tablosunu oluşturur.
-#    2.6. migrate_user_messages_table    : 'user_messages' tablosuna yeni sütunlar ekler (basit geçiş).
-#    2.7. check_database_status          : Veritabanı durumunu kontrol eder (tablo varlığı, satır sayıları).
-# 3. Yardımcı Fonksiyonlar (Helper Functions)
-#    3.1. initialize_database            : Veritabanını başlatır ve tabloları oluşturur.
-#    3.2. migrate_database               : Veritabanı geçişlerini çalıştırır.
-#    3.3. main (Örnek Çalıştırma Bloğu)   : Modülün doğrudan çalıştırılması durumunda örnek işlemler yapar.
+# -----------------------------------------------------------------------------
+# 1.0 İÇE AKTARMALAR (IMPORTS)
+#
+# 2.0 DATABASEMIGRATIONS SINIFI (DATABASEMIGRATIONS CLASS)
+#     2.1. __init__                        : Yapıcı Metot.
+#     2.2. create_all_tables               : Tüm veritabanı tablolarını oluşturur.
+#     2.3. _create_table_if_not_exists     : Bir tabloyu yoksa oluşturan yardımcı metot.
+#     2.4. create_categories_table         : 'ai_categories' tablosunu oluşturur.
+#     2.5. create_models_table             : 'ai_models' tablosunu oluşturur/günceller. (Güncellendi)
+#     2.6. create_user_messages_table      : 'user_messages' tablosunu oluşturur/günceller.
+#     2.7. migrate_user_messages_table     : 'user_messages' tablosu için geçişleri uygular.
+#     2.8. check_database_status           : Veritabanının mevcut durumunu kontrol eder.
+#
+# 3.0 YARDIMCI FONKSİYONLAR (HELPER FUNCTIONS)
+#     3.1. initialize_database             : Veritabanını başlatır ve tabloları oluşturur.
+#     3.2. migrate_database                : Veritabanı geçişlerini uygular.
 # =============================================================================
 
-# 1. İçe Aktarmalar (Imports)
+# =============================================================================
+# 1.0 İÇE AKTARMALAR (IMPORTS)
 # =============================================================================
 from app.models.base import DatabaseConnection # Temel veritabanı bağlantı sınıfı
-from mysql.connector import Error as MySQLError # MySQL'e özgü hata tipi, daha belirgin olması için yeniden adlandırıldı
-from typing import Tuple, List, Dict, Any
-import json # check_database_status sonuçlarını formatlı yazdırmak için
+from mysql.connector import Error as MySQLError # MySQL hata yakalama
+from typing import Tuple, List, Dict, Any, Callable # Tip ipuçları
+import json # JSON işlemleri için
 
-# 2. DatabaseMigrations Sınıfı
+# =============================================================================
+# 2.0 DATABASEMIGRATIONS SINIFI (DATABASEMIGRATIONS CLASS)
 # =============================================================================
 class DatabaseMigrations:
     """Veritabanı tablo oluşturma ve geçiş işlemleri için sınıf."""
 
-    # 2.1. __init__
+    # -------------------------------------------------------------------------
+    # 2.1. Yapıcı Metot (__init__)
     # -------------------------------------------------------------------------
     def __init__(self):
         """DatabaseMigrations sınıfını başlatır."""
         self.db = DatabaseConnection()
-        # print("DEBUG: DatabaseMigrations örneği oluşturuldu.")
 
-    # 2.2. create_all_tables
+    # -------------------------------------------------------------------------
+    # 2.2. Tüm veritabanı tablolarını oluşturur (create_all_tables)
     # -------------------------------------------------------------------------
     def create_all_tables(self) -> bool:
         """
-        Gerekli tüm veritabanı tablolarını, eğer mevcut değillerse oluşturur.
-        Yabancı anahtar kısıtlamaları nedeniyle oluşturma sırası önemlidir.
+        Gerekli tüm veritabanı tablolarını oluşturur.
         Returns:
-            bool: Tüm tablolar başarıyla oluşturulduysa True, aksi takdirde False.
+            bool: Tüm tablolar başarıyla oluşturulduysa True, aksi halde False.
         """
         all_created_successfully = True
-        # print("DEBUG: Tüm tablolar oluşturuluyor...")
         try:
-            self.db._ensure_connection() # Bağlantının aktif olduğundan emin ol
-
-            # Tablo oluşturma sırası önemli (yabancı anahtar kısıtlamaları nedeniyle)
+            self.db._ensure_connection()
             if not self._create_table_if_not_exists(self.create_categories_table, "ai_categories"):
                 all_created_successfully = False
             if not self._create_table_if_not_exists(self.create_models_table, "ai_models"):
                 all_created_successfully = False
             if not self._create_table_if_not_exists(self.create_user_messages_table, "user_messages"):
                 all_created_successfully = False
-
-            if all_created_successfully:
-                # print("DEBUG: Tüm tablolar başarıyla kontrol edildi/oluşturuldu.")
-                pass
-            else:
-                # print("DEBUG: Bazı tablolar oluşturulurken hata oluştu.")
-                pass
             return all_created_successfully
-        except MySQLError as e:
-            # print(f"DEBUG: create_all_tables sırasında genel hata: {e}")
+        except MySQLError:
+            # Hata detayları artık doğrudan ilgili metotlarda ele alınıyor.
+            # Burada genel bir hata durumu olarak False dönülebilir.
             return False
         finally:
-            self.db.close() # Bağlantıyı her zaman kapat
+            self.db.close()
 
-    def _create_table_if_not_exists(self, creation_method: callable, table_name: str) -> bool:
-        """Belirli bir tablo oluşturma metodunu çağırır ve sonucu loglar."""
-        # print(f"DEBUG: '{table_name}' tablosu kontrol ediliyor/oluşturuluyor...")
+    # -------------------------------------------------------------------------
+    # 2.3. Bir tabloyu yoksa oluşturan yardımcı metot (_create_table_if_not_exists)
+    # -------------------------------------------------------------------------
+    def _create_table_if_not_exists(self, creation_method: Callable[[], bool], table_name: str) -> bool:
+        """
+        Belirtilen tablo oluşturma metodunu çağırarak tabloyu oluşturur.
+        Args:
+            creation_method (Callable[[], bool]): Tabloyu oluşturan metot.
+            table_name (str): Oluşturulacak tablonun adı (loglama için).
+        Returns:
+            bool: Tablo başarıyla oluşturulduysa veya zaten mevcutsa True.
+        """
         if not creation_method():
-            # print(f"DEBUG: '{table_name}' tablosu oluşturulamadı.")
+            # Hata mesajı artık creation_method içinde veriliyor.
             return False
-        # print(f"DEBUG: '{table_name}' tablosu başarıyla kontrol edildi/oluşturuldu.")
         return True
 
-    # 2.3. create_categories_table
+    # -------------------------------------------------------------------------
+    # 2.4. 'ai_categories' tablosunu oluşturur (create_categories_table)
     # -------------------------------------------------------------------------
     def create_categories_table(self) -> bool:
-        """'ai_categories' tablosunu, eğer mevcut değilse oluşturur."""
+        """
+        'ai_categories' tablosunu, eğer mevcut değilse oluşturur.
+        Returns:
+            bool: Tablo başarıyla oluşturulduysa True, aksi halde False.
+        """
         try:
             self.db._ensure_connection()
+            if self.db.cursor is None:
+                # Cursor None ise, bağlantı düzgün kurulmamış olabilir.
+                return False
             self.db.cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ai_categories (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -98,109 +111,127 @@ class DatabaseMigrations:
             """)
             if self.db.connection: self.db.connection.commit()
             return True
-        except MySQLError as e:
-            # print(f"DEBUG: 'ai_categories' tablosu oluşturulurken hata: {e}")
-            if self.db.connection and self.db.connection.is_connected(): self.db.connection.rollback()
+        except MySQLError:
+            if self.db.connection and self.db.connection.is_connected():
+                try:
+                    self.db.connection.rollback()
+                except MySQLError:
+                    pass # Rollback hatasını yoksay
             return False
 
-    # 2.4. create_models_table
+    # -------------------------------------------------------------------------
+    # 2.5. 'ai_models' tablosunu oluşturur/günceller (create_models_table)
     # -------------------------------------------------------------------------
     def create_models_table(self) -> bool:
-        """'ai_models' tablosunu, eğer mevcut değilse oluşturur.
-        
-        Tablo yapısı:
-        - id: Benzersiz tanımlayıcı (otomatik artan)
-        - category_id: Bağlı olduğu kategorinin ID'si
-        - name: Modelin adı
-        - icon: Model ikonu (Font Awesome sınıfı)
-        - description: Modelin kısa açıklaması
-        - details: Model hakkında daha detaylı bilgi (JSON formatında)
-        - api_url: API endpoint URL'si
-        - request_method: HTTP istek metodu (GET, POST, vb.)
-        - request_headers: İstek başlıkları (JSON formatında)
-        - request_body: İstek gövdesi şablonu (JSON formatında)
-        - response_path: JSON yanıtından veri çıkarma yolu (örn: 'choices.0.message.content')
-        - api_key: API anahtarı (geliştirme aşamasında doğrudan, sonra şifrelenmiş)
-        - created_at: Oluşturulma tarihi
-        - updated_at: Güncellenme tarihi
+        """
+        'ai_models' tablosunu, eğer mevcut değilse oluşturur veya mevcutsa günceller.
+        Yeni alanlar: service_provider, external_model_name, prompt_template, status.
+        Returns:
+            bool: Tablo başarıyla oluşturuldu/güncellendiyse True, aksi halde False.
         """
         try:
             self.db._ensure_connection()
-            self.db.cursor.execute("""
+            if self.db.cursor is None: return False
+
+            create_table_query = """
                 CREATE TABLE IF NOT EXISTS ai_models (
                     id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Benzersiz tanımlayıcı',
                     category_id INT COMMENT 'Bağlı olduğu kategori ID',
-                    name VARCHAR(255) NOT NULL COMMENT 'Model adı',
+                    name VARCHAR(255) NOT NULL COMMENT 'Kullanıcı dostu model adı',
                     icon VARCHAR(100) COMMENT 'Model ikonu (örn: fas fa-robot)',
                     description TEXT COMMENT 'Modelin kısa açıklaması',
                     details JSON COMMENT 'Model hakkında daha detaylı bilgi (JSON formatında)',
-                    api_url VARCHAR(2048) COMMENT 'API endpoint URL',
-                    request_method VARCHAR(10) DEFAULT 'POST' COMMENT 'HTTP istek metodu (GET, POST, PUT, DELETE)',
+                    service_provider VARCHAR(100) COMMENT 'Hangi AI servisi sağlayıcısı (openai, gemini_sdk, custom_rest vb.)',
+                    external_model_name VARCHAR(255) COMMENT 'Servis sağlayıcının kendi içindeki model adı (gpt-4o, gemini-1.5-pro)',
+                    api_url VARCHAR(2048) COMMENT 'API endpoint URL (custom_rest veya farklı base_url için)',
+                    request_method VARCHAR(10) DEFAULT 'POST' COMMENT 'HTTP istek metodu (GET, POST, vb.)',
                     request_headers JSON COMMENT 'İstek başlıkları (JSON formatında)',
                     request_body JSON COMMENT 'İstek gövdesi şablonu (JSON formatında)',
-                    response_path VARCHAR(255) COMMENT 'JSON yanıtından veri çıkarma yolu',
-                    api_key VARCHAR(512) COMMENT 'API anahtarı (geliştirme için düz metin, sonra şifrelenecek)',
+                    response_path VARCHAR(255) COMMENT 'JSON yanıtından veri çıkarma yolu (custom_rest için)',
+                    api_key VARCHAR(512) COMMENT 'API anahtarı (İleride güvenli referans sistemi kullanılmalı)',
+                    prompt_template TEXT COMMENT 'Model için varsayılan prompt şablonu',
+                    status VARCHAR(50) DEFAULT 'active' COMMENT 'Modelin durumu (active, inactive, beta)',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Oluşturulma tarihi',
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Güncellenme tarihi',
                     FOREIGN KEY (category_id) REFERENCES ai_categories(id)
-                        ON DELETE SET NULL  -- Kategori silinirse modelin category_id'si NULL olur
-                        ON UPDATE CASCADE,  -- Kategori ID'si güncellenirse buradaki de güncellenir
+                        ON DELETE SET NULL
+                        ON UPDATE CASCADE,
                     INDEX idx_category_id (category_id),
-                    INDEX idx_name (name)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
-                COMMENT='AI modellerini ve API yapılandırmalarını saklar';
-            """)
-            
-            # Mevcut tabloyu yeni sütunlarla güncellemek için ALTER TABLE sorguları (eğer tablo zaten varsa)
-            # Bu, idempotent bir şekilde sütunların varlığını kontrol eder ve yoksa ekler/değiştirir.
-            alter_statements = [
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS description TEXT COMMENT 'Modelin kısa açıklaması' AFTER icon",
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS details JSON COMMENT 'Model hakkında daha detaylı bilgi (JSON formatında)' AFTER description",
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS api_url VARCHAR(2048) COMMENT 'API endpoint URL' AFTER details",
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS request_method VARCHAR(10) DEFAULT 'POST' COMMENT 'HTTP istek metodu (GET, POST, PUT, DELETE)' AFTER api_url",
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS request_headers JSON COMMENT 'İstek başlıkları (JSON formatında)' AFTER request_method",
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS request_body JSON COMMENT 'İstek gövdesi şablonu (JSON formatında)' AFTER request_headers",
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS response_path VARCHAR(255) COMMENT 'JSON yanıtından veri çıkarma yolu' AFTER request_body",
-                "ALTER TABLE ai_models ADD COLUMN IF NOT EXISTS api_key VARCHAR(512) COMMENT 'API anahtarı (geliştirme için düz metin, sonra şifrelenecek)' AFTER response_path",
-                "ALTER TABLE ai_models MODIFY COLUMN icon VARCHAR(100) COMMENT 'Model ikonu (örn: fas fa-robot)'", # Varolan sütunun tipini/commentini güncellemek
-                "ALTER TABLE ai_models MODIFY COLUMN name VARCHAR(255) NOT NULL COMMENT 'Model adı'",
+                    INDEX idx_name (name),
+                    INDEX idx_service_provider (service_provider)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                COMMENT='AI modellerini ve API yapılandırmalarını saklar (Revize Edilmiş)';
+            """
+            self.db.cursor.execute(create_table_query)
+
+            alter_statements_modify = [
+                "ALTER TABLE ai_models MODIFY COLUMN name VARCHAR(255) NOT NULL COMMENT 'Kullanıcı dostu model adı'",
+                "ALTER TABLE ai_models MODIFY COLUMN icon VARCHAR(100) COMMENT 'Model ikonu (örn: fas fa-robot)'",
+                "ALTER TABLE ai_models MODIFY COLUMN description TEXT COMMENT 'Modelin kısa açıklaması'",
+                "ALTER TABLE ai_models MODIFY COLUMN details JSON COMMENT 'Model hakkında daha detaylı bilgi (JSON formatında)'",
+                "ALTER TABLE ai_models MODIFY COLUMN api_url VARCHAR(2048) COMMENT 'API endpoint URL (custom_rest veya farklı base_url için)'",
+                "ALTER TABLE ai_models MODIFY COLUMN request_method VARCHAR(10) DEFAULT 'POST' COMMENT 'HTTP istek metodu (GET, POST, vb.)'",
+                "ALTER TABLE ai_models MODIFY COLUMN request_headers JSON COMMENT 'İstek başlıkları (JSON formatında)'",
+                "ALTER TABLE ai_models MODIFY COLUMN request_body JSON COMMENT 'İstek gövdesi şablonu (JSON formatında)'",
+                "ALTER TABLE ai_models MODIFY COLUMN response_path VARCHAR(255) COMMENT 'JSON yanıtından veri çıkarma yolu (custom_rest için)'",
+                "ALTER TABLE ai_models MODIFY COLUMN api_key VARCHAR(512) COMMENT 'API anahtarı (İleride güvenli referans sistemi kullanılmalı)'",
             ]
-            
-            if self.db.connection: # Bağlantının varlığından emin ol
-                # Tablonun var olup olmadığını kontrol et
-                self.db.cursor.execute(f"""
-                    SELECT COUNT(*) AS count
-                    FROM information_schema.tables
-                    WHERE table_schema = DATABASE() AND table_name = 'ai_models'
-                """)
-                table_exists = self.db.cursor.fetchone()['count'] > 0
+
+            alter_statements_add = [
+                ("service_provider", "VARCHAR(100) COMMENT 'Hangi AI servisi sağlayıcısı (openai, gemini_sdk, custom_rest vb.)' AFTER details"),
+                ("external_model_name", "VARCHAR(255) COMMENT 'Servis sağlayıcının kendi içindeki model adı (gpt-4o, gemini-1.5-pro)' AFTER service_provider"),
+                ("prompt_template", "TEXT COMMENT 'Model için varsayılan prompt şablonu' AFTER api_key"),
+                ("status", "VARCHAR(50) DEFAULT 'active' COMMENT 'Modelin durumu (active, inactive, beta)' AFTER prompt_template"),
+            ]
+
+            if self.db.connection:
+                self.db.cursor.execute(f"SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'ai_models'")
+                result = self.db.cursor.fetchone()
+                table_exists = result and result.get('count', 0) > 0
 
                 if table_exists:
-                    for alter_query in alter_statements:
+                    for stmt in alter_statements_modify:
                         try:
-                            # print(f"DEBUG: ALTER TABLE sorgusu çalıştırılıyor: {alter_query}")
-                            self.db.cursor.execute(alter_query)
-                        except MySQLError as e:
-                            # print(f"UYARI: '{alter_query}' sorgusu çalıştırılırken hata (muhtemelen sütun zaten var veya uyumsuz değişiklik): {e}")
-                            # Hata "Duplicate column name" ise veya "Column already exists" ise genellikle güvenle yoksayılabilir.
-                            # Diğer hatalar için loglama/inceleme gerekebilir.
-                            if "Duplicate column name" not in str(e) and "already exists" not in str(e):
-                                # print(f"KRİTİK UYARI: Beklenmedik ALTER TABLE hatası: {e}")
-                                pass # Geliştirme aşamasında bu tür hataları yoksayabiliriz, ancak üretimde dikkatli olunmalı.
-                
+                            self.db.cursor.execute(stmt)
+                        except MySQLError: # Hataları yoksay (sütun zaten doğru formatta olabilir)
+                            pass
+                    for col_name, col_definition in alter_statements_add:
+                        try:
+                            self.db.cursor.execute(f"SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'ai_models' AND column_name = '{col_name}'")
+                            result = self.db.cursor.fetchone()
+                            column_exists = result and result.get('count', 0) > 0
+                            if not column_exists:
+                                self.db.cursor.execute(f"ALTER TABLE ai_models ADD COLUMN {col_name} {col_definition}")
+                        except MySQLError: # Hataları yoksay
+                            pass
+                    try:
+                        self.db.cursor.execute("SHOW INDEX FROM ai_models WHERE Key_name = 'idx_service_provider'")
+                        if not self.db.cursor.fetchone():
+                            self.db.cursor.execute("ALTER TABLE ai_models ADD INDEX idx_service_provider (service_provider)")
+                    except MySQLError: # Hataları yoksay
+                        pass
                 self.db.connection.commit()
             return True
-        except MySQLError as e:
-            # print(f"DEBUG: 'ai_models' tablosu oluşturulurken/güncellenirken hata: {e}")
-            if self.db.connection and self.db.connection.is_connected(): self.db.connection.rollback()
+        except MySQLError:
+            if self.db.connection and self.db.connection.is_connected():
+                try:
+                    self.db.connection.rollback()
+                except MySQLError: pass
             return False
 
-    # 2.5. create_user_messages_table
+    # -------------------------------------------------------------------------
+    # 2.6. 'user_messages' tablosunu oluşturur/günceller (create_user_messages_table)
     # -------------------------------------------------------------------------
     def create_user_messages_table(self) -> bool:
-        """'user_messages' tablosunu, eğer mevcut değilse oluşturur."""
+        """
+        'user_messages' tablosunu, eğer mevcut değilse oluşturur ve gerekli sütunları ekler/günceller.
+        Returns:
+            bool: Tablo başarıyla oluşturuldu/güncellendiyse True, aksi halde False.
+        """
         try:
             self.db._ensure_connection()
+            if self.db.cursor is None: return False
+
             self.db.cursor.execute("""
                 CREATE TABLE IF NOT EXISTS user_messages (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -209,7 +240,8 @@ class DatabaseMigrations:
                     user_message TEXT COMMENT 'Kullanıcı tarafından gönderilen mesaj',
                     prompt TEXT COMMENT 'AIya gönderilen tam prompt (geçmişi içerebilir)',
                     ai_response TEXT COMMENT 'AIdan gelen yanıt',
-                    ai_model_name VARCHAR(255) COMMENT 'Kullanılan AI modelinin adı (data_ai_index olabilir)',
+                    ai_model_name VARCHAR(255) COMMENT 'Kullanılan AI modelinin adı (örn: gpt-4o, gemini-1.5-pro)',
+                    model_id_used INT COMMENT 'Kullanılan ai_models tablosundaki modelin IDsi',
                     model_params JSON COMMENT 'AI modeli için kullanılan parametrelerin JSON dizesi',
                     request_json JSON COMMENT 'AIya gönderilen gerçek isteğin JSON dizesi',
                     response_json JSON COMMENT 'AIdan gelen gerçek yanıtın JSON dizesi',
@@ -217,219 +249,182 @@ class DatabaseMigrations:
                     duration FLOAT COMMENT 'AI çağrısının saniye cinsinden süresi',
                     error_message TEXT COMMENT 'AI çağrısı başarısız olursa hata mesajı',
                     status VARCHAR(50) COMMENT 'Mesajın durumu (örn: success, error, pending)',
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Mesajın zaman damgası'
-                ) COMMENT = 'Kullanıcıların AI modelleriyle etkileşimlerini saklar';
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Mesajın zaman damgası',
+                    FOREIGN KEY (model_id_used) REFERENCES ai_models(id) ON DELETE SET NULL
+                ) COMMENT = 'Kullanıcıların AI modelleriyle etkileşimlerini saklar (Revize Edilmiş)';
             """)
+
+            # Sütun varlığını kontrol et ve ekle/güncelle
+            columns_to_ensure = {
+                "model_id_used": "INT COMMENT 'Kullanılan ai_models tablosundaki modelin IDsi' AFTER ai_model_name",
+            }
+            foreign_keys_to_ensure = {
+                "fk_user_messages_model_id": "FOREIGN KEY (model_id_used) REFERENCES ai_models(id) ON DELETE SET NULL"
+            }
+            columns_to_modify = {
+                 "ai_model_name": "VARCHAR(255) COMMENT 'Kullanılan AI modelinin adı (örn: gpt-4o, gemini-1.5-pro)'"
+            }
+
+            for col_name, col_definition in columns_to_ensure.items():
+                try:
+                    self.db.cursor.execute(f"SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'user_messages' AND column_name = '{col_name}'")
+                    result = self.db.cursor.fetchone()
+                    if not (result and result.get('count', 0) > 0):
+                        self.db.cursor.execute(f"ALTER TABLE user_messages ADD COLUMN {col_name} {col_definition}")
+                except MySQLError: pass # Hataları yoksay
+
+            for fk_name, fk_definition in foreign_keys_to_ensure.items():
+                try:
+                    self.db.cursor.execute(f"SELECT COUNT(*) AS count FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = 'user_messages' AND constraint_name = '{fk_name}' AND constraint_type = 'FOREIGN KEY'")
+                    result = self.db.cursor.fetchone()
+                    if not (result and result.get('count', 0) > 0):
+                         # Önce sütunun var olduğundan emin olalım (model_id_used)
+                        self.db.cursor.execute(f"SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'user_messages' AND column_name = 'model_id_used'")
+                        col_exists_result = self.db.cursor.fetchone()
+                        if col_exists_result and col_exists_result.get('count', 0) > 0:
+                            self.db.cursor.execute(f"ALTER TABLE user_messages ADD CONSTRAINT {fk_name} {fk_definition}")
+                except MySQLError: pass # Hataları yoksay
+
+            for col_name, col_definition in columns_to_modify.items():
+                try:
+                    self.db.cursor.execute(f"ALTER TABLE user_messages MODIFY COLUMN {col_name} {col_definition}")
+                except MySQLError: pass # Hataları yoksay
+
+
             if self.db.connection: self.db.connection.commit()
             return True
-        except MySQLError as e:
-            # print(f"DEBUG: 'user_messages' tablosu oluşturulurken hata: {e}")
-            if self.db.connection and self.db.connection.is_connected(): self.db.connection.rollback()
+        except MySQLError:
+            if self.db.connection and self.db.connection.is_connected():
+                try:
+                    self.db.connection.rollback()
+                except MySQLError: pass
             return False
 
-    # 2.6. migrate_user_messages_table
+    # -------------------------------------------------------------------------
+    # 2.7. 'user_messages' tablosu için geçişleri uygular (migrate_user_messages_table)
     # -------------------------------------------------------------------------
     def migrate_user_messages_table(self) -> Tuple[bool, List[str]]:
         """
-        'user_messages' tablosuna, eğer mevcut değillerse yeni sütunlar ekler.
-        Bu basit bir geçiş örneğidir; daha karmaşık geçişler için özel bir kütüphane gerekebilir.
+        'user_messages' tablosu için gerekli geçişleri uygular.
+        Şu anda bu metot, create_user_messages_table içindeki güncellemeler nedeniyle
+        ek bir işlem yapmamaktadır.
         Returns:
-            Tuple[bool, List[str]]: (başarı_durumu, eklenen_sütunların_listesi)
+            Tuple[bool, List[str]]: Başarı durumu ve eklenen sütunların listesi.
         """
-        added_columns = []
-        migration_successful = True
-        # print("DEBUG: 'user_messages' tablosu için geçiş başlatılıyor...")
-        try:
-            self.db._ensure_connection()
-            columns_to_add = [] # Bu örnekte user_messages için yeni sütun eklenmiyor.
+        # create_user_messages_table zaten idempotent güncellemeleri yapıyor.
+        return True, []
 
-            if not columns_to_add:
-                # print("DEBUG: 'user_messages' tablosuna eklenecek yeni sütun tanımlanmamış.")
-                return True, [] 
-
-            for col_name, col_type, col_position, col_comment in columns_to_add:
-                try:
-                    self.db.cursor.execute(f"""
-                        SELECT COUNT(*) AS count
-                        FROM information_schema.COLUMNS
-                        WHERE TABLE_SCHEMA = DATABASE()
-                        AND TABLE_NAME = 'user_messages'
-                        AND COLUMN_NAME = %s;
-                    """, (col_name,))
-                    if self.db.cursor.fetchone()['count'] == 0:
-                        # print(f"DEBUG: '{col_name}' sütunu 'user_messages' tablosuna ekleniyor...")
-                        self.db.cursor.execute(
-                            f"ALTER TABLE user_messages ADD COLUMN {col_name} {col_type} "
-                            f"COMMENT %s {col_position};", (col_comment,)
-                        )
-                        added_columns.append(col_name)
-                    else:
-                        # print(f"DEBUG: '{col_name}' sütunu 'user_messages' tablosunda zaten mevcut.")
-                        pass
-                except MySQLError as e:
-                    # print(f"DEBUG: '{col_name}' sütunu 'user_messages' tablosuna eklenirken hata: {e}")
-                    migration_successful = False 
-            
-            if migration_successful and added_columns:
-                if self.db.connection: self.db.connection.commit()
-            elif not added_columns and migration_successful:
-                pass
-            else: 
-                if self.db.connection and self.db.connection.is_connected(): self.db.connection.rollback()
-
-            return migration_successful, added_columns
-        except MySQLError as e:
-            # print(f"DEBUG: migrate_user_messages_table sırasında genel hata: {e}")
-            if self.db.connection and self.db.connection.is_connected(): self.db.connection.rollback()
-            return False, added_columns 
-        finally:
-            self.db.close()
-
-    # 2.7. check_database_status
+    # -------------------------------------------------------------------------
+    # 2.8. Veritabanının mevcut durumunu kontrol eder (check_database_status)
     # -------------------------------------------------------------------------
     def check_database_status(self) -> Dict[str, Any]:
         """
-        Veritabanının durumunu kontrol eder; tablo varlığı ve satır sayıları dahil.
+        Veritabanının ve ana tabloların durumunu kontrol eder.
         Returns:
             Dict[str, Any]: Veritabanı durumu hakkında bilgi içeren bir sözlük.
         """
-        status = {
+        status: Dict[str, Any] = {
             'database_name': None,
             'tables': {},
             'row_counts': {},
             'connection_status': 'Bağlantı Kesik',
             'overall_success': False
         }
-        # print("DEBUG: Veritabanı durumu kontrol ediliyor...")
         try:
             self.db._ensure_connection()
-            status['connection_status'] = 'Bağlı' 
-            if self.db.connection: 
+            status['connection_status'] = 'Bağlı'
+            if self.db.connection and self.db.cursor:
                 status['database_name'] = self.db.connection.database
 
-            tables_to_check = ['ai_categories', 'ai_models', 'user_messages']
-            for table_name in tables_to_check:
-                try:
-                    self.db.cursor.execute(f"""
-                        SELECT COUNT(*) AS count
-                        FROM information_schema.tables
-                        WHERE table_schema = DATABASE() AND table_name = %s
-                    """, (table_name,))
-                    table_exists = self.db.cursor.fetchone()['count'] > 0
+                tables_to_check = ['ai_categories', 'ai_models', 'user_messages']
+                for table_name in tables_to_check:
+                    try:
+                        self.db.cursor.execute(f"SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = %s", (table_name,))
+                        table_info = self.db.cursor.fetchone()
+                        table_exists = table_info['count'] > 0 if table_info else False
 
-                    if table_exists:
-                        self.db.cursor.execute(f"DESCRIBE {table_name}")
-                        columns_data = self.db.cursor.fetchall()
-                        column_details = {
-                            col['Field']: {
-                                'type': col['Type'],
-                                'null': col['Null'],
-                                'key': col['Key'],
-                                'default': col['Default'],
-                                'extra': col['Extra']
-                            } for col in columns_data
-                        }
-                        status['tables'][table_name] = {
-                            'exists': True,
-                            'column_count': len(columns_data),
-                            'columns': column_details
-                        }
-                        self.db.cursor.execute(f"SELECT COUNT(*) as count FROM {table_name}")
-                        count_result = self.db.cursor.fetchone()
-                        status['row_counts'][table_name] = count_result['count'] if count_result else 0
-                    else:
-                        status['tables'][table_name] = {'exists': False, 'column_count': 0, 'columns': {}}
+                        if table_exists:
+                            self.db.cursor.execute(f"DESCRIBE {table_name}")
+                            columns_data = self.db.cursor.fetchall()
+                            column_details = {
+                                col['Field']: {
+                                    'type': col['Type'], 'null': col['Null'],
+                                    'key': col['Key'], 'default': col['Default'],
+                                    'extra': col['Extra']
+                                } for col in columns_data
+                            } if columns_data else {}
+                            status['tables'][table_name] = {'exists': True, 'column_count': len(columns_data or []), 'columns': column_details}
+
+                            self.db.cursor.execute(f"SELECT COUNT(*) as count FROM {table_name}")
+                            count_result = self.db.cursor.fetchone()
+                            status['row_counts'][table_name] = count_result['count'] if count_result else 0
+                        else:
+                            status['tables'][table_name] = {'exists': False, 'column_count': 0, 'columns': {}}
+                            status['row_counts'][table_name] = 0
+                    except MySQLError as e:
+                        status['tables'][table_name] = {'exists': False, 'error': str(e)}
                         status['row_counts'][table_name] = 0
-                except MySQLError as e:
-                    # print(f"DEBUG: '{table_name}' tablosu kontrol edilirken hata: {e}")
-                    status['tables'][table_name] = {'exists': False, 'error': str(e)}
-                    status['row_counts'][table_name] = 0
-            status['overall_success'] = True 
+                status['overall_success'] = True
         except MySQLError as e:
-            # print(f"DEBUG: check_database_status içinde veritabanı bağlantı hatası: {e}")
             status['connection_status'] = f"Hata: {str(e)}"
-            status['overall_success'] = False 
+            status['overall_success'] = False
         finally:
             self.db.close()
-        # print(f"DEBUG: Veritabanı durumu: {json.dumps(status, indent=2, ensure_ascii=False)}")
         return status
 
-# 3. Yardımcı Fonksiyonlar (Helper Functions)
+# =============================================================================
+# 3.0 YARDIMCI FONKSİYONLAR (HELPER FUNCTIONS)
 # =============================================================================
 
-# 3.1. initialize_database
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# 3.1. Veritabanını başlatır ve tabloları oluşturur (initialize_database)
+# -------------------------------------------------------------------------
 def initialize_database() -> bool:
     """
-    Veritabanını başlatır ve gerekli tabloları oluşturur.
+    DatabaseMigrations sınıfını kullanarak veritabanını başlatır ve tüm tabloları oluşturur.
     Returns:
-        bool: Tüm tablolar başarıyla oluşturulduysa True, aksi takdirde False.
+        bool: Başarılı olursa True, aksi halde False.
     """
-    # print("INFO: Veritabanı başlatılıyor...")
     migrations = DatabaseMigrations()
     success = migrations.create_all_tables()
-    if success:
-        # print("INFO: Veritabanı başarıyla başlatıldı.")
-        pass
-    else:
-        # print("ERROR: Veritabanı başlatma başarısız oldu.")
-        pass
+    # Başarı/hata mesajları artık doğrudan çağrılan metotlarda veya loglama ile ele alınabilir.
     return success
 
-# 3.2. migrate_database
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# 3.2. Veritabanı geçişlerini uygular (migrate_database)
+# -------------------------------------------------------------------------
 def migrate_database() -> Tuple[bool, List[str]]:
     """
-    Veritabanı geçişlerini çalıştırır (örn: mevcut tablolara yeni sütunlar ekleme).
+    DatabaseMigrations sınıfını kullanarak veritabanı geçişlerini uygular.
     Returns:
-        Tuple[bool, List[str]]: (başarı_durumu, eklenen_sütunların_listesi).
+        Tuple[bool, List[str]]: Başarı durumu ve eklenen sütunların listesi.
     """
-    # print("INFO: Veritabanı geçişi başlatılıyor...")
     migrations = DatabaseMigrations()
-    # Şu anda sadece user_messages için bir geçiş fonksiyonu var, gerekirse ai_models için de eklenebilir.
     success_user_messages, added_cols_user_messages = migrations.migrate_user_messages_table()
-    
-    # ai_models için ayrı bir migrate fonksiyonu olsaydı burada çağrılabilirdi:
-    # success_ai_models, added_cols_ai_models = migrations.migrate_ai_models_table() 
-    # success = success_user_messages and success_ai_models
-    # added_columns = added_cols_user_messages + added_cols_ai_models
+    # Diğer geçişler buraya eklenebilir.
+    return success_user_messages, added_cols_user_messages
 
-    success = success_user_messages # Şimdilik sadece user_messages sonucunu kullanıyoruz
-    added_columns = added_cols_user_messages
-
-    if success:
-        if added_columns:
-            # print(f"INFO: Veritabanı geçişi başarılı. Eklenen sütunlar: {', '.join(added_columns)}")
-            pass
-        else:
-            # print("INFO: Veritabanı geçişi kontrol edildi. Eklenecek yeni sütun yok.")
-            pass
-    else:
-        # print("ERROR: Veritabanı geçişi başarısız oldu.")
-        pass
-    return success, added_columns
-
-# 3.3. main (Örnek Çalıştırma Bloğu)
-# -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    print("Veritabanı başlatılıyor...")
+    # Bu blok, modül doğrudan çalıştırıldığında test veya başlatma işlemleri için kullanılır.
+    # print() çağrıları, bu özel __main__ bloğu içinde test amaçlı kalabilir,
+    # ancak modül bir uygulamanın parçası olarak içe aktarıldığında çalışmazlar.
+    # Uygulama genelinde loglama tercih edilmelidir.
+    print("Veritabanı işlemleri başlatılıyor (migrations.py doğrudan çalıştırıldı)...")
     if initialize_database():
-        print("Veritabanı başarıyla başlatıldı.")
-
-        print("\nGeçişler çalıştırılıyor...")
+        print("Veritabanı başarıyla başlatıldı/kontrol edildi.")
         mig_success, mig_cols = migrate_database()
         if mig_success:
             if mig_cols:
-                print(f"Geçişler uygulandı. Eklenen sütunlar: {', '.join(mig_cols)}")
+                print(f"Veritabanı geçişi başarılı. Eklenen/değiştirilen sütunlar (user_messages): {', '.join(mig_cols)}")
             else:
-                print("Uygulanacak yeni geçiş yok.")
+                print("Veritabanı geçişi kontrol edildi, user_messages için ek işlem yapılmadı.")
         else:
-            print("Geçişler başarısız oldu.")
+            print("Veritabanı geçişi başarısız oldu.")
 
         print("\nVeritabanı durumu kontrol ediliyor...")
-        db_status_checker = DatabaseMigrations() 
+        db_status_checker = DatabaseMigrations() # Yeni bir örnek, çünkü önceki bağlantıyı kapattı.
         db_status = db_status_checker.check_database_status()
         print("Veritabanı Durumu:")
-        print(json.dumps(db_status, indent=4, ensure_ascii=False)) 
+        print(json.dumps(db_status, indent=4, ensure_ascii=False)) # Detaylı JSON çıktısı
     else:
-        print("Veritabanı başlatma başarısız oldu.")
+        print("Veritabanı başlatma veya tablo oluşturma başarısız oldu.")
