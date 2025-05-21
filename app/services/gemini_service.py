@@ -88,6 +88,13 @@ class GeminiService:
             target_model_name = model_entity.external_model_name
 
         try:
+            print(f"\n=== GEMINI API DETAYLARI ===")
+            print(f"API URL: https://generativelanguage.googleapis.com/v1/models/{target_model_name}")
+            print(f"Model Adı: {target_model_name}")
+            print(f"API Key: {self.api_key[:4]}...{self.api_key[-4:] if len(self.api_key) > 8 else '****'}")
+            print(f"Safety Settings: {getattr(genai, 'safety_settings', 'Varsayılan')}")
+            print("=" * 50)
+            
             model = genai.GenerativeModel(target_model_name)
             gemini_history_for_api = []
             for message in chat_history:
@@ -125,7 +132,22 @@ class GeminiService:
                 
                 chat_session = model.start_chat(history=gemini_history_for_api)
                 if chat_message:
-                    api_response = chat_session.send_message(chat_message)
+                    print(f"\n=== GEMINI API'YE GÖNDERİLEN MESAJ DETAYI ===")
+                    print(f"Mesaj: {chat_message}")
+                    print("=" * 50)
+                    
+                    try:
+                        api_response = chat_session.send_message(chat_message)
+                        print(f"\n=== GEMINI API YANITI ===")
+                        print(f"Yanıt Durumu: Başarılı")
+                        print(f"Yanıt Metni: {api_response.text[:100]}..." if len(api_response.text) > 100 else api_response.text)
+                        print(f"Yanıt Uzunluğu: {len(api_response.text)} karakter")
+                        print("=" * 50)
+                    except Exception as e:
+                        print(f"\n=== GEMINI API HATA ===")
+                        print(f"Hata: {str(e)}")
+                        print("=" * 50)
+                        raise
                 else:
                     if gemini_history_for_api and gemini_history_for_api[-1]['role'] == 'model':
                         last_model_parts = gemini_history_for_api[-1]['parts']
@@ -134,19 +156,48 @@ class GeminiService:
                     else:
                         return {"response": "Yeni mesaj gönderilmedi; sadece geçmiş sağlandı.", "status_code": 200}
             elif chat_message:
-                api_response = model.generate_content(chat_message)
+                print(f"\n=== GEMINI API TEK MESAJ GÖNDERİMİ ===")
+                print(f"Mesaj: {chat_message}")
+                print("=" * 50)
+                
+                try:
+                    api_response = model.generate_content(chat_message)
+                    print(f"\n=== GEMINI API TEK MESAJ YANITI ===")
+                    print(f"Yanıt Durumu: Başarılı")
+                    print(f"Yanıt Metni: {api_response.text[:100]}..." if len(api_response.text) > 100 else api_response.text)
+                    print("=" * 50)
+                except Exception as e:
+                    print(f"\n=== GEMINI API TEK MESAJ HATASI ===")
+                    print(f"Hata: {str(e)}")
+                    print("=" * 50)
+                    raise
             else:
+                print(f"\n=== GEMINI API GİRDİ HATASI ===")
+                print("Hata: İşlenecek girdi bulunamadı.")
+                print("=" * 50)
                 return {"error": "İşlenecek girdi bulunamadı.", "status_code": 400}
 
             if not api_response:
-                 return {"error": "Gemini API'sinden yanıt alınamadı.", "status_code": 500}
+                print(f"\n=== GEMINI API YANIT YOK ===")
+                print("Hata: Gemini API'sinden yanıt alınamadı.")
+                print("=" * 50)
+                return {"error": "Gemini API'sinden yanıt alınamadı.", "status_code": 500}
 
             response_text = api_response.text
+            print(f"\n=== GEMINI API İşLEM TAMAMLANDI ===")
+            print(f"Son Yanıt: {response_text[:150]}..." if len(response_text) > 150 else response_text)
+            print("=" * 50)
             return {"response": response_text, "status_code": 200}
 
         except Exception as e:
-            error_message = str(e)
-            return {"error": "Gemini API isteği başarısız oldu.", "details": error_message, "status_code": 500}
+            import traceback
+            error_message = f"Gemini API hatası: {str(e)}"
+            print(f"\n=== GEMINI API GENEL HATA ===")
+            print(f"Hata Mesajı: {error_message}")
+            print(f"Hata Detayları: {str(e)}")
+            print(f"Hata İzi: \n{traceback.format_exc()}")
+            print("=" * 50)
+            return {"error": error_message, "details": str(e), "status_code": 500}
 
 # =============================================================================
 # 3.0 ÖRNEK KULLANIM (EXAMPLE USAGE)
