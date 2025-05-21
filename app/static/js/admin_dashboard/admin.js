@@ -947,23 +947,10 @@ const AdminPanelManager = (function() {
                 throw new Error(responseData.error || `Bir hata oluştu: ${response.status}`);
             }
             
-            log('debug', 'FormSubmit', '--- handleModelFormSubmit: API Response Model for card render ---', responseData.model);
             showToast(responseData.message || (isEdit ? 'Model başarıyla güncellendi.' : 'Yeni model başarıyla eklendi.'), 'success');
             closeModelModal();
             
-            if (responseData.model) {
-                // Eğer kategori adı yoksa, kategorilerden bulup ekle
-                if (!responseData.model.category_name && elements.categoryFilter) {
-                    const selectedOption = Array.from(elements.categoryFilter.options).find(option => option.value == responseData.model.category_id);
-                    if (selectedOption) responseData.model.category_name = selectedOption.textContent;
-                }
-                renderOrUpdateModelInList(responseData.model, isEdit);
-            } else {
-                log('warn', 'API', 'Model data not found in response, reloading page as fallback.');
-                // Fallback: reload the current page to see changes if dynamic update fails
-                const currentPage = history.state?.page || 'models'; // Default to models or get from history
-                loadPageContent(currentPage, false); // Reload current page content
-            }
+            loadPageContent('models', false);
 
         } catch (error) {
             log('error', 'FormSubmit', `Error submitting model form: ${error.message}`, error);
