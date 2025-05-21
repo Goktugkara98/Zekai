@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="tr" class="light"> <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zekai Admin - Sade ve Şık Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard/admin.css') }}">
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full flex flex-col z-40 shadow-lg">
+        <div class="px-6 py-5 flex items-center justify-between border-b border-[var(--card-border)]">
+            <a href="#" class="flex items-center space-x-2.5">
+                <svg class="sidebar-logo-icon h-8 w-auto text-accent" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                <span class="sidebar-logo-full text-2xl font-bold text-[var(--text-primary)]">Zekai<span class="text-accent">Panel</span></span>
+            </a>
+        </div>
+        <nav class="flex-grow p-4 space-y-1.5">
+            <a href="#" class="nav-link active flex items-center space-x-3 px-4 py-2.5 rounded-lg">
+                <i class="fas fa-tachometer-alt fa-fw nav-icon w-5 text-center"></i>
+                <span class="sidebar-text text-sm font-medium">Genel Bakış</span>
+            </a>
+            <a href="#" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
+                <i class="fas fa-users fa-fw nav-icon w-5 text-center"></i>
+                <span class="sidebar-text text-sm font-medium">Kullanıcılar</span>
+            </a>
+            <a href="{{ url_for('admin_bp.models_page') }}" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
+                <i class="fas fa-robot fa-fw nav-icon w-5 text-center"></i>
+                <span class="sidebar-text text-sm font-medium">AI Modelleri</span>
+            </a>
+            <a href="#" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
+                <i class="fas fa-folder-tree fa-fw nav-icon w-5 text-center"></i>
+                <span class="sidebar-text text-sm font-medium">Kategoriler</span>
+            </a>
+        </nav>
+        <div class="p-4 border-t border-[var(--card-border)]">
+            <a href="#" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
+                <i class="fas fa-cog fa-fw nav-icon w-5 text-center"></i>
+                <span class="sidebar-text text-sm font-medium">Ayarlar</span>
+            </a>
+             <button id="themeToggle" class="nav-link w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg mt-1.5">
+                <i class="fas fa-moon fa-fw nav-icon w-5 text-center" id="themeIcon"></i>
+                <span class="sidebar-text text-sm font-medium">Tema Değiştir</span>
+            </button>
+        </div>
+    </aside>
+
+    <div id="mainContent" class="main-content flex-1 flex flex-col overflow-y-auto ml-[250px]">
+        <header class="topbar sticky top-0 z-30 px-6 py-3.5 flex justify-between items-center">
+            <div class="flex items-center">
+                <button id="sidebarToggle" class="p-2 rounded-md text-[var(--text-secondary)] hover:text-accent hover:bg-accent-light mr-3">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="Ara..." class="pl-10 pr-4 py-2 w-64 text-sm border border-[var(--card-border)] rounded-lg bg-[var(--card-bg)] text-[var(--text-primary)] focus:ring-1 focus:ring-accent focus:border-accent outline-none">
+                </div>
+            </div>
+            <div class="flex items-center space-x-5">
+                <button class="text-[var(--text-secondary)] hover:text-accent relative">
+                    <i class="far fa-bell text-xl"></i>
+                    <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-1 ring-[var(--topbar-bg)]"></span>
+                </button>
+                <div class="flex items-center space-x-3">
+                    <img src="https://placehold.co/36x36/6366F1/FFFFFF?text=A&font=inter" alt="Admin Avatar" class="w-9 h-9 rounded-full">
+                    <div>
+                        <p class="text-sm font-semibold text-[var(--text-primary)]">Admin Kullanıcı</p>
+                        <p class="text-xs text-[var(--text-secondary)]">Yönetici</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 p-6">
+            <h1 class="text-2xl font-semibold text-[var(--text-primary)] mb-6">Genel Bakış</h1>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+                <div class="kpi-card p-5 rounded-xl shadow-custom">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Toplam Kullanıcı</p>
+                        <div class="p-2 rounded-full bg-accent-light text-accent">
+                            <i class="fas fa-users fa-sm"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-[var(--text-primary)]" id="totalUsersStat">1,234</p>
+                    <p class="text-xs text-green-500 mt-1">+5.2% geçen haftadan</p>
+                </div>
+                 <div class="kpi-card p-5 rounded-xl shadow-custom">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Toplam AI Modeli</p>
+                        <div class="p-2 rounded-full bg-accent-light text-accent">
+                            <i class="fas fa-robot fa-sm"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-[var(--text-primary)]" id="totalModelsStat">78</p>
+                    <p class="text-xs text-green-500 mt-1">+3 yeni model</p>
+                </div>
+                <div class="kpi-card p-5 rounded-xl shadow-custom">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Toplam Kategori</p>
+                        <div class="p-2 rounded-full bg-accent-light text-accent">
+                            <i class="fas fa-folder-tree fa-sm"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-[var(--text-primary)]" id="totalCategoriesStat">12</p>
+                    <p class="text-xs text-[var(--text-secondary)] mt-1">Değişiklik yok</p>
+                </div>
+                <div class="kpi-card p-5 rounded-xl shadow-custom">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Aktif İstekler</p>
+                        <div class="p-2 rounded-full bg-red-100 text-red-500 dark:bg-red-500/20 dark:text-red-400">
+                            <i class="fas fa-bolt fa-sm"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-bold text-[var(--text-primary)]" id="activeRequestsStat">45</p>
+                    <p class="text-xs text-red-500 dark:text-red-400 mt-1">Yüksek yoğunluk</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+                <div class="lg:col-span-2 kpi-card p-5 rounded-xl shadow-custom">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-[var(--text-primary)]">AI İstek Trendi</h3>
+                        <select id="trendChartTimespan" class="text-xs border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--text-secondary)] rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-accent">
+                            <option value="7">Son 7 Gün</option>
+                            <option value="30" selected>Son 30 Gün</option>
+                            <option value="90">Son 90 Gün</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="aiRequestTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="kpi-card p-5 rounded-xl shadow-custom">
+                     <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-4">Model Kullanım Oranları</h3>
+                    <div class="chart-container" style="height: 280px;">
+                        <canvas id="topModelsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+             <footer class="text-center py-6 mt-auto">
+                <p class="text-xs text-[var(--text-secondary)]">&copy; 2024 ZekaiPanel. Tüm hakları saklıdır.</p>
+            </footer>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/admin_dashboard/admin.js') }}"></script>
+</body>
+</html>
