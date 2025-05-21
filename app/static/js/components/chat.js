@@ -787,6 +787,7 @@ const ChatManager = (function() {
         }
 
         try {
+            // Son mesajı hariç tutarak geçmişi oluştur
             const conversationHistoryForAPI = chat.messages
                 .filter(msg => msg.text && String(msg.text).trim() !== '')
                 .map(msg => ({ role: msg.isUser ? 'user' : 'model', parts: [{ text: String(msg.text).trim() }] }));

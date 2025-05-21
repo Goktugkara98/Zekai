@@ -111,6 +111,18 @@ class GeminiService:
 
             api_response = None
             if gemini_history_for_api:
+                print("\n=== GEMINI API'YE GÖNDERİLEN MESAJ ===")
+                print("Chat History:", gemini_history_for_api)
+                print("New Message:", chat_message)
+                print("=" * 50 + "\n")
+                
+                # Eğer history'de zaten bu mesaj varsa, chat_message'ı boş bırak
+                if chat_message and gemini_history_for_api and \
+                   gemini_history_for_api[-1]['role'] == 'user' and \
+                   gemini_history_for_api[-1]['parts'] and \
+                   gemini_history_for_api[-1]['parts'][0].get('text') == chat_message:
+                    chat_message = None
+                
                 chat_session = model.start_chat(history=gemini_history_for_api)
                 if chat_message:
                     api_response = chat_session.send_message(chat_message)
