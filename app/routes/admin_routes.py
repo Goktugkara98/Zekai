@@ -99,7 +99,7 @@ def dashboard_page() -> str:
     current_page_identifier: str = "dashboard"
     try:
         stats: Dict[str, Any] = dashboard_service.get_dashboard_stats()
-        return render_template('admin_dashboard.html',
+        return render_template('admin_dashboard/admin_dashboard.html',
                                title=page_title,
                                current_page=current_page_identifier,
                                page_data=stats)
@@ -171,14 +171,14 @@ def models_page() -> str:
         all_categories: List[Dict[str, Any]] = category_service.get_all_categories_for_display()
         page_content_data = {"models": models_data, "categories": all_categories}
         print(page_content_data)
-        return render_template('admin_models.html',
+        return render_template('admin_dashboard/admin_models.html',
                                title=page_title,
                                current_page=current_page_identifier,
                                page_data=page_content_data)
     except Exception as e:
         current_app.logger.error(f"Admin AI modelleri sayfası yüklenirken hata: {str(e)}", exc_info=True)
         flash(f"AI Modelleri yüklenirken bir hata oluştu: {str(e)}", "danger")
-        return render_template('admin_models.html',
+        return render_template('admin_dashboard/admin_dashboard.html',
                                title="Hata - AI Modelleri",
                                current_page=current_page_identifier,
                                page_data={"models": [], "categories": []})
