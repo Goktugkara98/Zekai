@@ -1,80 +1,6 @@
-<!DOCTYPE html>
-<html lang="tr" class="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Modelleri - Zekai Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard/admin.css') }}">
-</head>
-<body class="flex h-screen overflow-hidden">
+{% extends "admin_dashboard/admin_dashboard.html" %}
 
-    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full flex flex-col z-40 shadow-lg">
-        <div class="px-6 py-5 flex items-center justify-between border-b border-[var(--card-border)]">
-            <a href="{{ url_for('admin_bp.dashboard_page') }}" class="flex items-center space-x-2.5">
-                <svg class="sidebar-logo-icon h-8 w-auto text-accent" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-                <span class="sidebar-logo-full text-2xl font-bold text-[var(--text-primary)]">Zekai<span class="text-accent">Panel</span></span>
-            </a>
-        </div>
-        <nav class="flex-grow p-4 space-y-1.5">
-            <a href="{{ url_for('admin_bp.dashboard_page') }}" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
-                <i class="fas fa-tachometer-alt fa-fw nav-icon w-5 text-center"></i>
-                <span class="sidebar-text text-sm font-medium">Genel Bakış</span>
-            </a>
-            <a href="{{ url_for('admin_bp.users_page') }}" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
-                <i class="fas fa-users fa-fw nav-icon w-5 text-center"></i>
-                <span class="sidebar-text text-sm font-medium">Kullanıcılar</span>
-            </a>
-            <a href="{{ url_for('admin_bp.models_page') }}" class="nav-link active flex items-center space-x-3 px-4 py-2.5 rounded-lg">
-                <i class="fas fa-robot fa-fw nav-icon w-5 text-center"></i>
-                <span class="sidebar-text text-sm font-medium">AI Modelleri</span>
-            </a>
-            <a href="{{ url_for('admin_bp.categories_page') }}" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
-                <i class="fas fa-folder-tree fa-fw nav-icon w-5 text-center"></i>
-                <span class="sidebar-text text-sm font-medium">Kategoriler</span>
-            </a>
-        </nav>
-        <div class="p-4 border-t border-[var(--card-border)]">
-            <a href="{{ url_for('admin_bp.settings_page') }}" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg">
-                <i class="fas fa-cog fa-fw nav-icon w-5 text-center"></i>
-                <span class="sidebar-text text-sm font-medium">Ayarlar</span>
-            </a>
-             <button id="themeToggle" class="nav-link w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg mt-1.5">
-                <i class="fas fa-moon fa-fw nav-icon w-5 text-center" id="themeIcon"></i>
-                <span class="sidebar-text text-sm font-medium">Tema Değiştir</span>
-            </button>
-        </div>
-    </aside>
-
-    <div id="mainContent" class="main-content flex-1 flex flex-col overflow-y-auto ml-[250px]">
-        <header class="topbar sticky top-0 z-30 px-6 py-3.5 flex justify-between items-center">
-            <div class="flex items-center">
-                <button id="sidebarToggle" class="p-2 rounded-md text-[var(--text-secondary)] hover:text-accent hover:bg-accent-light mr-3">
-                    <i class="fas fa-bars text-lg"></i>
-                </button>
-                <div class="relative">
-                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                    <input type="text" placeholder="Ara..." class="pl-10 pr-4 py-2 w-64 text-sm border border-[var(--card-border)] rounded-lg bg-[var(--card-bg)] text-[var(--text-primary)] focus:ring-1 focus:ring-accent focus:border-accent outline-none">
-                </div>
-            </div>
-            <div class="flex items-center space-x-5">
-                <button class="text-[var(--text-secondary)] hover:text-accent relative">
-                    <i class="far fa-bell text-xl"></i>
-                    <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-1 ring-[var(--topbar-bg)]"></span>
-                </button>
-                <div class="flex items-center space-x-3">
-                    <img src="https://placehold.co/36x36/6366F1/FFFFFF?text=A&font=inter" alt="Admin Avatar" class="w-9 h-9 rounded-full">
-                    <div>
-                        <p class="text-sm font-semibold text-[var(--text-primary)]">Admin Kullanıcı</p>
-                        <p class="text-xs text-[var(--text-secondary)]">Yönetici</p>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <main class="flex-1 p-6">
+{% block content %}
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-2xl font-semibold text-[var(--text-primary)]">AI Modelleri</h1>
                 <button id="addModelBtn" class="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
@@ -271,7 +197,7 @@
                                     <button type="button" id="cancelModelBtn" class="px-4 py-2 border border-[var(--card-border)] text-[var(--text-secondary)] rounded-lg text-sm font-medium hover:bg-[var(--card-border)] transition-colors">
                                         İptal
                                     </button>
-                                    <button type="submit" class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg text-sm font-medium">
+                                    <button type="submit" id="submitModelBtn" class="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg text-sm font-medium">
                                         Kaydet
                                     </button>
                                 </div>
@@ -307,11 +233,4 @@
                 </div>
             </div>
 
-            <!-- Toast Bildirimleri -->
-            <div id="toastContainer" class="fixed bottom-4 right-4 z-50"></div>
-        </main>
-    </div>
-
-    <script src="{{ url_for('static', filename='js/admin_dashboard/admin.js') }}"></script>
-</body>
-</html>
+{% endblock %}

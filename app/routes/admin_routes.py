@@ -327,7 +327,25 @@ def api_add_model() -> Tuple[str, int]:
         return jsonify({'success': False, 'message': 'AI Modeli eklenirken sunucuda bir hata oluştu.'}), 500
 
 # -----------------------------------------------------------------------------
-# 6.2.2. Bir AI modelini siler (api_delete_model)
+# 6.2.2. Bir AI modelini getirir (api_get_model)
+#        Rota: /admin/api/models/<int:model_id> (GET)
+# -----------------------------------------------------------------------------
+@admin_bp.route('/api/models/<int:model_id>', methods=['GET'])
+def api_get_model(model_id: int) -> Tuple[str, int]:
+    """
+    Belirtilen ID'ye sahip AI modelini getirir.
+    """
+    try:
+        model = model_service.get_model_by_id(model_id)
+        if not model:
+            return jsonify({'success': False, 'message': f'ID: {model_id} olan model bulunamadı.'}), 404
+        return jsonify({'success': True, 'model': model}), 200
+    except Exception as e:
+        current_app.logger.error(f"Model bilgisi alınırken hata: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'message': 'Model bilgisi alınırken bir hata oluştu.'}), 500
+
+# -----------------------------------------------------------------------------
+# 6.2.3. Bir AI modelini siler (api_delete_model)
 #        Rota: /admin/api/models/<int:model_id> (DELETE)
 # -----------------------------------------------------------------------------
 @admin_bp.route('/api/models/<int:model_id>', methods=['DELETE'])
