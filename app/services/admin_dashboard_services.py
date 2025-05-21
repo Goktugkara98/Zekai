@@ -155,7 +155,7 @@ class CategoryService:
                 # Category entity'sinde bu alanlar varsa, bu şekilde kullanılabilir.
                 cat_dict = simple_model_to_dict(cat_entity, columns=['id', 'name', 'icon']) # 'description' çıkarıldı, Category entity'sinde yoksa
                 if cat_dict and cat_entity.id is not None: # id None değilse devam et
-                    cat_dict['model_count'] = self.model_repo.count_models_by_category_id(cat_entity.id)
+                    cat_dict['model_count'] = self.model_repo.count_all_models()
                     categories_data.append(cat_dict)
             return categories_data
         except Exception as e:

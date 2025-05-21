@@ -1,1052 +1,650 @@
-document.addEventListener('DOMContentLoaded', function () {
-    // Utility function to get cookie value by name
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+/**
+ * Zekai Admin Panel JavaScript
+ * Bu dosya, admin panelinin tüm işlevselliğini yönetir.
+ */
 
-    // DOM Elements
-    const sidebar = document.getElementById('sidebar');
-    const content = document.getElementById('mainContentArea');
-    const toggleSidebar = document.getElementById('toggleSidebar');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    const pageTitleElement = document.getElementById('pageTitle');
-    const pageContentContainer = document.getElementById('pageContentContainer');
+document.addEventListener('DOMContentLoaded', function() {
+    // Tema değiştirme işlevi
+    initThemeToggle();
     
-    // Get initial data from Flask
-    const initialDataElement = document.getElementById('initial-data');
-    const appData = JSON.parse(initialDataElement.textContent);
+    // Sidebar toggle işlevi
+    initSidebarToggle();
     
-    // Toggle sidebar on button click
-    toggleSidebar.addEventListener('click', () => {
-        const isMobile = window.innerWidth <= 992;
-        
-        if (isMobile) {
-            sidebar.classList.toggle('show');
-            sidebarOverlay.classList.toggle('active');
-        } else {
-            sidebar.classList.toggle('collapsed');
-            content.classList.toggle('sidebar-collapsed');
-        }
-    });
-    
-    // Close sidebar when clicking overlay (mobile)
-    sidebarOverlay.addEventListener('click', () => {
-        sidebar.classList.remove('show');
-        sidebarOverlay.classList.remove('active');
-    });
-    
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        const isMobile = window.innerWidth <= 992;
-        
-        if (!isMobile && sidebar.classList.contains('show')) {
-            sidebar.classList.remove('show');
-            sidebarOverlay.classList.remove('active');
-        }
-    });
-
-
-    // --- Toast Message Function ---
-    function showToast(message, type = 'info') { // type: success, info, warning, danger
-        const toastContainer = document.querySelector('.toast-container');
-        const toastId = 'toast-' + Date.now();
-        const bgColor = type === 'info' ? 'var(--info)' : 
-                       type === 'success' ? 'var(--success)' : 
-                       type === 'warning' ? 'var(--warning)' : 'var(--danger)';
-                       
-        const toastHTML = `
-            <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header" style="background-color: ${bgColor}; color: white;">
-                    <i class="fas fa-${type === 'info' ? 'info-circle' : 
-                                    type === 'success' ? 'check-circle' : 
-                                    type === 'warning' ? 'exclamation-triangle' : 'times-circle'} me-2"></i>
-                    <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-                    <small>Şimdi</small>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
-            </div>
-        `;
-        
-        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
-        toast.show();
-    }
-
-    // Show flash messages
-    if (appData.flashMessages && appData.flashMessages.length > 0) {
-        appData.flashMessages.forEach(flash => {
-            let toastType = 'info';
-            if (flash.category === 'success') toastType = 'success';
-            else if (flash.category === 'warning') toastType = 'warning';
-            else if (flash.category === 'danger' || flash.category === 'error') toastType = 'danger';
-            showToast(flash.message, toastType);
-        });
-    }
-
-
-    // --- Dinamik İçerik Render Fonksiyonları ---
-    function renderDashboard(data) {
-        pageTitleElement.textContent = 'Dashboard';
-        let stats = data || {}; // Gelen veri yoksa boş obje
-        
-        pageContentContainer.innerHTML = `
-            <div class="row g-4 mb-4">
-                <div class="col-md-6 col-xl-3">
-                    <div class="stat-card users">
-                        <div class="stat-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <h3 class="stat-value">${stats.total_users || '0'}</h3>
-                        <p class="stat-label">Toplam Kullanıcı</p>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-xl-3">
-                    <div class="stat-card models">
-                        <div class="stat-icon">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <h3 class="stat-value">${stats.total_models || '0'}</h3>
-                        <p class="stat-label">AI Modelleri</p>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-xl-3">
-                    <div class="stat-card categories">
-                        <div class="stat-icon">
-                            <i class="fas fa-tags"></i>
-                        </div>
-                        <h3 class="stat-value">${stats.total_categories || '0'}</h3>
-                        <p class="stat-label">Kategoriler</p>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-xl-3">
-                    <div class="stat-card chats">
-                        <div class="stat-icon">
-                            <i class="fas fa-comments"></i>
-                        </div>
-                        <h3 class="stat-value">${stats.active_tasks || '0'}</h3>
-                        <p class="stat-label">Aktif Sohbetler</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row g-4 mb-4">
-                <div class="col-lg-8">
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h5 class="content-card-title">Kullanım İstatistikleri</h5>
-                            <div>
-                                <button class="btn btn-sm btn-outline-primary">Günlük</button>
-                                <button class="btn btn-sm btn-primary">Haftalık</button>
-                                <button class="btn btn-sm btn-outline-primary">Aylık</button>
-                            </div>
-                        </div>
-                        <div class="content-card-body">
-                            <canvas id="salesChart" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4">
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h5 class="content-card-title">Model Kullanımı</h5>
-                        </div>
-                        <div class="content-card-body">
-                            <canvas id="modelUsageChart" height="250"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h5 class="content-card-title">Son Etkinlikler</h5>
-                        </div>
-                        <div class="content-card-body p-0">
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex align-items-center p-3">
-                                    <div class="me-3" style="width: 40px; height: 40px; background-color: rgba(67, 97, 238, 0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                    <div>
-                                        <p class="mb-0 fw-medium">Yeni kullanıcı kaydoldu</p>
-                                        <small class="text-muted">2 dakika önce</small>
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center p-3">
-                                    <div class="me-3" style="width: 40px; height: 40px; background-color: rgba(76, 201, 240, 0.1); color: var(--success); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-brain"></i>
-                                    </div>
-                                    <div>
-                                        <p class="mb-0 fw-medium">Yeni AI modeli eklendi</p>
-                                        <small class="text-muted">1 saat önce</small>
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex align-items-center p-3">
-                                    <div class="me-3" style="width: 40px; height: 40px; background-color: rgba(247, 37, 133, 0.1); color: var(--warning); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-cog"></i>
-                                    </div>
-                                    <div>
-                                        <p class="mb-0 fw-medium">Sistem ayarları güncellendi</p>
-                                        <small class="text-muted">3 saat önce</small>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-6">
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h5 class="content-card-title">Hızlı Erişim</h5>
-                        </div>
-                        <div class="content-card-body">
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <a href="{{ url_for('admin_bp.users_page') }}" class="btn btn-light w-100 py-3 text-start">
-                                        <i class="fas fa-users me-2 text-primary"></i> Kullanıcılar
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="{{ url_for('admin_bp.models_page') }}" class="btn btn-light w-100 py-3 text-start">
-                                        <i class="fas fa-brain me-2 text-warning"></i> AI Modelleri
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="{{ url_for('admin_bp.categories_page') }}" class="btn btn-light w-100 py-3 text-start">
-                                        <i class="fas fa-tags me-2 text-success"></i> Kategoriler
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="{{ url_for('admin_bp.settings_page') }}" class="btn btn-light w-100 py-3 text-start">
-                                        <i class="fas fa-cog me-2 text-info"></i> Ayarlar
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Ana grafik yükle
-        loadSalesChart();
-        
-        // Model kullanım grafiği yükle
-        loadModelUsageChart();
-    }
-
-    function renderUsers(users) {
-        pageTitleElement.textContent = 'Kullanıcılar';
-        let tableRows = '<tr><td colspan="6" class="text-center">Kullanıcı bulunamadı.</td></tr>';
-        if (users && users.length > 0) {
-            tableRows = users.map(user => `
-                <tr>
-                    <td>${user.id}</td>
-                    <td>${user.username || 'N/A'}</td>
-                    <td>${user.email || 'N/A'}</td>
-                    <td><span class="badge bg-secondary">${user.role || 'N/A'}</span></td>
-                    <td>${user.created_at || 'N/A'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" title="Düzenle" onclick="editUser(${user.id})"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" title="Sil" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        pageContentContainer.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Kullanıcılar</h2>
-                <button class="btn btn-primary rounded-pill" onclick="showAddUserModal()"><i class="fas fa-plus me-2"></i> Yeni Kullanıcı Ekle</button>
-            </div>
-            <div class="card"><div class="card-body"><div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light"><tr><th>ID</th><th>Kullanıcı Adı</th><th>Email</th><th>Rol</th><th>Kayıt Tarihi</th><th>İşlemler</th></tr></thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-            </div></div></div>`;
-    }
-
-    function renderCategories(categories) {
-        pageTitleElement.textContent = 'Kategoriler';
-         let tableRows = '<tr><td colspan="4" class="text-center">Kategori bulunamadı.</td></tr>';
-        if (categories && categories.length > 0) {
-            tableRows = categories.map(cat => `
-                <tr>
-                    <td>${cat.id}</td>
-                    <td>${cat.name || 'N/A'}</td>
-                    <td>${cat.description || 'N/A'}</td>
-                    <td>${cat.model_count !== undefined ? cat.model_count : 'N/A'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" title="Düzenle" onclick="editCategory(${cat.id}, '${cat.name}', '${cat.description}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" title="Sil" onclick="confirmDeleteCategory(${cat.id}, '${cat.name}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        pageContentContainer.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Kategoriler</h2>
-                <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#addCategoryModal"><i class="fas fa-plus me-2"></i> Yeni Kategori Ekle</button>
-            </div>
-            <div class="card"><div class="card-body"><div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light"><tr><th>ID</th><th>Ad</th><th>Açıklama</th><th>Model Sayısı</th><th>İşlemler</th></tr></thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-            </div></div></div>
-            ${addCategoryModalHTML()} 
-            ${editCategoryModalHTML()}
-        `;
-        // Event listener for add category form
-        const addCategoryForm = document.getElementById('addCategoryForm');
-        if(addCategoryForm) {
-            addCategoryForm.addEventListener('submit', handleAddCategory);
-        }
-         const editCategoryForm = document.getElementById('editCategoryForm');
-        if(editCategoryForm) {
-            // Edit form submit logic will be handled by a separate function called by editCategory()
-        }
+    // Dashboard sayfası için grafikleri yükle
+    if (document.getElementById('aiRequestTrendChart')) {
+        initDashboardCharts();
     }
     
-    function renderModels(data) {
-        pageTitleElement.textContent = 'AI Modelleri';
-        let tableRows = '<tr><td colspan="6" class="text-center">AI Modeli bulunamadı.</td></tr>';
-        
-        // Modelleri data.models'dan al (data bir obje ve models bir property)
-        const models = data && data.models ? data.models : [];
-        
-        if (models && models.length > 0) {
-            tableRows = models.map(model => `
-                <tr>
-                    <td>${model.id}</td>
-                    <td>${model.name || 'N/A'}</td>
-                    <td>${model.category_name || model.category_id || 'N/A'}</td>
-                    <td>${model.description || 'N/A'}</td>
-                    <td><span class="badge bg-${model.status === 'active' ? 'success' : 'secondary'}">${model.status || 'N/A'}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" title="Düzenle" onclick="editModel(${model.id})"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" title="Sil" onclick="deleteModel(${model.id}, '${(model.name || '').replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        // Modal HTML'lerini ekle
-        const addModalHTML = addModelModalHTML();
-        const editModalHTML = editModelModalHTML();
-        
-        pageContentContainer.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>AI Modelleri</h2>
-                <button class="btn btn-primary rounded-pill" onclick="showAddModelModal()"><i class="fas fa-plus me-2"></i> Yeni Model Ekle</button>
-            </div>
-            <div class="card"><div class="card-body"><div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light"><tr><th>ID</th><th>Ad</th><th>Kategori</th><th>Açıklama</th><th>Durum</th><th>İşlemler</th></tr></thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-            </div></div></div>
-            ${addModalHTML}
-            ${editModalHTML}`;
-            
-        // Form submit olaylarını dinle
-        const addForm = document.getElementById('addModelForm');
-        if (addForm) {
-            addForm.addEventListener('submit', handleAddModel);
-        }
-        
-        const editForm = document.getElementById('editModelForm');
-        if (editForm) {
-            editForm.addEventListener('submit', handleEditModel);
-        }
+    // AI Modelleri sayfası için işlevler
+    if (document.getElementById('modelsContainer')) {
+        initModelFilters();
+        initModelModal();
+        initModelActions();
     }
-
-    function renderSettings(settings) {
-        pageTitleElement.textContent = 'Ayarlar';
-        let s = settings || {};
-        pageContentContainer.innerHTML = `
-            <div class="card">
-                <div class="card-header"><h5 class="mb-0">Genel Ayarlar</h5></div>
-                <div class="card-body">
-                    <form id="settingsForm">
-                        <div class="mb-3 row">
-                            <label for="siteName" class="col-sm-3 col-form-label">Site Adı</label>
-                            <div class="col-sm-9"><input type="text" class="form-control" id="siteName" value="${s.site_name || ''}"></div>
-                        </div>
-                        <div class="mb-3 row">
-                            <label for="adminEmail" class="col-sm-3 col-form-label">Admin Email</label>
-                            <div class="col-sm-9"><input type="email" class="form-control" id="adminEmail" value="${s.admin_email || ''}"></div>
-                        </div>
-                        <div class="mb-3 row">
-                            <div class="col-sm-9 offset-sm-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="maintenanceMode" ${s.maintenance_mode ? 'checked' : ''}>
-                                    <label class="form-check-label" for="maintenanceMode">Bakım Modu</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-9 offset-sm-3">
-                                <button type="submit" class="btn btn-primary rounded-pill">Ayarları Kaydet</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>`;
-        document.getElementById('settingsForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            showToast('Ayarlar kaydedildi (demo).', 'success');
-        });
-    }
-
-    // --- Modal HTML Fonksiyonları ---
-    function editModelModalHTML() {
-        // Kategorileri al (eğer yoksa boş dizi olarak başlat)
-        const categories = (appData.pageData && appData.pageData.categories) || [];
-        const categoryOptions = categories.map(cat => 
-            `<option value="${cat.id}">${cat.name}</option>`
-        ).join('');
-        
-        return `
-        <div class="modal fade" id="editModelModal" tabindex="-1" aria-labelledby="editModelModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editModelModalLabel">AI Modelini Düzenle</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form id="editModelForm">
-                        <input type="hidden" id="editModelId" name="id">
-                        <div class="modal-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="editModelName" class="form-label">Model Adı <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="editModelName" name="name" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="editModelCategory" class="form-label">Kategori <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="editModelCategory" name="category_id" required>
-                                        <option value="" disabled>Kategori seçiniz</option>
-                                        ${categoryOptions}
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="editModelStatus" class="form-label">Durum</label>
-                                    <select class="form-select" id="editModelStatus" name="status">
-                                        <option value="active">Aktif</option>
-                                        <option value="inactive">Pasif</option>
-                                        <option value="maintenance">Bakımda</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label for="editModelDescription" class="form-label">Açıklama</label>
-                                    <textarea class="form-control" id="editModelDescription" name="description" rows="2"></textarea>
-                                </div>
-                                <div class="col-12">
-                                    <label for="editModelApiUrl" class="form-label">API URL</label>
-                                    <input type="url" class="form-control" id="editModelApiUrl" name="api_url" placeholder="https://api.example.com/endpoint">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                            <button type="submit" class="btn btn-primary">Güncelle</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>`;
-    }
-    
-    function addModelModalHTML() {
-        // Kategorileri al (eğer yoksa boş dizi olarak başlat)
-        const categories = (appData.pageData && appData.pageData.categories) || [];
-        const categoryOptions = categories.map(cat => 
-            `<option value="${cat.id}">${cat.name}</option>`
-        ).join('');
-        
-        // Örnek Bootstrap Icons
-        const bootstrapIcons = [
-            'bi-robot', 'bi-cpu', 'bi-braces', 'bi-code-square', 'bi-gear',
-            'bi-lightbulb', 'bi-lightning', 'bi-magic', 'bi-palette', 'bi-terminal'
-        ];
-        
-        const iconOptions = bootstrapIcons.map(icon => 
-            `<option value="${icon}">${icon}</option>`
-        ).join('');
-        
-        return `
-        <div class="modal fade" id="addModelModal" tabindex="-1" aria-labelledby="addModelModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addModelModalLabel">Yeni AI Modeli Ekle</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form id="addModelForm">
-                        <div class="modal-body">
-                            <h6 class="mb-3">Temel Bilgiler</h6>
-                            <div class="row g-3 mb-4">
-                                <div class="col-md-6">
-                                    <label for="modelName" class="form-label required">Model Adı</label>
-                                    <input type="text" class="form-control" id="modelName" name="name" required>
-                                    <div class="form-text">Modelin görünen adı</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="modelCategory" class="form-label required">Kategori</label>
-                                    <select class="form-select" id="modelCategory" name="category_id" required>
-                                        <option value="" selected disabled>Kategori seçiniz</option>
-                                        ${categoryOptions}
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="modelIcon" class="form-label">İkon</label>
-                                    <select class="form-select" id="modelIcon" name="icon">
-                                        <option value="" selected>İkon seçiniz</option>
-                                        ${iconOptions}
-                                    </select>
-                                    <div class="form-text">Bootstrap Icons'tan bir ikon seçin</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="modelStatus" class="form-label">Durum</label>
-                                    <select class="form-select" id="modelStatus" name="status">
-                                        <option value="active" selected>Aktif</option>
-                                        <option value="inactive">Pasif</option>
-                                        <option value="maintenance">Bakımda</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label for="modelDescription" class="form-label">Açıklama</label>
-                                    <textarea class="form-control" id="modelDescription" name="description" rows="2"></textarea>
-                                    <div class="form-text">Modelin kısa açıklaması</div>
-                                </div>
-                            </div>
-                            
-                            <h6 class="mb-3">API Ayarları</h6>
-                            <div class="row g-3 mb-4">
-                                <div class="col-12">
-                                    <label for="modelApiUrl" class="form-label required">API URL</label>
-                                    <input type="url" class="form-control" id="modelApiUrl" name="api_url" required>
-                                    <div class="form-text">Örnek: https://api.example.com/v1/chat/completions</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="modelApiMethod" class="form-label required">İstek Metodu</label>
-                                    <select class="form-select" id="modelApiMethod" name="api_method" required>
-                                        <option value="GET">GET</option>
-                                        <option value="POST" selected>POST</option>
-                                        <option value="PUT">PUT</option>
-                                        <option value="PATCH">PATCH</option>
-                                        <option value="DELETE">DELETE</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="modelApiKey" class="form-label">API Anahtarı</label>
-                                    <div class="input-group">
-                                        <input type="password" class="form-control" id="modelApiKey" name="api_key" autocomplete="off">
-                                        <button class="btn btn-outline-secondary toggle-password" type="button">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    </div>
-                                    <div class="form-text">Opsiyonel, güvenli bir şekilde saklanacaktır</div>
-                                </div>
-                            </div>
-                            
-                            <h6 class="mb-3">İstek ve Yanıt Yapılandırması</h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="modelRequestHeaders" class="form-label">İstek Başlıkları (JSON)</label>
-                                    <textarea class="form-control font-monospace" id="modelRequestHeaders" name="request_headers" rows="4" placeholder='{"Content-Type": "application/json", "Authorization": "Bearer YOUR_API_KEY"}'>{
-    "Content-Type": "application/json"
-}</textarea>
-                                    <div class="form-text">JSON formatında istek başlıkları</div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="modelRequestBody" class="form-label">İstek Gövdesi (JSON)</label>
-                                    <textarea class="form-control font-monospace" id="modelRequestBody" name="request_body" rows="4" placeholder='{"model": "gpt-4", "messages": [{"role": "user", "content": "Merhaba!"}]}'>{
-    "model": "model-adı",
-    "messages": [
-        {
-            "role": "user",
-            "content": "%MESSAGE%"
-        }
-    ]
-}</textarea>
-                                    <div class="form-text">%MESSAGE% kullanıcı girişiyle değiştirilecektir</div>
-                                </div>
-                                <div class="col-12">
-                                    <label for="modelResponsePath" class="form-label">Yanıt Yolu (JSON Path)</label>
-                                    <input type="text" class="form-control" id="modelResponsePath" name="response_path" placeholder="$.choices[0].message.content">
-                                    <div class="form-text">Yanıttan metni çıkarmak için JSON Path ifadesi</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i> Kaydet
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <script>
-        // Şifre göster/gizle işlevselliği
-        document.addEventListener('DOMContentLoaded', function() {
-            const togglePassword = document.querySelector('.toggle-password');
-            if (togglePassword) {
-                togglePassword.addEventListener('click', function() {
-                    const passwordInput = document.querySelector('#modelApiKey');
-                    const icon = this.querySelector('i');
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    icon.classList.toggle('bi-eye');
-                    icon.classList.toggle('bi-eye-slash');
-                });
-            }
-        });
-        </script>`;
-    }
-    
-    function addCategoryModalHTML() {
-        return `
-        <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content rounded-3">
-                    <form id="addCategoryForm">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="addCategoryModalLabel">Yeni Kategori Ekle</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="newCategoryName" class="form-label">Kategori Adı</label>
-                                <input type="text" class="form-control" id="newCategoryName" name="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="newCategoryDescription" class="form-label">Açıklama (Opsiyonel)</label>
-                                <textarea class="form-control" id="newCategoryDescription" name="description" rows="3"></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Kapat</button>
-                            <button type="submit" class="btn btn-primary rounded-pill">Kaydet</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>`;
-    }
-    function editCategoryModalHTML() {
-         return `
-        <div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content rounded-3">
-                    <form id="editCategoryForm">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="editCategoryModalLabel">Kategoriyi Düzenle</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <input type="hidden" id="editCategoryId" name="id">
-                            <div class="mb-3">
-                                <label for="editCategoryName" class="form-label">Kategori Adı</label>
-                                <input type="text" class="form-control" id="editCategoryName" name="name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="editCategoryDescription" class="form-label">Açıklama (Opsiyonel)</label>
-                                <textarea class="form-control" id="editCategoryDescription" name="description" rows="3"></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Kapat</button>
-                            <button type="submit" class="btn btn-primary rounded-pill">Değişiklikleri Kaydet</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>`;
-    }
-
-
-    // --- CRUD İşlemleri için API Çağrıları ---
-    async function handleEditModel(event) {
-        event.preventDefault();
-        
-        const form = event.target;
-        const formData = new FormData(form);
-        const formValues = Object.fromEntries(formData.entries());
-        const modelId = formValues.id;
-        
-        try {
-            // API'ye gönderilecek veriyi hazırla
-            const modelData = {
-                name: formValues.name,
-                category_id: parseInt(formValues.category_id),
-                description: formValues.description || null,
-                api_url: formValues.api_url || null,
-                status: formValues.status || 'active'
-            };
-            
-            // API isteğini gönder
-            const response = await fetch(`/admin/api/models/${modelId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(modelData)
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showToast('Model başarıyla güncellendi.', 'success');
-                
-                // Modal'ı kapat
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editModelModal'));
-                if (modal) {
-                    modal.hide();
-                }
-                
-                // Sayfayı yenile
-                window.location.reload();
-            } else {
-                showToast(result.message || 'Model güncellenirken bir hata oluştu.', 'danger');
-            }
-        } catch (error) {
-            console.error('Model güncelleme hatası:', error);
-            showToast('Bir hata oluştu: ' + error.message, 'danger');
-        }
-    }
-    
-    async function handleAddModel(event) {
-        event.preventDefault();
-        
-        const form = event.target;
-        const formData = new FormData(form);
-        const formValues = Object.fromEntries(formData.entries());
-        
-        try {
-            // JSON alanlarını parse et
-            let requestHeaders = {};
-            let requestBody = {};
-            
-            try {
-                if (formValues.request_headers) {
-                    requestHeaders = JSON.parse(formValues.request_headers);
-                }
-                if (formValues.request_body) {
-                    requestBody = JSON.parse(formValues.request_body);
-                }
-            } catch (e) {
-                showToast('JSON formatında hata: ' + e.message, 'danger');
-                return;
-            }
-            
-            // API'ye gönderilecek veriyi hazırla
-            const modelData = {
-                name: formValues.name,
-                category_id: parseInt(formValues.category_id),
-                icon: formValues.icon || null,
-                description: formValues.description || null,
-                api_url: formValues.api_url,
-                api_method: formValues.api_method || 'POST',
-                api_key: formValues.api_key || null,
-                request_headers: requestHeaders,
-                request_body: requestBody,
-                response_path: formValues.response_path || null,
-                status: formValues.status || 'active'
-            };
-            
-            // Yükleniyor durumunu göster
-            const submitButton = form.querySelector('button[type="submit"]');
-            const originalButtonText = submitButton.innerHTML;
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Kaydediliyor...';
-            
-            try {
-                // API isteğini gönder
-                const response = await fetch('/admin/api/models', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': getCookie('csrftoken') || ''
-                    },
-                    body: JSON.stringify(modelData)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showToast('Model başarıyla eklendi.', 'success');
-                    
-                    // Modal'ı kapat
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('addModelModal'));
-                    if (modal) {
-                        modal.hide();
-                    }
-                    
-                    // Sayfayı yenile
-                    window.location.reload();
-                } else {
-                    showToast(result.message || 'Model eklenirken bir hata oluştu.', 'danger');
-                }
-            } catch (error) {
-                console.error('Model ekleme hatası:', error);
-                showToast('Bir hata oluştu: ' + (error.message || 'Bilinmeyen hata'), 'danger');
-            } finally {
-                // Butonu eski haline getir
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonText;
-            }
-        } catch (error) {
-            console.error('Beklenmeyen hata:', error);
-            showToast('Beklenmeyen bir hata oluştu.', 'danger');
-        }
-    }
-    
-    async function handleAddCategory(event) {
-        event.preventDefault();
-        const form = event.target;
-        const categoryName = form.name.value;
-        const categoryDescription = form.description.value;
-
-        try {
-            const response = await fetch('{{ url_for("admin_bp.api_add_category") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: categoryName, description: categoryDescription })
-            });
-            const result = await response.json();
-            if (result.success) {
-                showToast(result.message, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
-                // Sayfayı yeniden yüklemek yerine listeyi güncelleyebiliriz, şimdilik basitçe yönlendirme:
-                window.location.href = '{{ url_for("admin_bp.categories_page") }}'; 
-            } else {
-                showToast(result.message || 'Kategori eklenemedi.', 'danger');
-            }
-        } catch (error) {
-            console.error('Kategori ekleme hatası:', error);
-            showToast('Bir ağ hatası oluştu.', 'danger');
-        }
-    }
-    
-    window.confirmDeleteCategory = async function(categoryId, categoryName) {
-        // Basit bir custom modal ile onay alalım
-        const confirmationModalHTML = `
-            <div class="modal fade" id="confirmDeleteModal-${categoryId}" tabindex="-1">
-                <div class="modal-dialog modal-sm">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Silme Onayı</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>"${categoryName}" kategorisini silmek istediğinizden emin misiniz?</p>
-                            <p class="text-danger small">Bu işlem geri alınamaz.</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">İptal</button>
-                            <button type="button" class="btn btn-danger rounded-pill" id="doDeleteCategory-${categoryId}">Evet, Sil</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        if (!document.getElementById(`confirmDeleteModal-${categoryId}`)) {
-             document.body.insertAdjacentHTML('beforeend', confirmationModalHTML);
-        }
-        const modalElement = document.getElementById(`confirmDeleteModal-${categoryId}`);
-        const modalInstance = new bootstrap.Modal(modalElement);
-
-        document.getElementById(`doDeleteCategory-${categoryId}`).onclick = async () => {
-            modalInstance.hide(); // Onay modalını gizle
-            try {
-                const response = await fetch(`{{ url_for("admin_bp.api_delete_category", category_id=0) }}`.replace('0', categoryId), {
-                    method: 'DELETE'
-                });
-                const result = await response.json();
-                if (result.success) {
-                    showToast(result.message, 'success');
-                    window.location.href = '{{ url_for("admin_bp.categories_page") }}'; // Sayfayı yenile
-                } else {
-                    showToast(result.message || 'Kategori silinemedi.', 'danger');
-                }
-            } catch (error) {
-                console.error('Kategori silme hatası:', error);
-                showToast('Bir ağ hatası oluştu.', 'danger');
-            }
-        };
-        modalInstance.show();
-         modalElement.addEventListener('hidden.bs.modal', () => { // Modal kapandığında DOM'dan kaldır
-            modalElement.remove();
-        });
-    }
-
-
-    // --- Sayfa Yükleme Mantığı ---
-    function loadPageContent(pageKey, data) {
-        if (pageKey === 'dashboard') renderDashboard(data);
-        else if (pageKey === 'users') renderUsers(data);
-        else if (pageKey === 'categories') renderCategories(data);
-        else if (pageKey === 'models') renderModels(data);
-        else if (pageKey === 'settings') renderSettings(data);
-        else renderDashboard(null); // Varsayılan olarak dashboard
-    }
-
-    // Grafik Yükleme Fonksiyonu (Dashboard için)
-    function loadSalesChart() {
-        const salesChartCtx = document.getElementById('salesChart');
-        if (!salesChartCtx) return;
-        const existingChart = Chart.getChart(salesChartCtx);
-        if (existingChart) existingChart.destroy();
-        new Chart(salesChartCtx, { /* ... (önceki grafik ayarları) ... */ });
-    }
-
-    // Başlangıç sayfasını yükle
-    loadPageContent(appData.currentPage, appData.pageData);
-    
-    // Sidebar linklerinin aktifliğini ayarla (Python'dan gelen current_page'e göre)
-    // Bu zaten Jinja template içinde yapılıyor.
-    // window.dispatchEvent(new Event('resize')); // İlk sidebar durumunu ayarla
 });
 
-// Global scope'a CRUD fonksiyonlarını ekleyelim ki HTML içinden çağrılabilsinler
-// Örnek: window.editUser = function(id) { console.log('Edit user', id); /* Modal göster vs. */ }
-// window.deleteUser = function(id) { console.log('Delete user', id); /* Onay al ve sil */ }
-// window.editCategory, window.deleteCategory, window.editModel, window.deleteModel vb.
-// Şimdilik sadece logluyoruz, gerçek implementasyonlar eklenecek.
-window.editUser = (id) => console.log('Edit user:', id);
-window.deleteUser = (id) => console.log('Delete user:', id);
-window.editCategory = (id, name, description) => {
-    document.getElementById('editCategoryId').value = id;
-    document.getElementById('editCategoryName').value = name;
-    document.getElementById('editCategoryDescription').value = description;
-    const modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
-    modal.show();
-    // Edit form submit logic...
-};
-// window.deleteCategory zaten confirmDeleteCategory olarak implemente edildi.
-window.editModel = async (id) => {
-    try {
-        // Model verilerini yükle
-        const response = await fetch(`/admin/api/models/${id}`, {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.getElementById('mainContent');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const htmlElement = document.documentElement;
+
+/**
+ * Sidebar toggle işlevini başlatır
+ */
+function initSidebarToggle() {
+    if (!sidebarToggle || !sidebar || !mainContent) return;
+    
+    // Kayıtlı sidebar durumunu kontrol et
+    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        mainContent.style.marginLeft = '80px';
+    }
+    
+    // Sidebar toggle butonu tıklama olayı
+    sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('collapsed');
+        
+        if (sidebar.classList.contains('collapsed')) {
+            mainContent.style.marginLeft = '80px';
+            localStorage.setItem('sidebarCollapsed', 'true');
+        } else {
+            mainContent.style.marginLeft = '250px';
+            localStorage.setItem('sidebarCollapsed', 'false');
+        }
+    });
+}
+
+/**
+ * Tema değiştirme işlevini başlatır
+ */
+function initThemeToggle() {
+    if (!themeToggle || !themeIcon || !htmlElement) return;
+    
+    // Kayıtlı temayı kontrol et
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        htmlElement.classList.add('dark');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+    }
+    
+    // Tema değiştirme butonu tıklama olayı
+    themeToggle.addEventListener('click', function() {
+        if (htmlElement.classList.contains('dark')) {
+            htmlElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
+        } else {
+            htmlElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
+    });
+}
+
+// Eski tema yönetimi fonksiyonu (geriye dönük uyumluluk için)
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        htmlElement.classList.add('dark');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
+    } else {
+        htmlElement.classList.remove('dark');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+    }
+    // Grafikleri yeniden çiz (eğer bu sayfada grafikler varsa)
+    if (typeof destroyCharts === 'function' && typeof initializeCharts === 'function') {
+        destroyCharts();
+        initializeCharts();
+    }
+}
+
+// Eski tema değiştirme kodu kaldırıldı - çift event listener çakışması önlendi
+
+/**
+ * AI Modelleri sayfası için filtreleme işlevini başlatır
+ */
+function initModelFilters() {
+    const categoryFilter = document.getElementById('categoryFilter');
+    const providerFilter = document.getElementById('providerFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const modelsContainer = document.getElementById('modelsContainer');
+    
+    if (!categoryFilter || !providerFilter || !statusFilter || !modelsContainer) return;
+    
+    const modelCards = modelsContainer.querySelectorAll('.kpi-card[data-model-id]');
+    
+    // Filtreleme fonksiyonu
+    function filterModels() {
+        const categoryValue = categoryFilter.value;
+        const providerValue = providerFilter.value;
+        const statusValue = statusFilter.value;
+        
+        let visibleCount = 0;
+        
+        modelCards.forEach(card => {
+            const categoryMatch = !categoryValue || card.dataset.category === categoryValue;
+            const providerMatch = !providerValue || card.dataset.provider === providerValue;
+            const statusMatch = !statusValue || card.dataset.status === statusValue;
+            
+            if (categoryMatch && providerMatch && statusMatch) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
             }
         });
         
-        if (!response.ok) {
-            throw new Error('Model verileri yüklenirken bir hata oluştu.');
+        // Hiç sonuç yoksa mesaj göster
+        if (visibleCount === 0 && modelCards.length > 0) {
+            let noResultsElement = document.getElementById('noFilterResults');
+            if (!noResultsElement) {
+                noResultsElement = document.createElement('div');
+                noResultsElement.id = 'noFilterResults';
+                noResultsElement.className = 'col-span-3 py-12 flex flex-col items-center justify-center text-center';
+                noResultsElement.innerHTML = `
+                    <div class="bg-accent-light text-accent p-4 rounded-full mb-4">
+                        <i class="fas fa-filter text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-2">Sonuç Bulunamadı</h3>
+                    <p class="text-[var(--text-secondary)] max-w-md mb-6">Seçtiğiniz filtrelere uygun model bulunamadı. Lütfen filtreleri değiştirin veya temizleyin.</p>
+                    <button id="clearFiltersBtn" class="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                        <i class="fas fa-times mr-2"></i> Filtreleri Temizle
+                    </button>
+                `;
+                modelsContainer.appendChild(noResultsElement);
+                
+                // Filtreleri temizleme butonu
+                document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+                    categoryFilter.value = '';
+                    providerFilter.value = '';
+                    statusFilter.value = '';
+                    filterModels();
+                });
+            }
+        } else {
+            const noResultsElement = document.getElementById('noFilterResults');
+            if (noResultsElement) {
+                noResultsElement.remove();
+            }
         }
-        
-        const model = await response.json();
-        
-        // Modal elementini bul veya oluştur
-        let modalElement = document.getElementById('editModelModal');
-        if (!modalElement) {
-            console.error('Düzenleme modalı bulunamadı!');
-            return;
-        }
-        
-        // Form alanlarını doldur
-        document.getElementById('editModelId').value = model.id;
-        document.getElementById('editModelName').value = model.name || '';
-        document.getElementById('editModelDescription').value = model.description || '';
-        document.getElementById('editModelApiUrl').value = model.api_url || '';
-        
-        // Kategori seçeneğini ayarla
-        const categorySelect = document.getElementById('editModelCategory');
-        if (categorySelect) {
-            categorySelect.value = model.category_id || '';
-        }
-        
-        // Durum seçeneğini ayarla
-        const statusSelect = document.getElementById('editModelStatus');
-        if (statusSelect) {
-            statusSelect.value = model.status || 'active';
-        }
-        
-        // Modal'ı göster
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-        
-    } catch (error) {
-        console.error('Model düzenleme hatası:', error);
-        showToast('Model yüklenirken bir hata oluştu: ' + error.message, 'danger');
-    }
-};
-window.deleteModel = async (id, name = '') => {
-    // Onay iste
-    if (!confirm(`"${name || 'Bu modeli'}" silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
-        return;
     }
     
-    try {
-        const response = await fetch(`/admin/api/models/${id}`, {
-            method: 'DELETE',
+    // Filtre değişikliklerini dinle
+    categoryFilter.addEventListener('change', filterModels);
+    providerFilter.addEventListener('change', filterModels);
+    statusFilter.addEventListener('change', filterModels);
+}
+
+/**
+ * AI Modelleri sayfası için modal işlevlerini başlatır
+ */
+function initModelModal() {
+    const addModelBtn = document.getElementById('addModelBtn');
+    const emptyAddModelBtn = document.getElementById('emptyAddModelBtn');
+    const modelModal = document.getElementById('modelModal');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelModelBtn = document.getElementById('cancelModelBtn');
+    const modelForm = document.getElementById('modelForm');
+    const modalTitle = document.getElementById('modalTitle');
+    
+    if (!modelModal) return;
+    
+    // Modal açma fonksiyonu
+    function openModal(isEdit = false, modelData = null) {
+        modalTitle.textContent = isEdit ? 'Modeli Düzenle' : 'Yeni Model Ekle';
+        
+        // Form alanlarını sıfırla veya doldur
+        if (isEdit && modelData) {
+            document.getElementById('modelId').value = modelData.id;
+            document.getElementById('modelName').value = modelData.name;
+            document.getElementById('modelCategory').value = modelData.category_id;
+            document.getElementById('modelDescription').value = modelData.description || '';
+            document.getElementById('modelProvider').value = modelData.service_provider;
+            document.getElementById('modelExternalName').value = modelData.external_model_name;
+            document.getElementById('modelApiUrl').value = modelData.api_url || '';
+            document.getElementById('modelRequestMethod').value = modelData.request_method || 'POST';
+            document.getElementById('modelStatus').value = modelData.status;
+        } else {
+            modelForm.reset();
+            document.getElementById('modelId').value = '';
+        }
+        
+        modelModal.classList.remove('hidden');
+    }
+    
+    // Modal kapatma fonksiyonu
+    function closeModal() {
+        modelModal.classList.add('hidden');
+    }
+    
+    // Yeni model ekleme butonları
+    if (addModelBtn) {
+        addModelBtn.addEventListener('click', () => openModal());
+    }
+    
+    if (emptyAddModelBtn) {
+        emptyAddModelBtn.addEventListener('click', () => openModal());
+    }
+    
+    // Modal kapatma butonları
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelModelBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', closeModal);
+    
+    // Form gönderimi
+    modelForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(modelForm);
+        const modelId = formData.get('modelId');
+        const isEdit = modelId !== '';
+        
+        // Form verilerini JSON'a dönüştür
+        const modelData = {};
+        formData.forEach((value, key) => {
+            if (key === 'category_id') {
+                modelData[key] = parseInt(value);
+            } else if (key !== 'modelId') {
+                modelData[key] = value;
+            }
+        });
+        
+        // API isteği gönder
+        const url = isEdit ? `/admin/api/models/${modelId}` : '/admin/api/models';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(modelData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Bir hata oluştu');
+                });
             }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showToast('Model başarıyla silindi.', 'success');
+            return response.json();
+        })
+        .then(data => {
+            showToast(isEdit ? 'Model başarıyla güncellendi.' : 'Yeni model başarıyla eklendi.', 'success');
+            closeModal();
+            
             // Sayfayı yenile
-            window.location.reload();
-        } else {
-            showToast(result.message || 'Model silinirken bir hata oluştu.', 'danger');
-        }
-    } catch (error) {
-        console.error('Model silme hatası:', error);
-        showToast('Bir hata oluştu: ' + error.message, 'danger');
-    }
-};
-window.showAddUserModal = () => console.log('Show add user modal');
-window.showAddModelModal = () => {
-    // Modal elementini bul
-    const modalElement = document.getElementById('addModelModal');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        })
+        .catch(error => {
+            showToast(error.message, 'error');
+        });
+    });
     
-    if (modalElement) {
-        // Modal'ı göster
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+    // Global erişim için modal açma fonksiyonunu dışa aktar
+    window.modelModalFunctions = { openModal };
+}
+
+/**
+ * AI Modelleri sayfası için model işlemlerini başlatır
+ */
+function initModelActions() {
+    const modelsContainer = document.getElementById('modelsContainer');
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteModalOverlay = document.getElementById('deleteModalOverlay');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    if (!modelsContainer || !deleteConfirmModal) return;
+    
+    let modelToDelete = null;
+    
+    // Düzenleme butonları
+    const editButtons = document.querySelectorAll('.edit-model-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modelId = this.dataset.modelId;
+            
+            // Model verilerini API'den al
+            fetch(`/admin/api/models/${modelId}`)
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Bir hata oluştu');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Modal'ı aç ve verileri doldur
+                if (window.modelModalFunctions && window.modelModalFunctions.openModal) {
+                    window.modelModalFunctions.openModal(true, data.model);
+                }
+            })
+            .catch(error => {
+                showToast(error.message, 'error');
+            });
+        });
+    });
+    
+    // Silme butonları
+    const deleteButtons = document.querySelectorAll('.delete-model-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            modelToDelete = this.dataset.modelId;
+            deleteConfirmModal.classList.remove('hidden');
+        });
+    });
+    
+    // Silme modalını kapat
+    function closeDeleteModal() {
+        deleteConfirmModal.classList.add('hidden');
+        modelToDelete = null;
+    }
+    
+    // Silme modalı kapatma butonları
+    cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+    deleteModalOverlay.addEventListener('click', closeDeleteModal);
+    
+    // Silme onay butonu
+    confirmDeleteBtn.addEventListener('click', function() {
+        if (!modelToDelete) return;
         
-        // Formu sıfırla
-        const form = document.getElementById('addModelForm');
-        if (form) {
-            form.reset();
+        fetch(`/admin/api/models/${modelToDelete}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Bir hata oluştu');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            showToast('Model başarıyla silindi.', 'success');
+            closeDeleteModal();
+            
+            // Silinen modeli DOM'dan kaldır
+            const modelCard = document.querySelector(`.kpi-card[data-model-id="${modelToDelete}"]`);
+            if (modelCard) {
+                modelCard.remove();
+                
+                // Eğer hiç model kalmadıysa boş durum mesajını göster
+                const remainingModels = document.querySelectorAll('.kpi-card[data-model-id]');
+                if (remainingModels.length === 0) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'col-span-3 py-12 flex flex-col items-center justify-center text-center';
+                    emptyState.innerHTML = `
+                        <div class="bg-accent-light text-accent p-4 rounded-full mb-4">
+                            <i class="fas fa-robot text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-[var(--text-primary)] mb-2">Henüz Model Yok</h3>
+                        <p class="text-[var(--text-secondary)] max-w-md mb-6">Sisteme henüz hiç AI modeli eklenmemiş. Yeni model eklemek için "Yeni Model Ekle" butonunu kullanabilirsiniz.</p>
+                        <button id="emptyAddModelBtn" class="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <i class="fas fa-plus mr-2"></i> Yeni Model Ekle
+                        </button>
+                    `;
+                    modelsContainer.innerHTML = '';
+                    modelsContainer.appendChild(emptyState);
+                    
+                    // Yeni eklenen butona olay dinleyicisi ekle
+                    document.getElementById('emptyAddModelBtn').addEventListener('click', function() {
+                        if (window.modelModalFunctions && window.modelModalFunctions.openModal) {
+                            window.modelModalFunctions.openModal();
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            showToast(error.message, 'error');
+        });
+    });
+}
+
+// Sayfa yüklendiğinde kayıtlı temayı uygula
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'light'; // Varsayılan açık tema
+    applyTheme(savedTheme);
+    
+    // Grafikleri yükle
+    if (document.getElementById('aiRequestTrendChart')) {
+        initializeCharts();
+    }
+    
+    // Sidebar durumunu ayarla (eğer büyük ekran ise)
+    if (window.innerWidth < 1024) { // Tailwind lg breakpoint
+         if (!sidebar.classList.contains('collapsed')) {
+            sidebar.classList.add('collapsed');
+            mainContent.style.marginLeft = '80px';
+         }
+    } else {
+         if (sidebar.classList.contains('collapsed')) {
+            mainContent.style.marginLeft = '80px';
+         } else {
+            mainContent.style.marginLeft = '250px';
+         }
+    }
+});
+ // Ekran boyutu değiştiğinde sidebar'ı ayarla
+window.addEventListener('resize', () => {
+    if (window.innerWidth < 1024) {
+        if (!sidebar.classList.contains('collapsed')) {
+            sidebar.classList.add('collapsed');
+            mainContent.style.marginLeft = '80px';
         }
     } else {
-        console.error('Model ekleme modalı bulunamadı!');
-        showToast('Bir hata oluştu. Lütfen sayfayı yenileyip tekrar deneyin.', 'danger');
+        // Büyük ekranda isteğe bağlı olarak sidebar'ı açık bırakabilirsiniz
+        // Veya son kullanıcı tercihine göre ayarlayabilirsiniz.
+        // Bu örnekte dokunmuyoruz, kullanıcı toggle ile yönetebilir.
+         if (sidebar.classList.contains('collapsed')) {
+            mainContent.style.marginLeft = '80px';
+         } else {
+            mainContent.style.marginLeft = '250px';
+         }
     }
-};
+});
+
+
+let aiRequestTrendChartInstance;
+let topModelsChartInstance;
+
+function getChartThemeColors() {
+    const isDarkMode = htmlElement.classList.contains('dark');
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+    return {
+        primary: accent,
+        primaryTransparent: accent + '33', // ~20% opacity
+        gridColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+        textColor: isDarkMode ? '#cbd5e1' : '#4b5563', // gray-300 / gray-600
+        tooltipBg: isDarkMode ? '#1f2937' : '#ffffff', // gray-800 / white
+        doughnutBorder: isDarkMode ? '#2d3748' : '#ffffff' // card-bg
+    };
+}
+
+function loadAiRequestTrendChart() {
+    const ctx = document.getElementById('aiRequestTrendChart');
+    if (!ctx) return;
+    const themeColors = getChartThemeColors();
+    const labels = Array.from({length: 30}, (_, i) => `${i + 1}`);
+    const data = Array.from({length: 30}, () => Math.floor(Math.random() * 280) + 50);
+
+    aiRequestTrendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'AI İstekleri',
+                data: data,
+                borderColor: themeColors.primary,
+                backgroundColor: themeColors.primaryTransparent,
+                borderWidth: 2,
+                pointBackgroundColor: themeColors.primary,
+                pointBorderColor: themeColors.doughnutBorder,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: themeColors.gridColor, drawBorder: false }, ticks: { color: themeColors.textColor, font: {size: 10} } },
+                x: { grid: { display: false }, ticks: { color: themeColors.textColor, font: {size: 10} } }
+            },
+            plugins: { legend: { display: false }, tooltip: { backgroundColor: themeColors.tooltipBg, titleColor: themeColors.textColor, bodyColor: themeColors.textColor, padding: 10, cornerRadius: 4 } }
+        }
+    });
+}
+
+function loadTopModelsChart() {
+    const ctx = document.getElementById('topModelsChart');
+    if (!ctx) return;
+    const themeColors = getChartThemeColors();
+    const data = {
+        labels: ['GPT-4 Turbo', 'Claude 3 Sonnet', 'Gemini Pro', 'Llama 2 70B', 'Diğer'],
+        datasets: [{
+            data: [320, 210, 150, 100, 70],
+            backgroundColor: [themeColors.primary, '#60A5FA', '#34D399', '#FBBF24', '#F87171'].map(c => htmlElement.classList.contains('dark') ? c + 'BF' : c), // Add opacity for dark mode or use distinct colors
+            borderColor: themeColors.doughnutBorder,
+            borderWidth: 2,
+            hoverOffset: 6
+        }]
+    };
+    topModelsChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: themeColors.textColor, usePointStyle: true, boxWidth: 10, padding: 15, font: {size: 11} } }, tooltip: { backgroundColor: themeColors.tooltipBg, titleColor: themeColors.textColor, bodyColor: themeColors.textColor, padding: 10, cornerRadius: 4 } },
+            cutout: '65%'
+        }
+    });
+}
+
+const trendChartTimespanSelect = document.getElementById('trendChartTimespan');
+if (trendChartTimespanSelect) {
+    trendChartTimespanSelect.addEventListener('change', (event) => {
+        if (aiRequestTrendChartInstance) {
+            const days = parseInt(event.target.value);
+            aiRequestTrendChartInstance.data.labels = Array.from({length: days}, (_, i) => `${i + 1}`);
+            aiRequestTrendChartInstance.data.datasets[0].data = Array.from({length: days}, () => Math.floor(Math.random() * 280) + 50);
+            aiRequestTrendChartInstance.update();
+        }
+    });
+}
+
+function destroyCharts() {
+    if (aiRequestTrendChartInstance) aiRequestTrendChartInstance.destroy();
+    if (topModelsChartInstance) topModelsChartInstance.destroy();
+}
+function initializeCharts() {
+    loadAiRequestTrendChart();
+    loadTopModelsChart();
+}
+document.addEventListener('DOMContentLoaded', () => {
+    // Tema zaten DOMContentLoaded içinde ayarlanıyor, grafikler de orada initialize ediliyor.
+});
+
+/**
+ * Toast bildirimi gösterir
+ */
+function showToast(message, type = 'info') {
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        // Toast container yoksa oluştur
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'fixed bottom-4 right-4 z-50';
+        document.body.appendChild(container);
+        toastContainer = container;
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `flex items-center p-4 mb-3 rounded-lg shadow-lg max-w-xs animate-fade-in`;
+    
+    // Toast tipi
+    let bgColor, textColor, icon;
+    switch (type) {
+        case 'success':
+            bgColor = 'bg-green-100 dark:bg-green-900/30';
+            textColor = 'text-green-800 dark:text-green-300';
+            icon = 'fa-check-circle';
+            break;
+        case 'error':
+            bgColor = 'bg-red-100 dark:bg-red-900/30';
+            textColor = 'text-red-800 dark:text-red-300';
+            icon = 'fa-exclamation-circle';
+            break;
+        case 'warning':
+            bgColor = 'bg-yellow-100 dark:bg-yellow-900/30';
+            textColor = 'text-yellow-800 dark:text-yellow-300';
+            icon = 'fa-exclamation-triangle';
+            break;
+        default: // info
+            bgColor = 'bg-blue-100 dark:bg-blue-900/30';
+            textColor = 'text-blue-800 dark:text-blue-300';
+            icon = 'fa-info-circle';
+    }
+    
+    toast.classList.add(bgColor, textColor);
+    
+    toast.innerHTML = `
+        <i class="fas ${icon} mr-3 text-lg"></i>
+        <div class="text-sm font-medium">${message}</div>
+        <button class="ml-auto text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Kapatma butonu
+    const closeBtn = toast.querySelector('button');
+    closeBtn.addEventListener('click', () => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    });
+    
+    // Otomatik kapanma
+    setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 5000);
+}
+
+// CSS Animasyonları
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+    .opacity-0 {
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+    }
+</style>
+`);

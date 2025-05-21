@@ -170,14 +170,15 @@ def models_page() -> str:
         models_data: List[Dict[str, Any]] = model_service.get_all_models_for_display()
         all_categories: List[Dict[str, Any]] = category_service.get_all_categories_for_display()
         page_content_data = {"models": models_data, "categories": all_categories}
-        return render_template('admin_dashboard.html',
+        print(page_content_data)
+        return render_template('admin_models.html',
                                title=page_title,
                                current_page=current_page_identifier,
                                page_data=page_content_data)
     except Exception as e:
         current_app.logger.error(f"Admin AI modelleri sayfası yüklenirken hata: {str(e)}", exc_info=True)
         flash(f"AI Modelleri yüklenirken bir hata oluştu: {str(e)}", "danger")
-        return render_template('admin_dashboard.html',
+        return render_template('admin_models.html',
                                title="Hata - AI Modelleri",
                                current_page=current_page_identifier,
                                page_data={"models": [], "categories": []})
