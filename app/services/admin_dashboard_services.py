@@ -20,18 +20,18 @@
 #     3.2. AIModelService
 #          3.2.1. __init__                       : Başlatıcı metot.
 #          3.2.2. get_all_models_for_display     : Tüm AI modellerini gösterim için hazırlar.
-#          3.2.3. add_model_via_dict             : Sözlük verisinden yeni bir AI modeli ekler. (Önceki add_model'in güncellenmiş hali)
+#          3.2.3. add_model_via_dict             : Sözlük verisinden yeni bir AI modeli ekler.
 #          3.2.4. delete_model                   : Bir AI modelini siler.
-#          3.2.5. update_model_via_dict          : Sözlük verisiyle bir AI modelini günceller. (Önceki update_model'in güncellenmiş hali)
+#          3.2.5. update_model_via_dict          : Sözlük verisiyle bir AI modelini günceller.
 #     3.3. UserService
 #          3.3.1. __init__                       : Başlatıcı metot.
-#          3.3.2. get_all_users_for_display      : Tüm kullanıcıları gösterim için hazırlar (Örnek Veri).
+#          3.3.2. get_all_users_for_display      : Tüm kullanıcıları gösterim için hazırlar.
 #     3.4. DashboardService
 #          3.4.1. __init__                       : Başlatıcı metot.
 #          3.4.2. get_dashboard_stats            : Dashboard için genel istatistikleri toplar.
 #     3.5. SettingsService
-#          3.5.1. get_settings_for_display       : Uygulama ayarlarını gösterim için hazırlar (Örnek Veri).
-#          3.5.2. save_settings                  : Uygulama ayarlarını kaydeder (Örnek İşlev).
+#          3.5.1. get_settings_for_display       : Uygulama ayarlarını gösterim için hazırlar.
+#          3.5.2. save_settings                  : Uygulama ayarlarını kaydeder.
 # 4.0 VERİTABANI OTURUMU YÖNETİMİ NOTLARI (DATABASE SESSION MANAGEMENT NOTES)
 # =============================================================================
 

@@ -170,7 +170,6 @@ def models_page() -> str:
         models_data: List[Dict[str, Any]] = model_service.get_all_models_for_display()
         all_categories: List[Dict[str, Any]] = category_service.get_all_categories_for_display()
         page_content_data = {"models": models_data, "categories": all_categories}
-        print(page_content_data)
         return render_template('admin_dashboard/admin_models.html',
                                title=page_title,
                                current_page=current_page_identifier,

@@ -244,7 +244,7 @@ const AdminPanelManager = (function() {
      * This is the more detailed version from the original admin.js for creating the full card HTML.
      */
     function createModelCardHTML(model) {
-        log('debug', 'UI', 'Creating model card HTML for:', model);
+        log('debug', 'UI', '--- createModelCardHTML: Received model data ---', model);
         let statusClass = '';
         let statusText = '';
         
@@ -258,12 +258,12 @@ const AdminPanelManager = (function() {
                 statusText = 'Pasif';
                 break;
             case 'maintenance':
-                statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-                statusText = 'Bakımda';
+                statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/30 dark:text-yellow-400';
+                statusText = 'Beklemede';
                 break;
             default:
                 statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
-                statusText = 'Belirsiz';
+                statusText = model.status ? String(model.status).charAt(0).toUpperCase() + String(model.status).slice(1) : 'Belirsiz';
         }
 
         // Kategori adını bulmak için (API'den gelmiyorsa)
@@ -315,9 +315,9 @@ const AdminPanelManager = (function() {
                     </div>
                 </div>
             </div>
-            <div class="p-3 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
+            <div class="p-3 bg-[var(--card-footer-bg,theme(colors.gray.50))] dark:bg-[var(--dark-card-footer-bg,theme(colors.gray.700))] border-t border-[var(--card-border,theme(colors.gray.200))] dark:border-[var(--dark-card-border,theme(colors.gray.700))] rounded-b-lg">
                 <div class="flex justify-between items-center">
-                     <p class="text-xs text-gray-500 dark:text-gray-400">Fiyat: <span class="font-medium text-gray-700 dark:text-gray-200">${model.price_per_token ? model.price_per_token + ' / token' : (model.price_per_token === 0 ? 'Ücretsiz' : 'Belirtilmemiş')}</span></p>
+                    <span class="text-xs font-medium text-[var(--text-muted)] dark:text-[var(--dark-text-muted)]"><span class="${statusClass} text-xs font-medium me-2 px-2.5 py-0.5 rounded-full">${statusText}</span></span>
                     <button class="details-model-btn text-xs font-medium text-accent hover:text-accent-hover dark:text-accent-light dark:hover:text-accent" data-model-id="${model.id}">Detaylar</button>
                 </div>
             </div>
@@ -365,6 +365,7 @@ const AdminPanelManager = (function() {
             elements.modelsContainer.prepend(newCardElement);
         }
         setupModelCardEventListeners(newCardElement);
+        rebindAllModelCardListeners();
         applyCurrentFilters(); // Re-apply filters if any
     }
 
@@ -442,61 +443,120 @@ const AdminPanelManager = (function() {
      * 4.1. Global Event Listeners Setup
      */
     function setupGlobalEventListeners() {
+        // Small delay to ensure all elements are likely in the DOM after initial render or AJAX load
+        setTimeout(() => {
+            cacheCommonDOMElements(); // Ensure critical elements like htmlElement are cached
+            if (!elements.htmlElement) {
+                log('error', 'Events', 'HTML element not found, cannot set up global listeners reliably.');
+                return;
+            }
+        }, 0);
         log('info', 'Events', 'Setting up global event listeners.');
+
         if (elements.themeToggle) {
+            elements.themeToggle.removeEventListener('click', handleThemeToggle);
             elements.themeToggle.addEventListener('click', handleThemeToggle);
         }
         if (elements.sidebarToggle) {
+            elements.sidebarToggle.removeEventListener('click', handleSidebarToggle);
             elements.sidebarToggle.addEventListener('click', handleSidebarToggle);
         }
 
         elements.navLinks.forEach(link => {
+            // Remove existing listener before adding, using a wrapper if the handler is anonymous or bound
+            // For simplicity here, assuming direct re-attachment is okay if navLinks are re-fetched and are new elements
+            // or if setupGlobalEventListeners is called sparingly.
+            link.removeEventListener('click', handlePageNavigationClick); // Might need a named function or a more robust removal strategy if issues persist
             link.addEventListener('click', handlePageNavigationClick);
         });
 
+        window.removeEventListener('popstate', handleBrowserNavigation);
         window.addEventListener('popstate', handleBrowserNavigation);
+        window.removeEventListener('resize', handleWindowResize);
         window.addEventListener('resize', handleWindowResize);
-
-        // Modal common close actions
-        if (elements.modalOverlay) elements.modalOverlay.addEventListener('click', closeModelModal);
-        if (elements.closeModalBtn) elements.closeModalBtn.addEventListener('click', closeModelModal);
-        if (elements.cancelModelBtn) elements.cancelModelBtn.addEventListener('click', closeModelModal);
-
-        if (elements.deleteModalOverlay) elements.deleteModalOverlay.addEventListener('click', closeDeleteConfirmModal);
-        if (elements.cancelDeleteBtn) elements.cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
-        if (elements.confirmDeleteBtn) elements.confirmDeleteBtn.addEventListener('click', handleDeleteModelConfirm);
         
-        if (elements.modelForm) elements.modelForm.addEventListener('submit', handleModelFormSubmit);
+        // Modal common close actions and form submit listeners are MOVED to setupPageSpecificEventListeners
+        // to ensure they are bound correctly when modal/form HTML is loaded via AJAX for specific pages.
     }
 
     /**
-     * 4.2. Page Specific Event Listeners Setup (called after page content is loaded)
+     * Helper for adding model modal listener to avoid direct anonymous function if removeEventListener is needed.
+     */
+    const openAddModelModalHandler = () => openModelModal(false);
+
+    /**
+     * 4.2. Page Specific Event Listeners Setup
      */
     function setupPageSpecificEventListeners(pageName) {
         log('info', 'Events', `Setting up listeners for page: ${pageName}`);
         cacheCommonDOMElements(); // Re-cache elements that might be specific to the new page content
 
         if (pageName === 'models') {
+            // Add Model Buttons
             if (elements.addModelBtn) {
-                elements.addModelBtn.addEventListener('click', () => openModelModal(false));
+                elements.addModelBtn.removeEventListener('click', openAddModelModalHandler);
+                elements.addModelBtn.addEventListener('click', openAddModelModalHandler);
             }
-            // Check for dynamically added "Add Model" button in empty state
-            const emptyAddModelBtn = document.getElementById('emptyAddModelBtn'); // This ID was used in original code
+            const emptyAddModelBtn = document.getElementById('emptyAddModelBtn'); 
             if (emptyAddModelBtn) {
-                 emptyAddModelBtn.addEventListener('click', () => openModelModal(false));
+                 emptyAddModelBtn.removeEventListener('click', openAddModelModalHandler);
+                 emptyAddModelBtn.addEventListener('click', openAddModelModalHandler);
             }
 
-            if (elements.categoryFilter) elements.categoryFilter.addEventListener('change', applyCurrentFilters);
-            if (elements.providerFilter) elements.providerFilter.addEventListener('change', applyCurrentFilters);
-            if (elements.statusFilter) elements.statusFilter.addEventListener('change', applyCurrentFilters);
+            // Filters
+            if (elements.categoryFilter) {
+                elements.categoryFilter.removeEventListener('change', applyCurrentFilters);
+                elements.categoryFilter.addEventListener('change', applyCurrentFilters);
+            }
+            if (elements.providerFilter) {
+                elements.providerFilter.removeEventListener('change', applyCurrentFilters);
+                elements.providerFilter.addEventListener('change', applyCurrentFilters);
+            }
+            if (elements.statusFilter) {
+                elements.statusFilter.removeEventListener('change', applyCurrentFilters);
+                elements.statusFilter.addEventListener('change', applyCurrentFilters);
+            }
             
-            // Add listeners to existing model cards
-            const modelCards = document.querySelectorAll('#modelsContainer .kpi-card[data-model-id]');
-            modelCards.forEach(card => setupModelCardEventListeners(card));
+            // Model Add/Edit Modal Form Submit
+            if (elements.modelForm) {
+                elements.modelForm.removeEventListener('submit', handleModelFormSubmit);
+                elements.modelForm.addEventListener('submit', handleModelFormSubmit);
+            }
+
+            // Model Add/Edit Modal Close Actions (X button, Cancel button, Overlay)
+            if (elements.closeModalBtn) { 
+                elements.closeModalBtn.removeEventListener('click', closeModelModal);
+                elements.closeModalBtn.addEventListener('click', closeModelModal);
+            }
+            if (elements.cancelModelBtn) { 
+                elements.cancelModelBtn.removeEventListener('click', closeModelModal);
+                elements.cancelModelBtn.addEventListener('click', closeModelModal);
+            }
+            if (elements.modalOverlay) { 
+                elements.modalOverlay.removeEventListener('click', closeModelModal);
+                elements.modalOverlay.addEventListener('click', closeModelModal);
+            }
+
+            // Delete Confirmation Modal Actions
+            if (elements.confirmDeleteBtn) {
+                elements.confirmDeleteBtn.removeEventListener('click', handleDeleteModelConfirm);
+                elements.confirmDeleteBtn.addEventListener('click', handleDeleteModelConfirm);
+            }
+            if (elements.cancelDeleteBtn) {
+                elements.cancelDeleteBtn.removeEventListener('click', closeDeleteConfirmModal);
+                elements.cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
+            }
+            if (elements.deleteModalOverlay) { 
+                elements.deleteModalOverlay.removeEventListener('click', closeDeleteConfirmModal);
+                elements.deleteModalOverlay.addEventListener('click', closeDeleteConfirmModal);
+            }
+            
+            rebindAllModelCardListeners(); // Setup listeners for all model cards on the page
         }
 
         if (pageName === 'dashboard') {
             if (elements.trendChartTimespanSelect) {
+                elements.trendChartTimespanSelect.removeEventListener('change', handleTrendChartTimespanChange);
                 elements.trendChartTimespanSelect.addEventListener('change', handleTrendChartTimespanChange);
             }
             initializeCharts();
@@ -510,9 +570,28 @@ const AdminPanelManager = (function() {
         const modelId = cardElement.dataset.modelId;
         if (!modelId) return;
 
+        // --- Event listener'ları önce temizle (memory leak/çakışma önlemi) ---
         const editBtn = cardElement.querySelector(`.edit-model-btn[data-model-id="${modelId}"]`);
+        const deleteBtn = cardElement.querySelector(`.delete-model-btn[data-model-id="${modelId}"]`);
+        const detailsBtn = cardElement.querySelector(`.details-model-btn[data-model-id="${modelId}"]`);
+
         if (editBtn) {
-            editBtn.addEventListener('click', async function() {
+            editBtn.replaceWith(editBtn.cloneNode(true));
+        }
+        if (deleteBtn) {
+            deleteBtn.replaceWith(deleteBtn.cloneNode(true));
+        }
+        if (detailsBtn) {
+            detailsBtn.replaceWith(detailsBtn.cloneNode(true));
+        }
+
+        // Tekrar seç (çünkü cloneNode ile DOM değişti)
+        const freshEditBtn = cardElement.querySelector(`.edit-model-btn[data-model-id="${modelId}"]`);
+        const freshDeleteBtn = cardElement.querySelector(`.delete-model-btn[data-model-id="${modelId}"]`);
+        const freshDetailsBtn = cardElement.querySelector(`.details-model-btn[data-model-id="${modelId}"]`);
+
+        if (freshEditBtn) {
+            freshEditBtn.addEventListener('click', async function() {
                 log('action', 'ModelCard', `Edit button clicked for model: ${modelId}`);
                 try {
                     const response = await fetch(`/admin/api/models/${modelId}`);
@@ -532,10 +611,8 @@ const AdminPanelManager = (function() {
                 }
             });
         }
-        
-        const deleteBtn = cardElement.querySelector(`.delete-model-btn[data-model-id="${modelId}"]`);
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', function() {
+        if (freshDeleteBtn) {
+            freshDeleteBtn.addEventListener('click', function() {
                 log('action', 'ModelCard', `Delete button clicked for model: ${modelId}`);
                 state.modelToDelete = modelId;
                 if (elements.deleteConfirmModal) {
@@ -545,16 +622,21 @@ const AdminPanelManager = (function() {
                 }
             });
         }
-        
-        const detailsBtn = cardElement.querySelector(`.details-model-btn[data-model-id="${modelId}"]`);
-        if(detailsBtn) {
-            detailsBtn.addEventListener('click', function() {
+        if (freshDetailsBtn) {
+            freshDetailsBtn.addEventListener('click', function() {
                 log('info', 'ModelCard', `Details button clicked for model: ${modelId}. (No action defined yet)`);
                 showToast(`Model ${modelId} için detay görüntüleme henüz aktif değil.`, 'info');
             });
         }
     }
 
+    // Sayfa yüklendiğinde ve yeni model eklendiğinde tüm kartlara listener bağla
+    function rebindAllModelCardListeners() {
+        elements.modelsContainer = elements.modelsContainer || document.getElementById('modelsContainer');
+        if (!elements.modelsContainer) return;
+        const cards = elements.modelsContainer.querySelectorAll('.kpi-card[data-model-id]');
+        cards.forEach(card => setupModelCardEventListeners(card));
+    }
 
     //=============================================================================
     // 5. OPERATIONS & LOGIC
@@ -661,17 +743,10 @@ const AdminPanelManager = (function() {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
-            const newMainContent = doc.querySelector('main');
-            const currentPageMain = document.querySelector('main'); // Get current main content area
-
-            if (!newMainContent) {
-                throw new Error('Yeni sayfa içeriğinde <main> etiketi bulunamadı.');
+            const newContent = doc.querySelector('#mainContent');
+            if (newContent && elements.mainContent) {
+                elements.mainContent.innerHTML = newContent.innerHTML;
             }
-            if (!currentPageMain) {
-                throw new Error('Mevcut sayfada <main> etiketi bulunamadı.');
-            }
-            
-            currentPageMain.innerHTML = newMainContent.innerHTML;
             document.title = `${pageName.charAt(0).toUpperCase() + pageName.slice(1)} - Zekai Admin`;
 
             if (addToHistory) {
@@ -680,6 +755,7 @@ const AdminPanelManager = (function() {
             
             updateActiveMenuItem(pageName);
             setupPageSpecificEventListeners(pageName); // Setup listeners for the new content
+            rebindAllModelCardListeners();
 
         } catch (error) {
             log('error', 'Navigation', `Page load error: ${error.message}`, error);
@@ -807,6 +883,8 @@ const AdminPanelManager = (function() {
             document.getElementById('modelRequestMethod').value = 'POST'; // Default method
         }
         elements.modelModal.classList.remove('hidden');
+        // DO NOT re-call setupGlobalEventListeners() here.
+        // Modal specific listeners are handled by setupPageSpecificEventListeners or directly if needed.
     }
 
     function closeModelModal() {
@@ -869,10 +947,16 @@ const AdminPanelManager = (function() {
                 throw new Error(responseData.error || `Bir hata oluştu: ${response.status}`);
             }
             
+            log('debug', 'FormSubmit', '--- handleModelFormSubmit: API Response Model for card render ---', responseData.model);
             showToast(responseData.message || (isEdit ? 'Model başarıyla güncellendi.' : 'Yeni model başarıyla eklendi.'), 'success');
             closeModelModal();
             
             if (responseData.model) {
+                // Eğer kategori adı yoksa, kategorilerden bulup ekle
+                if (!responseData.model.category_name && elements.categoryFilter) {
+                    const selectedOption = Array.from(elements.categoryFilter.options).find(option => option.value == responseData.model.category_id);
+                    if (selectedOption) responseData.model.category_name = selectedOption.textContent;
+                }
                 renderOrUpdateModelInList(responseData.model, isEdit);
             } else {
                 log('warn', 'API', 'Model data not found in response, reloading page as fallback.');
@@ -1141,7 +1225,9 @@ const AdminPanelManager = (function() {
     /**
      * 6.2. DOM Ready Initialization
      */
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+        init();
+    });
 
     // Expose public methods if any (though for admin panel, init might be enough)
     return {
