@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard/admin.css') }}">
+    {% block head_scripts %}{% endblock %}
 </head>
 <body class="flex h-screen overflow-hidden">
 
@@ -146,7 +147,7 @@
             {% endblock %}
             
             <footer class="text-center py-6 mt-auto">
-                <p class="text-xs text-[var(--text-secondary)]">&copy; 2024 ZekaiPanel. Tüm hakları saklıdır.</p>
+                <p class="text-xs text-[var(--text-secondary)]">&copy; 2025 ZekaiPanel. Tüm hakları saklıdır.</p>
             </footer>
             
             <!-- Yükleniyor göstergesi -->

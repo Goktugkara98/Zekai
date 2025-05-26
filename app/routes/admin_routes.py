@@ -145,17 +145,18 @@ def categories_page() -> str:
     current_page_identifier: str = "categories"
     try:
         categories_data: List[Dict[str, Any]] = category_service.get_all_categories_for_display()
-        return render_template('admin_dashboard.html',
+        page_content_data = {"categories": categories_data}
+        return render_template('admin_dashboard/admin_categories.html',
                                title=page_title,
                                current_page=current_page_identifier,
-                               page_data=categories_data)
+                               page_data=page_content_data)
     except Exception as e:
         current_app.logger.error(f"Admin kategoriler sayfası yüklenirken hata: {str(e)}", exc_info=True)
         flash(f"Kategoriler yüklenirken bir hata oluştu: {str(e)}", "danger")
-        return render_template('admin_dashboard.html',
+        return render_template('admin_dashboard/admin_dashboard.html',
                                title="Hata - Kategoriler",
                                current_page=current_page_identifier,
-                               page_data=[])
+                               page_data={"categories": []})
 
 # -----------------------------------------------------------------------------
 # 5.4. AI Modeli yönetimi sayfasını gösterir (models_page)
