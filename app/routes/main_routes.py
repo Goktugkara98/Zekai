@@ -15,8 +15,6 @@
 #     4.1. index_page                     : Ana sayfayı gösterir.
 # 5.0 API ROTALARI (API ROUTES - JSON)
 #     5.1. send_message                   : Sohbet mesajını işler ve AI yanıtını döndürür.
-#     5.2. Sahte (Mock) API Rotaları (Test Amaçlı)
-#          5.2.1. mock_gemini_generate_content_route : Sahte Gemini API yanıtı üretir.
 # =============================================================================
 
 # =============================================================================
@@ -158,68 +156,4 @@ def send_message() -> Tuple[str, int]:
             db_connection_instance.close()
 
 
-# -----------------------------------------------------------------------------
-# 5.2. Sahte (Mock) API Rotaları (Test Amaçlı)
-# -----------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# 5.2.1. Sahte Gemini API yanıtı üretir (mock_gemini_generate_content_route)
-#        Rota: /mock_gemini_api/v1beta/models/gemini-2.0-flash:generateContent (POST)
-# -----------------------------------------------------------------------------
-@main_bp.route('/mock_gemini_api/v1beta/models/gemini-2.0-flash:generateContent', methods=['POST'])
-def mock_gemini_generate_content_route() -> Tuple[str, int]:
-    """
-    Geliştirme ve test amaçlı sahte bir Gemini API endpoint'i.
-    Google Gemini API'sinin `generateContent` metodunu taklit eder.
-    """
-    try:
-        data: Optional[Dict[str, Any]] = request.json
-        if not data:
-            return jsonify({"error": "İstek gövdesi JSON formatında olmalı ve boş olamaz."}), 400
-
-        user_text: str = "bir mesaj (payload'dan alınamadı)"
-        if (isinstance(data.get("contents"), list) and
-                data["contents"] and
-                isinstance(data["contents"][-1], dict) and
-                isinstance(data["contents"][-1].get("parts"), list) and
-                data["contents"][-1]["parts"] and
-                isinstance(data["contents"][-1]["parts"][0], dict) and
-                "text" in data["contents"][-1]["parts"][0]):
-            user_text = data["contents"][-1]["parts"][0]["text"]
-
-        mock_response_text: str = (
-            f"Bu, Gemini (gemini-2.0-flash modeli - SAHTE YANIT) tarafından "
-            f"mesajınıza ('{user_text}') verilen sahte bir yanıttır."
-        )
-
-        gemini_like_response: Dict[str, Any] = {
-            "candidates": [{
-                "content": {
-                    "parts": [{"text": mock_response_text}],
-                    "role": "model"
-                },
-                "finishReason": "STOP",
-                "index": 0,
-                "safetyRatings": [{"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "probability": "NEGLIGIBLE"}]
-            }],
-            "promptFeedback": {
-                "safetyRatings": [{"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "probability": "NEGLIGIBLE"}]
-            }
-        }
-        return jsonify(gemini_like_response), 200
-
-    except (KeyError, IndexError, TypeError) as e:
-        current_app.logger.warning(
-            f"Sahte Gemini API'sine geçersiz payload: {str(e)}. Gelen data: {request.data.decode(errors='ignore')}",
-            exc_info=True
-        )
-        return jsonify({
-            "error": "Geçersiz payload formatı.",
-            "expected_format_example": "{'contents': [{'parts':[{'text': '...'}]}]}"
-        }), 400
-    except Exception as e:
-        current_app.logger.error(
-            f"Sahte Gemini API'sinde beklenmedik hata: {str(e)}",
-            exc_info=True
-        )
-        return jsonify({"error": "Sahte Gemini API'sinde beklenmedik bir sunucu hatası oluştu."}), 500

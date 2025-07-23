@@ -1,40 +1,39 @@
 import requests
 import json
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from flask import current_app
-from app.services.base_ai_service import BaseAIService
 
-class OpenAIRouterService(BaseAIService):
-    def __init__(self, model_config=None, config=None):
-        super().__init__(model_config=model_config)
-        self.config = config
-
+class OpenAIRouterService:
     """
     OpenAI uyumlu API'ler (OpenRouter, Together, vb.) için genel bir hizmet sınıfı.
     Bu sınıf, standart bir OpenAI API istemcisi gibi davranır ancak modelden modele
     değişebilen `api_url` ve `api_key` gibi parametreleri dinamik olarak kullanır.
     """
+    
+    def __init__(self, api_key: str, config: Dict[str, Any]):
+        self.api_key = api_key
+        self.config = config
 
-    def send_chat_request(self, messages: List[Dict[str, str]], model_config: Dict[str, Any]) -> Tuple[bool, Any]:
+    def send_chat_request(self, model_entity, chat_message: Optional[str], chat_history: List[Dict[str, str]]) -> Dict[str, Any]:
         """
         OpenAI uyumlu bir API'ye sohbet tamamlama isteği gönderir.
 
         Args:
-            messages: Kullanıcı ve asistan mesajlarını içeren bir liste.
-            model_config: Modelin API anahtarı, URL'si ve diğer ayarlarını içeren sözlük.
+            model_entity: Model varlığı (API anahtarı, URL'si ve diğer ayarları içerir).
+            chat_message: Kullanıcının yeni mesajı.
+            chat_history: Önceki sohbet geçmişi.
 
         Returns:
-            (başarı_durumu, yanıt_içeriği) şeklinde bir tuple.
+            Yanıt verisi içeren bir sözlük.
         """
-        api_key = model_config.get('api_key')
-        api_url = model_config.get('api_url', 'https://openrouter.ai/api/v1/chat/completions') # Varsayılan URL
-        external_model_name = model_config.get('external_model_name')
+        api_url = getattr(model_entity, 'api_url', 'https://openrouter.ai/api/v1/chat/completions')
+        external_model_name = getattr(model_entity, 'external_model_name', None)
 
-        if not api_key or not external_model_name:
-            return False, "API anahtarı veya harici model adı eksik."
+        if not self.api_key or not external_model_name:
+            return {"error": "API anahtarı veya harici model adı eksik.", "status_code": 400}
 
         headers = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
 
@@ -46,11 +45,16 @@ class OpenAIRouterService(BaseAIService):
             })
 
         # Mesajları OpenAI formatına uygun hale getir
-        formatted_messages = [{'role': msg['role'], 'content': msg['content']} for msg in messages]
+        messages = []
+        for msg in chat_history:
+            messages.append({'role': msg['role'], 'content': msg['content']})
+        
+        if chat_message:
+            messages.append({'role': 'user', 'content': chat_message})
 
         payload = {
             "model": external_model_name,
-            "messages": formatted_messages,
+            "messages": messages,
             "stream": False # Şimdilik stream desteklenmiyor
         }
 
@@ -62,19 +66,19 @@ class OpenAIRouterService(BaseAIService):
             # Yanıttan ilk mesajın içeriğini al
             if response_data.get("choices") and len(response_data["choices"]) > 0:
                 content = response_data["choices"][0]["message"]["content"]
-                return True, content.strip()
+                return {"reply": content.strip()}
             else:
-                return False, f"API yanıtında beklenen 'choices' alanı bulunamadı. Yanıt: {response_data}"
+                return {"error": f"API yanıtında beklenen 'choices' alanı bulunamadı. Yanıt: {response_data}", "status_code": 500}
 
         except requests.exceptions.HTTPError as http_err:
             error_message = f"OpenAI Uyumlu API (HTTP Hatası): {http_err.response.status_code} - {http_err.response.text}"
             current_app.logger.error(error_message)
-            return False, f"API sunucusundan bir hata alındı (Kod: {http_err.response.status_code}). Lütfen daha sonra tekrar deneyin."
+            return {"error": f"API sunucusundan bir hata alındı (Kod: {http_err.response.status_code}). Lütfen daha sonra tekrar deneyin.", "status_code": 500}
         except requests.exceptions.RequestException as req_err:
             error_message = f"OpenAI Uyumlu API (İstek Hatası): {req_err}"
             current_app.logger.error(error_message)
-            return False, "API sunucusuna bağlanırken bir sorun oluştu. Lütfen ağ bağlantınızı kontrol edin veya daha sonra tekrar deneyin."
+            return {"error": "API sunucusuna bağlanırken bir sorun oluştu. Lütfen ağ bağlantınızı kontrol edin veya daha sonra tekrar deneyin.", "status_code": 500}
         except Exception as e:
             error_message = f"OpenAI Uyumlu API (Beklenmedik Hata): {str(e)}"
             current_app.logger.error(error_message)
-            return False, "Beklenmedik bir hata oluştu. Lütfen geliştirici ile iletişime geçin."
+            return {"error": "Beklenmedik bir hata oluştu. Lütfen geliştirici ile iletişime geçin.", "status_code": 500}

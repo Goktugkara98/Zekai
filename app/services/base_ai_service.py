@@ -141,7 +141,7 @@ class BaseAIService:
     # 2.3. Sohbet isteklerini işler ve yönlendirir (process_chat_request)
     # -------------------------------------------------------------------------
     def process_chat_request(self,
-                             model_id: str,
+                             model_id: int,
                              chat_message: Optional[str],
                              chat_history: List[Dict[str, str]]
                              ) -> Dict[str, Any]:

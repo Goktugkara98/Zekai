@@ -1,209 +1,143 @@
 /**
- * ZekAI Main Application Module
- * ==========================
- * @description Main entry point and initialization for the ZekAI application
- * @version 1.0.0
+ * ZekAI Main Entry Point
+ * =====================
+ * @description Yeni modüler mimarinin ana başlatma dosyası
+ * @version 2.0.0
  * @author ZekAI Team
- * 
- * TABLE OF CONTENTS
- * ================
- * 1. Global Configuration
- *    1.1 State and Settings
- * 
- * 2. Core Initialization
- *    2.1 DOM Elements
- *    2.2 Event Listeners
- *    2.3 Application Bootstrap
  */
 
-//=============================================================================
-// 1. GLOBAL CONFIGURATION
-//=============================================================================
+(function() {
+    'use strict';
 
-/**
- * 1.1 State and Settings
- * -------------------
- * Global application state and configuration
- */
+    /**
+     * DOM hazır olduğunda uygulamayı başlat
+     */
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log('🚀 ZekAI Application Starting...');
+        console.log('📦 New Modular Architecture v2.0.0');
+        
+        try {
+            // Uygulamayı başlat
+            await ZekAIApp.initialize();
+            
+            console.log('✅ ZekAI Application Started Successfully');
+            console.log('📊 Application Status:', ZekAIApp.getStatus());
+            
+        } catch (error) {
+            console.error('❌ ZekAI Application Failed to Start:', error);
+            
+            // Fallback: Eski sistemi başlatmaya çalış
+            if (window.ChatManager && typeof window.ChatManager.init === 'function') {
+                console.warn('🔄 Falling back to legacy ChatManager...');
+                try {
+                    window.ChatManager.init();
+                    console.log('✅ Legacy ChatManager initialized as fallback');
+                } catch (legacyError) {
+                    console.error('❌ Legacy ChatManager also failed:', legacyError);
+                }
+            }
+        }
+    });
 
-// Initialize global state if it doesn't exist
-window.state = window.state || {
-    isDarkMode: false,
-    chats: [],
-    activeChat: null
-};
+    /**
+     * Debug için global fonksiyonlar
+     */
+    if (typeof window !== 'undefined') {
+        // Debug modunu açma/kapama
+        window.toggleDebug = function() {
+            window.DEBUG_LOG_ACTIVE = !window.DEBUG_LOG_ACTIVE;
+            Logger.configure({ enabled: window.DEBUG_LOG_ACTIVE });
+            console.log(`Debug mode: ${window.DEBUG_LOG_ACTIVE ? 'ON' : 'OFF'}`);
+        };
 
-// DOM element references (populated on DOMContentLoaded)
-window.elements = {};
+        // Uygulama durumunu görüntüleme
+        window.getAppStatus = function() {
+            return ZekAIApp.getStatus();
+        };
 
-// Default configuration settings
-window.config = window.config || { 
-    // Maximum number of concurrent chats
-    maxChats: 4,
-    
-    // Default layout configuration (1-6)
-    defaultLayout: 1,
-    
-    // Debug mode for additional console logging
-    debug: false
-};
+        // Debug bilgilerini görüntüleme
+        window.getDebugInfo = function() {
+            return ZekAIApp.getDebugInfo();
+        };
 
-//=============================================================================
-// 2. CORE INITIALIZATION
-//=============================================================================
+        // Uygulamayı yeniden başlatma
+        window.restartApp = async function() {
+            console.log('🔄 Restarting application...');
+            try {
+                await ZekAIApp.restart();
+                console.log('✅ Application restarted successfully');
+            } catch (error) {
+                console.error('❌ Failed to restart application:', error);
+            }
+        };
 
-/**
- * 2.1 DOM Elements
- * -------------
- */
+        // State'i görüntüleme
+        window.getState = function() {
+            return StateManager.getSnapshot();
+        };
 
-/**
- * Populates the window.elements object with frequently used DOM elements
- * Caches elements for better performance and easier access
- * 
- * @returns {void}
- */
-function populateDOMElements() {
-    console.log('[main.js] Populating DOM elements...');
-    
-    // Core UI elements
-    window.elements.sidebar = document.getElementById('sidebar');
-    window.elements.themeToggleBtn = document.getElementById('theme-toggle');
-    
-    // Chat-related elements
-    window.elements.chatContainer = document.getElementById('chat-container');
-    window.elements.welcomeScreen = document.getElementById('welcome-screen');
-    window.elements.welcomeNewChatBtn = document.getElementById('welcome-new-chat-btn');
-    window.elements.newChatBtn = document.getElementById('new-chat-btn');
-    window.elements.clearChatsBtn = document.getElementById('clear-chats-btn');
-    window.elements.layoutBtns = document.querySelectorAll('.layout-btn');
-    
-    // Log if critical elements are missing
-    if (!window.elements.sidebar) {
-        console.warn('[main.js] #sidebar element not found.');
-    }
-    
-    if (!window.elements.chatContainer) {
-        console.error('[main.js] #chat-container element not found! Chat functionality will not work.');
-    }
-    
-    console.log('[main.js] DOM elements populated:', window.elements);
-}
+        // Chat istatistiklerini görüntüleme
+        window.getChatStats = function() {
+            return ChatManager.getStats();
+        };
 
-/**
- * 2.2 Event Listeners
- * ----------------
- */
+        // Event listener'ları görüntüleme
+        window.getEventListeners = function() {
+            return EventBus.getListeners();
+        };
 
-/**
- * Sets up global event listeners for the application
- * Handles events for buttons and controls outside the dynamic panel area
- * 
- * @returns {void}
- */
-function setupGlobalEventListeners() {
-    console.log('[main.js] Setting up global event listeners...');
-
-    // Example: Send all messages button
-    if (window.elements.sendAllBtn) {
-        // window.elements.sendAllBtn.addEventListener('click', () => { ... });
-        console.log('[main.js] #send-all-btn found. Listener setup can be added here.');
+        console.log('🛠️  Debug functions available:');
+        console.log('   - toggleDebug()');
+        console.log('   - getAppStatus()');
+        console.log('   - getDebugInfo()');
+        console.log('   - restartApp()');
+        console.log('   - getState()');
+        console.log('   - getChatStats()');
+        console.log('   - getEventListeners()');
     }
 
-    // Add other global listeners as needed
-}
+    /**
+     * Sayfa kapatılırken temizlik yap
+     */
+    window.addEventListener('beforeunload', function() {
+        console.log('🧹 Cleaning up before page unload...');
+        
+        // Dropdown'ları kapat
+        if (window.ModelSelector) {
+            ModelSelector.closeAllDropdowns();
+        }
+        
+        // Event listener'ları temizle
+        if (window.EventBus) {
+            EventBus.clear();
+        }
+    });
 
-/**
- * Sets up event listeners for panel-specific elements
- * Currently a placeholder for future implementation
- * 
- * @returns {void}
- * @todo Implement actual panel event listeners
- */
-function setupPanelEventListeners() {
-    console.log('[main.js] setupPanelEventListeners is a placeholder and does not perform any actions.');
-}
+    /**
+     * Hata yakalama
+     */
+    window.addEventListener('error', function(event) {
+        console.error('🚨 Global Error:', {
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+            error: event.error
+        });
+    });
 
-/**
- * 2.3 Application Bootstrap
- * ---------------------
- */
+    window.addEventListener('unhandledrejection', function(event) {
+        console.error('🚨 Unhandled Promise Rejection:', event.reason);
+    });
 
-/**
- * Initializes the application and all its components
- * Main entry point that coordinates the startup sequence
- * 
- * @returns {void}
- */
-function init() {
-    console.log('[main.js] Initializing application...');
-    // Populate DOM elements first
-    populateDOMElements();
+})();
 
-    // Initialize theme
-    if (typeof initTheme === 'function') {
-        initTheme();
-    } else {
-        console.warn('[main.js] initTheme function not found.');
-    }
-    
-    // Setup theme toggle
-    if (typeof setupThemeToggle === 'function') {
-        setupThemeToggle();
-    } else {
-        console.warn('[main.js] setupThemeToggle function not found.');
-    }
+// Versiyon bilgisi
+console.log(`
+╔══════════════════════════════════════╗
+║            ZekAI Frontend            ║
+║         Modular Architecture         ║
+║            Version 2.0.0             ║
+╚══════════════════════════════════════╝
+`);
 
-    // Initialize ChatManager
-    if (window.ChatManager && typeof window.ChatManager.init === 'function') {
-        console.log('[main.js] Initializing ChatManager...');
-        window.ChatManager.init();
-    } else {
-        console.warn('[main.js] ChatManager.init not found or not a function.');
-    }
-
-    // Setup global event listeners
-    setupGlobalEventListeners(); 
-
-    // Setup panel event listeners
-    setupPanelEventListeners();
-    
-    // Setup sidebar handlers
-    if (typeof setupSidebarHandlers === 'function') {
-        setupSidebarHandlers();
-    } else {
-        console.warn('[main.js] setupSidebarHandlers function not found.');
-    }
-
-    // Setup collapsible sidebar sections
-    if (typeof setupCollapsibleSections === 'function') {
-        setupCollapsibleSections();
-    } else {
-        console.warn('[main.js] setupCollapsibleSections function not found.');
-    }
-
-    // Initialize responsive features
-    if (typeof initResponsiveFeatures === 'function') {
-        initResponsiveFeatures();
-    } else {
-        console.warn('[main.js] initResponsiveFeatures function not found.');
-    }
-    
-    // Add dynamic styles
-    if (typeof addDynamicStyles === 'function') {
-        addDynamicStyles();
-    } else {
-        console.warn('[main.js] addDynamicStyles function not found.');
-    }
-
-    console.log('[main.js] Application initialization sequence finished.');
-}
-
-/**
- * Start the application when DOM is fully loaded
- * This ensures all HTML elements are available before JavaScript runs
- */
-document.addEventListener('DOMContentLoaded', init);
-
-// Log application version on startup
-console.log('ZekAI Application v1.0.0 initialized');

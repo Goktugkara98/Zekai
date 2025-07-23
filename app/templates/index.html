@@ -197,17 +197,28 @@ if (Array.isArray(parsedAiCategories)) {
 
 <!-- Bootstrap JS & dependencies -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- SortableJS for drag-and-drop -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<!-- Custom JS -->
-<script src="/static/js/core/config.js"></script>
-<script src="/static/js/core/dom.js"></script>
-<script src="/static/js/utils/styles.js"></script>
-<script src="/static/js/utils/dragdrop.js"></script>
-<script src="/static/js/utils/responsive.js"></script>
-<script src="/static/js/components/theme.js"></script>
-<script src="/static/js/components/chat.js"></script>
-<script src="/static/js/handlers/sidebar.js"></script>
+<!-- Core -->
+<script src="/static/js/core/eventBus.js"></script>
+<script src="/static/js/core/logger.js"></script>
+
+<!-- Managers -->
+<script src="/static/js/managers/stateManager.js"></script>
+<script src="/static/js/managers/apiManager.js"></script>
+<script src="/static/js/managers/chatManager.js"></script>
+<script src="/static/js/managers/uiManager.js"></script>
+
+<!-- Components -->
+<script src="/static/js/components/messageRenderer.js"></script>
+<script src="/static/js/components/modelSelector.js"></script>
+
+<!-- Handlers -->
+<script src="/static/js/handlers/chatHandlers.js"></script>
+<script src="/static/js/handlers/uiHandlers.js"></script>
+
+<!-- Core App -->
+<script src="/static/js/core/app.js"></script>
+
+<!-- Main -->
 <script src="/static/js/main.js"></script>
 </body>
 </html>
