@@ -632,3 +632,98 @@
 2025-07-23 04:43:20,261 - app.services.base_ai_service - INFO - Chat request completed - Response time: 9.304s
 2025-07-23 04:43:20,262 - app.routes.main_routes - INFO - Chat request completed successfully - Processing time: 9.31s
 2025-07-23 04:43:20,264 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 04:43:20] "POST /api/send_message HTTP/1.1" 200 -
+2025-07-23 05:18:38,686 - werkzeug - INFO -  * Detected change in 'c:\\Users\\kara\\zekai\\Zekai\\app\\models\\entities\\model.py', reloading
+2025-07-23 05:18:39,238 - werkzeug - INFO -  * Detected change in 'C:\\Users\\kara\\zekai\\Zekai\\app\\models\\entities\\model.py', reloading
+2025-07-23 05:18:40,421 - werkzeug - INFO -  * Restarting with stat
+2025-07-23 05:18:40,901 - werkzeug - INFO -  * Restarting with stat
+2025-07-23 05:19:05,766 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:19:05,799 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:19:07,338 - werkzeug - WARNING -  * Debugger is active!
+2025-07-23 05:19:07,339 - werkzeug - WARNING -  * Debugger is active!
+2025-07-23 05:19:07,354 - werkzeug - INFO -  * Debugger PIN: 895-931-669
+2025-07-23 05:19:07,360 - werkzeug - INFO -  * Debugger PIN: 145-394-362
+2025-07-23 05:19:58,441 - werkzeug - INFO -  * Detected change in 'c:\\Users\\kara\\zekai\\Zekai\\app\\services\\openrouter_service.py', reloading
+2025-07-23 05:19:58,833 - werkzeug - INFO -  * Detected change in 'C:\\Users\\kara\\zekai\\Zekai\\app\\services\\openrouter_service.py', reloading
+2025-07-23 05:20:01,120 - werkzeug - INFO -  * Restarting with stat
+2025-07-23 05:20:01,449 - werkzeug - INFO -  * Restarting with stat
+2025-07-23 05:24:12,078 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:24:12,080 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:24:12,120 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET / HTTP/1.1" 200 -
+2025-07-23 05:24:12,252 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/base/variables.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,340 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/base/reset.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,600 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/layout/sidebar.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,646 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/layout/active-chats-sidebar.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,654 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/layout/main-content.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,655 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/components/buttons.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,669 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/components/chat.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,725 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/css/style.css HTTP/1.1" 200 -
+2025-07-23 05:24:12,961 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:12] "GET /static/js/core/eventBus.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,004 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/core/logger.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,091 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/managers/stateManager.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,143 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/managers/apiManager.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,213 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/managers/chatManager.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,233 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/managers/uiManager.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,320 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/components/messageRenderer.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,353 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/components/modelSelector.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,428 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/handlers/chatHandlers.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,479 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/handlers/uiHandlers.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,550 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/core/app.js HTTP/1.1" 200 -
+2025-07-23 05:24:13,652 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:13] "GET /static/js/main.js HTTP/1.1" 200 -
+2025-07-23 05:24:14,086 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:24:14] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-07-23 05:25:23,256 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:25:24,707 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-07-23 05:25:24,714 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-07-23 05:25:24,754 - werkzeug - INFO -  * Restarting with stat
+2025-07-23 05:25:29,023 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:25:29,023 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:25:29,053 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET / HTTP/1.1" 200 -
+2025-07-23 05:25:29,157 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/base/variables.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,291 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/base/reset.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,467 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/layout/main-content.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,480 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/layout/sidebar.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,520 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/layout/active-chats-sidebar.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,537 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/components/buttons.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,547 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/components/chat.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,623 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/css/style.css HTTP/1.1" 200 -
+2025-07-23 05:25:29,817 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/js/core/eventBus.js HTTP/1.1" 200 -
+2025-07-23 05:25:29,819 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/js/core/logger.js HTTP/1.1" 200 -
+2025-07-23 05:25:29,872 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/js/managers/stateManager.js HTTP/1.1" 200 -
+2025-07-23 05:25:29,890 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/js/managers/apiManager.js HTTP/1.1" 200 -
+2025-07-23 05:25:29,951 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/js/managers/chatManager.js HTTP/1.1" 200 -
+2025-07-23 05:25:29,981 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:29] "GET /static/js/managers/uiManager.js HTTP/1.1" 200 -
+2025-07-23 05:25:30,160 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:30] "GET /static/js/components/messageRenderer.js HTTP/1.1" 200 -
+2025-07-23 05:25:30,177 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:30] "GET /static/js/components/modelSelector.js HTTP/1.1" 200 -
+2025-07-23 05:25:30,241 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:30] "GET /static/js/handlers/uiHandlers.js HTTP/1.1" 200 -
+2025-07-23 05:25:30,244 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:30] "GET /static/js/handlers/chatHandlers.js HTTP/1.1" 200 -
+2025-07-23 05:25:30,285 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:30] "GET /static/js/core/app.js HTTP/1.1" 200 -
+2025-07-23 05:25:30,352 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:30] "GET /static/js/main.js HTTP/1.1" 200 -
+2025-07-23 05:25:30,748 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:30] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-07-23 05:25:34,281 - app.routes.main_routes - INFO - Chat request received - Model ID: 2, Message: True, History: 0 messages
+2025-07-23 05:25:34,282 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:25:34,282 - app.services.base_ai_service - INFO - BaseAIService initialized with improved caching and monitoring
+2025-07-23 05:25:34,287 - app.services.base_ai_service - INFO - Processing chat request - Model: 2, Provider: gemini_service
+2025-07-23 05:25:34,303 - app.services.base_ai_service - INFO - Service instance created: gemini_service (took 0.015s)
+2025-07-23 05:25:34,926 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:25:43,293 - app.services.base_ai_service - INFO - Chat request completed - Response time: 9.010s
+2025-07-23 05:25:43,294 - app.routes.main_routes - INFO - Chat request completed successfully - Processing time: 9.01s
+2025-07-23 05:25:43,311 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:43] "POST /api/send_message HTTP/1.1" 200 -
+2025-07-23 05:25:44,734 - werkzeug - WARNING -  * Debugger is active!
+2025-07-23 05:25:44,756 - werkzeug - INFO -  * Debugger PIN: 145-394-362
+2025-07-23 05:25:45,112 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/base/variables.css HTTP/1.1[0m" 304 -
+2025-07-23 05:25:45,155 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/base/reset.css HTTP/1.1[0m" 304 -
+2025-07-23 05:25:45,158 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/layout/sidebar.css HTTP/1.1[0m" 304 -
+2025-07-23 05:25:45,164 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/layout/main-content.css HTTP/1.1[0m" 304 -
+2025-07-23 05:25:45,174 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/layout/active-chats-sidebar.css HTTP/1.1[0m" 304 -
+2025-07-23 05:25:45,239 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/components/buttons.css HTTP/1.1[0m" 304 -
+2025-07-23 05:25:45,448 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/components/chat.css HTTP/1.1[0m" 304 -
+2025-07-23 05:25:45,511 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[33mGET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1[0m" 404 -
+2025-07-23 05:25:45,527 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:25:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2025-07-23 05:26:00,042 - app.routes.main_routes - INFO - Chat request received - Model ID: 1, Message: True, History: 0 messages
+2025-07-23 05:26:00,043 - app.models.base - WARNING - Connection pool already initialized
+2025-07-23 05:26:00,044 - app.services.base_ai_service - INFO - BaseAIService initialized with improved caching and monitoring
+2025-07-23 05:26:00,054 - app.services.base_ai_service - INFO - Processing chat request - Model: 1, Provider: gemini_service
+2025-07-23 05:26:00,070 - app.services.base_ai_service - INFO - Service instance created: gemini_service (took 0.015s)
+2025-07-23 05:26:06,003 - app.services.base_ai_service - INFO - Chat request completed - Response time: 5.958s
+2025-07-23 05:26:06,004 - app.routes.main_routes - INFO - Chat request completed successfully - Processing time: 5.96s
+2025-07-23 05:26:06,014 - werkzeug - INFO - 127.0.0.1 - - [23/Jul/2025 05:26:06] "POST /api/send_message HTTP/1.1" 200 -
