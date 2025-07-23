@@ -1,28 +1,22 @@
 # =============================================================================
-# Ana Rotalar Modülü (Main Routes Module)
+# İyileştirilmiş Ana Rotalar Modülü (Improved Main Routes Module)
 # =============================================================================
 # Bu modül, uygulamanın ana kullanıcı arayüzü (HTML) ve temel API (JSON)
-# rotalarını tanımlar. Ana sayfa gösterimi ve sohbet API'si gibi işlevleri
-# içerir.
+# rotalarını tanımlar. Gemini API entegrasyonu sorunları çözülmüş halidir.
 #
-# İÇİNDEKİLER:
-# -----------------------------------------------------------------------------
-# 1.0 İÇE AKTARMALAR (IMPORTS)
-# 2.0 BLUEPRINT TANIMI (BLUEPRINT DEFINITION)
-# 3.0 YARDIMCI FONKSİYONLAR (HELPER FUNCTIONS)
-#     (Bu dosyada özel bir yardımcı fonksiyon bulunmamaktadır)
-# 4.0 ARAYÜZ ROTALARI (VIEW ROUTES - HTML RENDERING)
-#     4.1. index_page                     : Ana sayfayı gösterir.
-# 5.0 API ROTALARI (API ROUTES - JSON)
-#     5.1. send_message                   : Sohbet mesajını işler ve AI yanıtını döndürür.
+# İYİLEŞTİRMELER:
+# - CORS desteği eklendi
+# - Error handling iyileştirildi
+# - Response format standardize edildi
+# - Logging sistemi eklendi
+# - Input validation güçlendirildi
 # =============================================================================
 
-# =============================================================================
-# 1.0 İÇE AKTARMALAR (IMPORTS)
-# =============================================================================
 import json
-import traceback # Hata ayıklama için
-from typing import Dict, Any, List, Tuple, Optional # Tip ipuçları için
+import traceback
+import logging
+from typing import Dict, Any, List, Tuple, Optional
+from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -32,15 +26,16 @@ from flask import (
     flash,
     current_app
 )
+from flask_cors import CORS, cross_origin
 
 # Uygulama özelindeki içe aktarmalar
 from app.repositories.model_repository import ModelRepository
-from app.services.ai_model_service import fetch_ai_categories_from_db # Kategori ve model listeleme servisi
-from app.services.base_ai_service import BaseAIService # Ana AI işleme servisi
-from app.models.base import DatabaseConnection # Veritabanı bağlantısı için
+from app.services.ai_model_service import fetch_ai_categories_from_db
+from app.services.base_ai_service import BaseAIService
+from app.models.base import DatabaseConnection
 
 # =============================================================================
-# 2.0 BLUEPRINT TANIMI (BLUEPRINT DEFINITION)
+# BLUEPRINT TANIMI VE CORS KONFIGÜRASYONU
 # =============================================================================
 main_bp = Blueprint(
     name='main',
@@ -49,26 +44,85 @@ main_bp = Blueprint(
     static_folder='../static'
 )
 
-# =============================================================================
-# 3.0 YARDIMCI FONKSİYONLAR (HELPER FUNCTIONS)
-# =============================================================================
-# Bu bölümde, bu blueprint'e özel yardımcı fonksiyonlar tanımlanabilir.
-# Şu an için bu dosyada özel bir yardımcı fonksiyon bulunmuyor.
+# CORS desteği ekle
+CORS(main_bp, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"]
+    }
+})
+
+# Logger konfigürasyonu
+logger = logging.getLogger(__name__)
 
 # =============================================================================
-# 4.0 ARAYÜZ ROTALARI (VIEW ROUTES - HTML RENDERING)
+# YARDIMCI FONKSİYONLAR
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# 4.1. Ana sayfayı gösterir (index_page)
-#      Rota: / (GET)
-# -----------------------------------------------------------------------------
+def create_success_response(data: Any, message: str = "Success") -> Dict[str, Any]:
+    """Başarılı API yanıtı oluşturur"""
+    return {
+        "success": True,
+        "message": message,
+        "data": data,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+def create_error_response(error: str, details: str = None, status_code: int = 400) -> Tuple[Dict[str, Any], int]:
+    """Hata API yanıtı oluşturur"""
+    response = {
+        "success": False,
+        "error": error,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    
+    if details and current_app.debug:
+        response["details"] = details
+        
+    return response, status_code
+
+def validate_chat_request(data: Dict[str, Any]) -> Tuple[bool, str]:
+    """Chat request verilerini doğrular"""
+    if not data:
+        return False, "İstek gövdesi JSON formatında olmalı ve boş olamaz."
+    
+    model_id = data.get('aiModelId')
+    if not model_id:
+        return False, "'aiModelId' alanı zorunludur."
+    
+    try:
+        int(model_id)
+    except (ValueError, TypeError):
+        return False, "'aiModelId' geçerli bir sayı olmalıdır."
+    
+    chat_message = data.get('chat_message', '').strip()
+    chat_history = data.get('history', [])
+    
+    if not chat_message and not chat_history:
+        return False, "'chat_message' veya 'history' alanlarından en az biri dolu olmalıdır."
+    
+    # Chat history formatını kontrol et
+    if chat_history and not isinstance(chat_history, list):
+        return False, "'history' alanı bir liste olmalıdır."
+    
+    for i, msg in enumerate(chat_history):
+        if not isinstance(msg, dict):
+            return False, f"'history[{i}]' bir sözlük olmalıdır."
+        
+        if 'role' not in msg or 'content' not in msg:
+            return False, f"'history[{i}]' 'role' ve 'content' alanlarını içermelidir."
+    
+    return True, ""
+
+# =============================================================================
+# ARAYÜZ ROTALARI (VIEW ROUTES - HTML RENDERING)
+# =============================================================================
+
 @main_bp.route('/')
 def index_page() -> str:
     """
     Ana sayfayı (index.html) AI kategorileriyle birlikte gösterir.
-    Kategoriler veritabanından çekilir ve şablona gönderilir.
-    Hata durumunda kullanıcıya bilgi mesajı gösterilir ve loglama yapılır.
     """
     ai_categories: List[Dict[str, Any]] = []
     page_title: str = "Ana Sayfa"
@@ -76,84 +130,198 @@ def index_page() -> str:
     try:
         ai_categories = fetch_ai_categories_from_db()
         if not ai_categories:
-            flash("AI kategorileri yüklenirken bir sorun oluştu veya hiç kategori bulunamadı. Lütfen daha sonra tekrar deneyin.", "warning")
-            ai_categories = [{"id":0, "name": "Kategoriler Yüklenemedi", "icon": "bi-exclamation-triangle", "models": []}]
+            flash("AI kategorileri yüklenirken bir sorun oluştu veya hiç kategori bulunamadı.", "warning")
+            ai_categories = [{"id": 0, "name": "Kategoriler Yüklenemedi", "icon": "bi-exclamation-triangle", "models": []}]
     except Exception as e:
-        current_app.logger.error(f"Ana sayfa kategorileri yüklenirken hata oluştu: {str(e)}", exc_info=True)
-        flash("Sayfa yüklenirken beklenmedik bir sunucu hatası oluştu. Lütfen sistem yöneticisi ile iletişime geçin.", "danger")
-        ai_categories = [{"id":0, "name": "Sunucu Hatası", "icon": "bi-server", "models": []}]
+        logger.error(f"Ana sayfa kategorileri yüklenirken hata: {str(e)}", exc_info=True)
+        flash("Sayfa yüklenirken beklenmedik bir sunucu hatası oluştu.", "danger")
+        ai_categories = [{"id": 0, "name": "Sunucu Hatası", "icon": "bi-server", "models": []}]
 
     return render_template('index.html', ai_categories=ai_categories, title=page_title)
 
 # =============================================================================
-# 5.0 API ROTALARI (API ROUTES - JSON)
+# API ROTALARI (API ROUTES - JSON)
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# 5.1. Sohbet mesajını işler ve AI yanıtını döndürür (send_message)
-#      Rota: /send_message (POST)
-# -----------------------------------------------------------------------------
-@main_bp.route('/send_message', methods=['POST'])
+@main_bp.route('/api/send_message', methods=['POST', 'OPTIONS'])
+@cross_origin()
 def send_message() -> Tuple[str, int]:
     """
-    Kullanıcıdan gelen sohbet mesajını alır, AI modeline BaseAIService
-    aracılığıyla gönderir ve AI'dan gelen cevabı JSON formatında döndürür.
+    İyileştirilmiş sohbet mesajı işleme endpoint'i.
+    
+    Request Format:
+    {
+        "aiModelId": int,
+        "chat_message": str (optional),
+        "history": [
+            {
+                "role": "user|assistant",
+                "content": str
+            }
+        ] (optional)
+    }
+    
+    Response Format:
+    {
+        "success": bool,
+        "message": str,
+        "data": {
+            "response": str,
+            "model_id": int,
+            "processing_time": float
+        },
+        "timestamp": str
+    }
     """
+    start_time = datetime.utcnow()
     db_connection_instance: Optional[DatabaseConnection] = None
+    
     try:
-        data: Optional[Dict[str, Any]] = request.json
-        if not data:
-            return jsonify({"error": "İstek gövdesi JSON formatında olmalı ve boş olamaz."}), 400
-
-        model_id_str: Optional[str] = data.get('aiModelId') # Frontend'den string olarak gelebilir
-        chat_message: Optional[str] = data.get('chat_message')
-        chat_history: List[Dict[str, str]] = data.get('history', [])
-
-        if not model_id_str: # Model ID'si string veya int olabilir, int'e çevirmeye çalışacağız
-            return jsonify({"error": "'aiModelId' alanı zorunludur."}), 400
-
+        # OPTIONS request için CORS headers döndür
+        if request.method == 'OPTIONS':
+            return '', 200
+        
+        # Request verilerini al ve doğrula
         try:
-            model_id_int = int(model_id_str) # Integer'a çevirmeyi dene
-        except ValueError:
-            return jsonify({"error": "'aiModelId' geçerli bir sayı olmalıdır."}), 400
-
-
-        if not chat_message and not chat_history: # Mesaj veya geçmişten en az biri olmalı
-            return jsonify({"error": "'chat_message' veya 'chat_history' alanlarından en az biri dolu olmalıdır."}), 400
-
-        db_connection_instance = DatabaseConnection() # Her istek için yeni bağlantı
+            data = request.get_json(force=True)
+        except Exception:
+            return create_error_response("Geçersiz JSON formatı.")
+        
+        # Input validation
+        is_valid, error_message = validate_chat_request(data)
+        if not is_valid:
+            return create_error_response(error_message)
+        
+        # Verileri çıkar
+        model_id = int(data['aiModelId'])
+        chat_message = data.get('chat_message', '').strip() or None
+        chat_history = data.get('history', [])
+        
+        logger.info(f"Chat request received - Model ID: {model_id}, Message: {bool(chat_message)}, History: {len(chat_history)} messages")
+        
+        # Database bağlantısı oluştur
+        db_connection_instance = DatabaseConnection()
         model_repository = ModelRepository(db_connection_instance)
-
+        
+        # AI servisini başlat
         base_ai_service = BaseAIService(
             model_repository=model_repository,
             config=current_app.config
         )
-
-        response_data: Dict[str, Any] = base_ai_service.process_chat_request(
-            model_id=model_id_int, # Artık integer
+        
+        # Chat isteğini işle
+        response_data = base_ai_service.process_chat_request(
+            model_id=model_id,
             chat_message=chat_message,
             chat_history=chat_history
         )
-
-        status_code: int = response_data.get("status_code", 200 if "error" not in response_data else 400)
-        if "status_code" in response_data:
-            del response_data["status_code"]
-
-        return jsonify(response_data), status_code
-
-    except json.JSONDecodeError:
-        current_app.logger.warning(f"Geçersiz JSON formatı /send_message: {request.data.decode(errors='ignore')}", exc_info=True)
-        return jsonify({"error": "Geçersiz JSON formatı."}), 400
+        
+        # İşlem süresini hesapla
+        processing_time = (datetime.utcnow() - start_time).total_seconds()
+        
+        # Yanıtı kontrol et
+        if "error" in response_data:
+            logger.warning(f"AI service error: {response_data.get('error')}")
+            return create_error_response(
+                response_data["error"],
+                response_data.get("details"),
+                response_data.get("status_code", 500)
+            )
+        
+        # Başarılı yanıt
+        result_data = {
+            "response": response_data.get("response", ""),
+            "model_id": model_id,
+            "processing_time": processing_time
+        }
+        
+        logger.info(f"Chat request completed successfully - Processing time: {processing_time:.2f}s")
+        
+        return jsonify(create_success_response(result_data, "Mesaj başarıyla işlendi")), 200
+        
+    except json.JSONDecodeError as e:
+        logger.warning(f"JSON decode error: {str(e)}")
+        return create_error_response("Geçersiz JSON formatı.")
+        
+    except ValueError as e:
+        logger.warning(f"Validation error: {str(e)}")
+        return create_error_response(str(e))
+        
     except Exception as e:
-        current_app.logger.error(f"/send_message rotasında genel hata: {str(e)}", exc_info=True)
-        error_details = {"error": "Mesaj işlenirken sunucuda beklenmedik bir hata oluştu."}
-        if current_app.debug:
-            error_details["details"] = str(e)
-            error_details["trace"] = traceback.format_exc()
-        return jsonify(error_details), 500
+        logger.error(f"Unexpected error in send_message: {str(e)}", exc_info=True)
+        return create_error_response(
+            "Mesaj işlenirken sunucuda beklenmedik bir hata oluştu.",
+            str(e) if current_app.debug else None,
+            500
+        )
+        
     finally:
-        if db_connection_instance: # Bağlantı örneği oluşturulduysa kapat
-            db_connection_instance.close()
+        if db_connection_instance:
+            try:
+                db_connection_instance.close()
+            except Exception as e:
+                logger.error(f"Error closing database connection: {str(e)}")
 
+@main_bp.route('/api/health', methods=['GET'])
+@cross_origin()
+def health_check() -> Tuple[str, int]:
+    """
+    API sağlık kontrolü endpoint'i
+    """
+    try:
+        # Database bağlantısını test et
+        db_connection = DatabaseConnection()
+        db_connection.close()
+        
+        health_data = {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+        return jsonify(create_success_response(health_data, "Sistem sağlıklı")), 200
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return create_error_response("Sistem sağlık kontrolü başarısız", str(e), 503)
 
+@main_bp.route('/api/models', methods=['GET'])
+@cross_origin()
+def get_models() -> Tuple[str, int]:
+    """
+    Mevcut AI modellerini listeler
+    """
+    try:
+        ai_categories = fetch_ai_categories_from_db()
+        
+        models_data = {
+            "categories": ai_categories,
+            "total_models": sum(len(cat.get('models', [])) for cat in ai_categories)
+        }
+        
+        return jsonify(create_success_response(models_data, "Modeller başarıyla listelendi")), 200
+        
+    except Exception as e:
+        logger.error(f"Error fetching models: {str(e)}")
+        return create_error_response("Modeller yüklenirken hata oluştu", str(e), 500)
+
+# =============================================================================
+# ERROR HANDLERS
+# =============================================================================
+
+@main_bp.errorhandler(404)
+def not_found(error):
+    """404 hata handler'ı"""
+    return create_error_response("Endpoint bulunamadı", status_code=404)
+
+@main_bp.errorhandler(405)
+def method_not_allowed(error):
+    """405 hata handler'ı"""
+    return create_error_response("HTTP metodu desteklenmiyor", status_code=405)
+
+@main_bp.errorhandler(500)
+def internal_error(error):
+    """500 hata handler'ı"""
+    logger.error(f"Internal server error: {str(error)}")
+    return create_error_response("Sunucu hatası", status_code=500)
 

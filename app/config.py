@@ -13,3 +13,18 @@ DB_CONFIG = {
 #     'GEMINI_API_KEY': 'YOUR_GEMINI_API_KEY_HERE'
 # }
 # DEBUG = True
+
+
+# AI Service Cache Configuration
+AI_SERVICE_CACHE = {
+    'max_size': 50,
+    'ttl_hours': 24
+}
+
+# Database Pool Configuration
+DB_CONFIG.update({
+    'pool_size': 10,
+    'pool_reset_session': True
+})
+
+

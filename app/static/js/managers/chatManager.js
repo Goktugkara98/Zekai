@@ -214,27 +214,31 @@ const ChatManager = (function() {
         try {
             // Konuşma geçmişini hazırla (son mesaj hariç)
             const conversationHistory = chat.messages
-                .slice(0, -1)
+                .slice(0, -1) // Son mesajı hariç tut (şu anki mesaj)
                 .filter(msg => msg.text && String(msg.text).trim() !== '')
                 .map(msg => ({
-                    role: msg.isUser ? 'user' : 'model',
-                    parts: [{ text: String(msg.text).trim() }]
+                    role: msg.isUser ? 'user' : 'assistant', // Backend 'assistant' bekliyor, 'model' değil
+                    content: String(msg.text).trim() // Backend 'content' bekliyor, 'parts' değil
                 }));
+                
+            console.log('Sending conversation history:', conversationHistory);
 
             // API'ye gönder
-            const response = await APIManager.sendMessage(
+            const apiResponse = await APIManager.sendMessage(
                 chatId,
                 chat.aiModelId,
                 text,
                 conversationHistory
             );
 
-            if (!response.response || typeof response.response !== 'string') {
-                throw new Error("AI'dan geçersiz yanıt formatı.");
+            // Backend'den gelen yanıtı işle
+            if (!apiResponse || !apiResponse.data || typeof apiResponse.data.response !== 'string') {
+                console.error('Invalid API response format:', apiResponse);
+                throw new Error("AI'dan geçersiz yanıt formatı alındı.");
             }
 
             // AI yanıtını ekle ve state'i güncelle
-            const aiMessage = addMessage(chatId, response.response, false);
+            const aiMessage = addMessage(chatId, apiResponse.data.response, false);
             
             // State'i güncelle
             const chats = StateManager.getState('chats');

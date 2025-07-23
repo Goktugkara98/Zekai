@@ -1,6 +1,7 @@
 import sys
 import os
 import secrets
+import logging
 
 # Projenin kök dizinini (app klasörünün ebeveyni olan Zekai klasörü) sys.path'e ekle.
 # Bu, app/main.py'den bir üst dizin.
@@ -10,25 +11,46 @@ if PACKAGE_PARENT not in sys.path:
     sys.path.insert(0, PACKAGE_PARENT)
 
 from flask import Flask
-from app.models.migrations import DatabaseMigrations # app. öneki eklendi
-from app.routes.main_routes import main_bp # app. öneki eklendi
-from app.routes.admin_routes import admin_bp # app. öneki eklendi
+from flask_cors import CORS
+from app.models.migrations import DatabaseMigrations  # app. öneki eklendi
+from app.routes.main_routes import main_bp  # app. öneki eklendi
+from app.routes.admin_routes import admin_bp  # app. öneki eklendi
 
+# Uygulama oluştur
 app = Flask(__name__)
 
-# Configure application
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
+# Uygulama yapılandırması
+app.config.update(
+    SECRET_KEY=os.environ.get('SECRET_KEY', secrets.token_hex(16)),
+    SESSION_TYPE='filesystem',
+    SESSION_PERMANENT=False,
+    USE_MOCK_API='false'  # Test için mock modu
+)
 
-# AI Service Configuration
-app.config['USE_MOCK_API'] = 'false'  # Enable mock mode for testing
+# Logging konfigürasyonu
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
 
-# Register Blueprints
+# CORS'u etkinleştir
+cors = CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
+
+# Blueprint'leri kaydet
 app.register_blueprint(main_bp)
 app.register_blueprint(admin_bp)
 
 if __name__ == '__main__':
-    db_migrations = DatabaseMigrations() # Call the initializer
+    db_migrations = DatabaseMigrations()  # Veritabanı başlatıcıyı çağır
     db_migrations.create_all_tables()
     app.run(debug=True)

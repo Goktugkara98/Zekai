@@ -11,7 +11,7 @@ const APIManager = (function() {
 
     // API konfigürasyonu
     const config = {
-        baseURL: '',
+        baseURL: 'http://localhost:5000',
         timeout: 30000,
         retryAttempts: 3,
         retryDelay: 1000
@@ -42,6 +42,14 @@ const APIManager = (function() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), finalOptions.timeout);
 
+            console.log('Sending request to:', fullURL, 'with options:', {
+                method: finalOptions.method,
+                headers: finalOptions.headers,
+                body: finalOptions.body ? JSON.parse(finalOptions.body) : null,
+                signal: 'AbortController signal set',
+                timeout: finalOptions.timeout
+            });
+
             const response = await fetch(fullURL, {
                 ...finalOptions,
                 signal: controller.signal
@@ -49,12 +57,46 @@ const APIManager = (function() {
 
             clearTimeout(timeoutId);
 
+            console.log('Received response:', {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                ok: response.ok,
+                redirected: response.redirected,
+                type: response.type,
+                url: response.url
+            });
+
             if (!response.ok) {
-                throw new APIError(
+                let errorBody;
+                try {
+                    errorBody = await response.text();
+                    // Try to parse as JSON, if it fails, keep as text
+                    try {
+                        errorBody = JSON.parse(errorBody);
+                    } catch (e) {
+                        // Not JSON, keep as text
+                    }
+                } catch (e) {
+                    errorBody = 'Could not parse error response';
+                }
+
+                const error = new APIError(
                     `HTTP ${response.status}: ${response.statusText}`,
                     response.status,
                     response
                 );
+                
+                error.responseBody = errorBody;
+                console.error('API Error Response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: fullURL,
+                    response: errorBody,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                
+                throw error;
             }
 
             const data = await response.json();
@@ -62,8 +104,40 @@ const APIManager = (function() {
 
             return data;
         } catch (error) {
+            console.error('Request Error Details:', {
+                url: fullURL,
+                method: finalOptions.method,
+                error: {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack,
+                    isAbortError: error.name === 'AbortError',
+                    isNetworkError: error.message.includes('Failed to fetch') || 
+                                  error.message.includes('NetworkError') ||
+                                  error.message.includes('fetch failed')
+                },
+                requestOptions: {
+                    method: finalOptions.method,
+                    headers: finalOptions.headers,
+                    body: finalOptions.body ? JSON.parse(finalOptions.body) : null
+                }
+            });
+            
             Logger.error('APIManager', `Request failed: ${fullURL}`, error);
-            throw error;
+            
+            // Enhance the error with more context
+            const enhancedError = new Error(`Request to ${url} failed: ${error.message}`);
+            enhancedError.originalError = error;
+            enhancedError.url = fullURL;
+            enhancedError.method = finalOptions.method;
+            
+            if (error.name === 'AbortError') {
+                enhancedError.message = `Request to ${url} timed out after ${finalOptions.timeout}ms`;
+            } else if (error.message.includes('Failed to fetch')) {
+                enhancedError.message = `Network error: Could not connect to ${url}. Please check your internet connection.`;
+            }
+            
+            throw enhancedError;
         }
     }
 
@@ -78,12 +152,32 @@ const APIManager = (function() {
         try {
             return await request(url, options);
         } catch (error) {
+            // Log detailed error information
+            console.error('Request Error Details:', {
+                url,
+                options,
+                error: {
+                    name: error.name,
+                    message: error.message,
+                    status: error.status,
+                    response: error.response,
+                    stack: error.stack
+                },
+                remainingAttempts: attempts - 1
+            });
+
             if (attempts > 1 && shouldRetry(error)) {
                 Logger.warn('APIManager', `Retrying request to ${url}. Attempts left: ${attempts - 1}`);
                 await delay(config.retryDelay);
                 return requestWithRetry(url, options, attempts - 1);
             }
-            throw error;
+            
+            // Enhance the error with more context before throwing
+            const enhancedError = new Error(`Request failed after ${config.retryAttempts} attempts: ${error.message}`);
+            enhancedError.originalError = error;
+            enhancedError.url = url;
+            enhancedError.options = options;
+            throw enhancedError;
         }
     }
 
@@ -129,7 +223,7 @@ const APIManager = (function() {
         EventBus.emit('api:message:sending', { chatId, message });
 
         try {
-            const response = await requestWithRetry('/send_message', {
+            const response = await requestWithRetry('/api/send_message', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
@@ -137,8 +231,29 @@ const APIManager = (function() {
             EventBus.emit('api:message:sent', { chatId, response });
             return response;
         } catch (error) {
-            EventBus.emit('api:message:error', { chatId, error });
-            throw error;
+            // Log detailed error information
+            console.error('API Error Details:', {
+                message: error.message,
+                status: error.status,
+                response: error.response,
+                stack: error.stack
+            });
+            
+            // Emit the error event with more details
+            EventBus.emit('api:message:error', { 
+                chatId, 
+                error: {
+                    message: error.message,
+                    status: error.status,
+                    response: error.response
+                } 
+            });
+            
+            // Re-throw the error with more context
+            const enhancedError = new Error(`Failed to send message: ${error.message}`);
+            enhancedError.originalError = error;
+            enhancedError.chatId = chatId;
+            throw enhancedError;
         }
     }
 
