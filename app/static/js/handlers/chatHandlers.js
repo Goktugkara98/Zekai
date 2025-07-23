@@ -242,19 +242,33 @@ const ChatHandlers = (function() {
         Logger.debug('ChatHandlers', 'Message sending started', data);
         
         const { chatId, message } = data;
-        
-        // Loading mesajı ekle
-        const aiTypes = StateManager.getState('aiTypes');
         const chat = ChatManager.getChat(chatId);
+        if (!chat) return;
+        
+        // Add user message to UI immediately
+        const chatElement = document.querySelector(`.chat-window[data-chat-id="${chatId}"]`);
+        if (chatElement) {
+            const messagesContainer = chatElement.querySelector('.chat-messages');
+            if (messagesContainer) {
+                const userMessageHTML = MessageRenderer.createMessageHTML(
+                    message,
+                    false,
+                    'You',
+                    null,
+                    true
+                );
+                messagesContainer.insertAdjacentHTML('beforeend', userMessageHTML);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+        
+        // Add loading indicator for AI response
+        const aiTypes = StateManager.getState('aiTypes') || [];
         const aiModel = aiTypes.find(m => m.id === chat.aiModelId);
         const aiName = aiModel ? aiModel.name : 'AI';
         
         const loadingElement = UIManager.addLoadingMessage(chatId, aiName);
-        
-        // Loading element'i chat'e kaydet (daha sonra değiştirmek için)
-        if (chat) {
-            chat._loadingElement = loadingElement;
-        }
+        chat._loadingElement = loadingElement;
     }
 
     /**
@@ -267,26 +281,120 @@ const ChatHandlers = (function() {
         const { chatId, userMessage, aiMessage, isFirstUserMessage } = data;
         const chat = ChatManager.getChat(chatId);
         
-        if (chat && chat._loadingElement) {
-            // Loading mesajını gerçek AI mesajıyla değiştir
-            const aiTypes = StateManager.getState('aiTypes');
-            const aiModel = aiTypes.find(m => m.id === chat.aiModelId);
-            const aiName = aiModel ? aiModel.name : 'AI';
-            
-            const messageHTML = MessageRenderer.createMessageHTML(
-                aiMessage, 
-                chat.messages.filter(m => !m.isUser).length === 1, // İlk AI mesajı mı?
-                aiName, 
-                chat.aiModelId
-            );
-            
-            UIManager.replaceLoadingMessage(chat._loadingElement, messageHTML);
-            delete chat._loadingElement;
+        if (!chat) {
+            Logger.error('ChatHandlers', `Chat not found: ${chatId}`);
+            return;
         }
         
-        // İlk kullanıcı mesajıysa dropdown'ları güncelle - FLASH EFEKTİNİ ÖNLEMEK İÇİN OPTİMİZE EDİLDİ
+        // Ensure the chat has the latest messages
+        const updatedChat = ChatManager.getChat(chatId);
+        if (!updatedChat) {
+            Logger.error('ChatHandlers', `Failed to get updated chat: ${chatId}`);
+            return;
+        }
+        
+        // Get the chat element
+        const chatElement = document.querySelector(`.chat-window[data-chat-id="${chatId}"]`);
+        if (!chatElement) {
+            Logger.error('ChatHandlers', `Chat element not found for chat: ${chatId}`);
+            return;
+        }
+        
+        // Get the messages container
+        const messagesContainer = chatElement.querySelector('.chat-messages');
+        if (!messagesContainer) {
+            Logger.error('ChatHandlers', 'Messages container not found in chat element');
+            return;
+        }
+        
+        // Remove the loading indicator if it exists
+        const loadingElement = chatElement.querySelector('.message.ai-message.loading-dots');
+        if (loadingElement) {
+            loadingElement.remove();
+        }
+        
+        // Add the AI's response to the chat
+        if (aiMessage && aiMessage.text) {
+            // Check if this message already exists in the chat
+            const messageExists = updatedChat.messages.some(m => 
+                m.timestamp === aiMessage.timestamp && m.text === aiMessage.text && !m.isUser
+            );
+            
+            if (!messageExists) {
+                // Add the message to the chat state
+                const addedMessage = ChatManager.addMessage(chatId, aiMessage.text, false);
+                
+                // Render the AI's response
+                const aiTypes = StateManager.getState('aiTypes') || [];
+                const aiModel = aiTypes.find(m => m.id === updatedChat.aiModelId);
+                const aiName = aiModel ? aiModel.name : 'AI';
+                
+                const aiMessageHTML = MessageRenderer.createMessageHTML(
+                    aiMessage.text,
+                    false,
+                    aiName,
+                    null,
+                    false
+                );
+                
+                // Add the AI's response to the chat
+                messagesContainer.insertAdjacentHTML('beforeend', aiMessageHTML);
+                
+                // Scroll to the bottom of the chat
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+        
+        try {
+            // Handle the AI's response
+            if (aiMessage) {
+                // Get the AI model info for display
+                const aiTypes = StateManager.getState('aiTypes') || [];
+                const aiModel = aiTypes.find(m => m.id === chat.aiModelId);
+                const aiName = aiModel ? aiModel.name : 'AI';
+                
+                // Create the message HTML
+                const isFirstAIMessage = chat.messages.filter(m => !m.isUser).length === 1;
+                const messageHTML = MessageRenderer.createMessageHTML(
+                    aiMessage, 
+                    isFirstAIMessage,
+                    aiName, 
+                    chat.aiModelId
+                );
+                
+                // Always remove loading element if it exists
+                if (chat._loadingElement && chat._loadingElement.parentNode) {
+                    chat._loadingElement.remove();
+                    delete chat._loadingElement;
+                }
+                
+                // Append the AI's response
+                const chatElement = document.querySelector(`.chat-window[data-chat-id="${chatId}"]`);
+                if (chatElement) {
+                    const messagesContainer = chatElement.querySelector('.chat-messages');
+                    if (messagesContainer) {
+                        messagesContainer.insertAdjacentHTML('beforeend', messageHTML);
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                }
+            }
+        } catch (error) {
+            Logger.error('ChatHandlers', 'Error handling sent message', error);
+            // Fallback to showing an error message
+            if (chat._loadingElement) {
+                const errorHTML = MessageRenderer.createMessageHTML(
+                    { text: 'Üzgünüm, mesaj işlenirken bir hata oluştu.' },
+                    false,
+                    'Sistem',
+                    chat.aiModelId
+                );
+                UIManager.replaceLoadingMessage(chat._loadingElement, errorHTML);
+                delete chat._loadingElement;
+            }
+        }
+        
+        // Update dropdowns if this is the first user message (optimized to prevent flash)
         if (isFirstUserMessage) {
-            // Debounce ile dropdown güncelleme
             clearTimeout(window._messageDropdownUpdateTimeout);
             window._messageDropdownUpdateTimeout = setTimeout(() => {
                 UIManager.renderActiveChatsDropdown();

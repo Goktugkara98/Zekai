@@ -233,8 +233,34 @@ const ChatManager = (function() {
                 throw new Error("AI'dan geçersiz yanıt formatı.");
             }
 
-            // AI yanıtını ekle
+            // AI yanıtını ekle ve state'i güncelle
             const aiMessage = addMessage(chatId, response.response, false);
+            
+            // State'i güncelle
+            const chats = StateManager.getState('chats');
+            const chatIndex = chats.findIndex(c => c.id === chatId);
+            
+            if (chatIndex !== -1) {
+                // Chat'i güncelle
+                const updatedChat = { ...chats[chatIndex] };
+                
+                // Eğer mesaj zaten eklenmediyse ekle
+                const messageExists = updatedChat.messages.some(m => 
+                    m.timestamp === aiMessage.timestamp && m.text === aiMessage.text
+                );
+                
+                if (!messageExists) {
+                    updatedChat.messages = [...updatedChat.messages, aiMessage];
+                    updatedChat.lastActivity = Date.now();
+                    
+                    // State'i güncelle
+                    const updatedChats = [...chats];
+                    updatedChats[chatIndex] = updatedChat;
+                    StateManager.setState('chats', updatedChats);
+                    
+                    Logger.debug('ChatManager', `AI response added to chat state: ${chatId}`, aiMessage);
+                }
+            }
 
             Logger.info('ChatManager', `Message sent and response received for chat ${chatId}`);
             EventBus.emit('chat:message:sent', { 
@@ -298,19 +324,20 @@ const ChatManager = (function() {
      * Chat'in AI modelini değiştirir
      * @param {string} chatId - Chat ID
      * @param {number} newAiModelId - Yeni AI Model ID
+     * @returns {object} Güncellenmiş chat objesi
      */
     function changeAIModel(chatId, newAiModelId) {
         Logger.action('ChatManager', `Changing AI model for chat ${chatId}`, { newAiModelId });
 
-        const chat = getChat(chatId);
-        if (!chat) {
+        const chats = StateManager.getState('chats');
+        const chatIndex = chats.findIndex(c => c.id === chatId);
+        
+        if (chatIndex === -1) {
             throw new Error(`Chat bulunamadı: ${chatId}`);
         }
 
-        // Mesajlaşma başladıysa model değiştirilemez
-        if (chat.messages && chat.messages.some(msg => msg.isUser)) {
-            throw new Error('Konuşma başladıktan sonra model değiştirilemez.');
-        }
+        const chat = chats[chatIndex];
+        const oldModelId = chat.aiModelId;
 
         // Model validasyonu
         const aiTypes = StateManager.getState('aiTypes');
@@ -320,17 +347,31 @@ const ChatManager = (function() {
             throw new Error(`Geçersiz AI Modeli: ${newAiModelId}`);
         }
 
-        // Modeli güncelle
-        chat.aiModelId = Number(newAiModelId);
-        const chats = StateManager.getState('chats');
-        StateManager.setState('chats', chats);
+        // Chat'i güncelle
+        const updatedChat = {
+            ...chat,
+            aiModelId: Number(newAiModelId),
+            lastActivity: Date.now()
+        };
+
+        // State'i güncelle
+        const updatedChats = [...chats];
+        updatedChats[chatIndex] = updatedChat;
+        StateManager.setState('chats', updatedChats);
 
         Logger.info('ChatManager', `AI model changed for chat ${chatId}`, { 
-            oldModelId: chat.aiModelId, 
+            oldModelId,
             newModelId: newAiModelId 
         });
 
-        EventBus.emit('chat:model:changed', { chatId, oldModelId: chat.aiModelId, newModelId: Number(newAiModelId), newModel });
+        EventBus.emit('chat:model:changed', { 
+            chatId, 
+            oldModelId, 
+            newModelId: Number(newAiModelId),
+            newModel 
+        });
+
+        return updatedChat;
     }
 
     /**
