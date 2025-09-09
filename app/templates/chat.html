@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sohbet - Zekai</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/chat-panes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/input-bar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/chat.css') }}">
+</head>
+<body>
+<div class="chat-container">
+    <!-- Sidebar -->
+    <aside class="chat-sidebar">
+        <!-- Logo Section -->
+        <div class="sidebar-logo">
+            <div class="logo-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <span class="logo-text">Zekai.ai</span>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="sidebar-content">
+            <!-- Primary Section -->
+            <div class="sidebar-section">
+                <div class="section-title">PRIMARY</div>
+                <div class="sidebar-item active">
+                    <i class="fas fa-play-circle"></i>
+                    <span>Playground</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fas fa-microphone"></i>
+                    <span>VoiceType (New)</span>
+                </div>
+            </div>
+
+        <!-- AI Models Section -->
+        <div class="sidebar-section">
+            <div class="section-header" data-target="ai-models">
+                <div class="section-title">AI MODELS</div>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>
+            <div class="collapsible-content" id="ai-models">
+                <div class="model-list">
+                    <div class="model-item">
+                        <div class="model-icon chatgpt-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <span>ChatGPT-5</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon gemini-icon">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <span>Gemini 2.5 Flash</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon claude-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <span>Claude Sonnet 4</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon deepseek-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <span>DeepSeek V3 0324</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon llama-icon">
+                            <i class="fas fa-mountain"></i>
+                        </div>
+                        <span>Llama 4 Scout</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon perplexity-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <span>Perplexity Sonar Pro</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon gemini-icon">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <span>Gemini 2.0 Flash</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon gemini-icon">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <span>Gemini 1.5 Pro</span>
+                    </div>
+                    <div class="model-item">
+                        <div class="model-icon chatgpt-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <span>ChatGPT-4o</span>
+                    </div>
+                </div>
+                <button class="pin-more-btn">
+                    <i class="fas fa-plus"></i>
+                    Pin More Models
+                </button>
+            </div>
+        </div>
+
+        <!-- Categories Section -->
+        <div class="sidebar-section">
+            <div class="section-header" data-target="categories">
+                <div class="section-title">CATEGORIES</div>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>
+            <div class="collapsible-content" id="categories">
+                <div class="category-list">
+                    <div class="category-item">
+                        <i class="fas fa-code"></i>
+                        <span>Programming</span>
+                    </div>
+                    <div class="category-item">
+                        <i class="fas fa-palette"></i>
+                        <span>Creative Writing</span>
+                    </div>
+                    <div class="category-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Business</span>
+                    </div>
+                    <div class="category-item">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Education</span>
+                    </div>
+                    <div class="category-item">
+                        <i class="fas fa-heart"></i>
+                        <span>Health & Wellness</span>
+                    </div>
+                    <div class="category-item">
+                        <i class="fas fa-gamepad"></i>
+                        <span>Gaming</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Chats Section -->
+        <div class="sidebar-section">
+            <div class="section-header" data-target="active-chats">
+                <div class="section-title">ACTIVE CHATS</div>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>
+            <div class="collapsible-content" id="active-chats">
+                <div class="chat-list">
+                    <div class="chat-item">
+                        <div class="chat-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name">ChatGPT-5</div>
+                            <div class="chat-preview">How to implement authentication...</div>
+                        </div>
+                        <div class="chat-time">2m</div>
+                    </div>
+                    <div class="chat-item">
+                        <div class="chat-avatar gemini-avatar">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name">Gemini 2.5 Flash</div>
+                            <div class="chat-preview">Explain quantum computing...</div>
+                        </div>
+                        <div class="chat-time">5m</div>
+                    </div>
+                    <div class="chat-item">
+                        <div class="chat-avatar claude-avatar">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="chat-info">
+                            <div class="chat-name">Claude Sonnet 4</div>
+                            <div class="chat-preview">Write a business plan for...</div>
+                        </div>
+                        <div class="chat-time">1h</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat History Section -->
+        <div class="sidebar-section">
+            <div class="section-header" data-target="chat-history">
+                <div class="section-title">CHAT HISTORY</div>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>
+            <div class="collapsible-content" id="chat-history">
+                <div class="history-list">
+                    <div class="history-group">
+                        <div class="history-date">Today</div>
+                        <div class="history-item">
+                            <i class="fas fa-robot"></i>
+                            <span>Python Web Development</span>
+                        </div>
+                        <div class="history-item">
+                            <i class="fab fa-google"></i>
+                            <span>Machine Learning Basics</span>
+                        </div>
+                    </div>
+                    <div class="history-group">
+                        <div class="history-date">Yesterday</div>
+                        <div class="history-item">
+                            <i class="fas fa-brain"></i>
+                            <span>Creative Writing Workshop</span>
+                        </div>
+                        <div class="history-item">
+                            <i class="fas fa-search"></i>
+                            <span>Data Analysis Project</span>
+                        </div>
+                    </div>
+                    <div class="history-group">
+                        <div class="history-date">This Week</div>
+                        <div class="history-item">
+                            <i class="fas fa-mountain"></i>
+                            <span>Business Strategy</span>
+                        </div>
+                        <div class="history-item">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Research Questions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+        <!-- Bottom Links -->
+        <div class="sidebar-bottom">
+            <div class="bottom-link">
+                <i class="fas fa-handshake"></i>
+                <span>Affiliates</span>
+            </div>
+            <div class="bottom-link">
+                <i class="fas fa-life-ring"></i>
+                <span>Support</span>
+            </div>
+            <div class="bottom-link">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-main">
+        <!-- Chat Panes Container -->
+        <div class="chat-panes-container">
+            <!-- Empty State -->
+            <div class="empty-chat-state">
+                <div class="empty-chat-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h2>Welcome to Zekai.ai</h2>
+                <p>Select a model from the sidebar to start chatting</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Bar -->
+    <div class="input-bar">
+        <div class="layout-controls">
+            <button class="layout-btn active" data-layout="single">
+                <i class="fas fa-square"></i>
+            </button>
+            <button class="layout-btn" data-layout="vertical">
+                <i class="fas fa-columns"></i>
+            </button>
+            <button class="layout-btn" data-layout="horizontal">
+                <i class="fas fa-grip-lines"></i>
+            </button>
+            <button class="layout-btn" data-layout="grid">
+                <i class="fas fa-th"></i>
+            </button>
+            <button class="layout-btn" data-layout="image">
+                <i class="fas fa-image"></i>
+            </button>
+        </div>
+
+        <div class="input-container">
+            <textarea 
+                class="message-input" 
+                placeholder="Use Shift+Enter to add new line."
+                rows="1"
+            ></textarea>
+            <button class="attachment-btn">
+                <i class="fas fa-paperclip"></i>
+            </button>
+        </div>
+
+        <div class="input-actions">
+            <button class="action-btn prompts-btn">
+                <i class="fas fa-lightbulb"></i>
+                Prompts
+            </button>
+            <button class="action-btn send-btn">
+                <i class="fas fa-paper-plane"></i>
+                Send
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JS -->
+<script type="module" src="{{ url_for('static', filename='js/chat/chat-new.js') }}"></script>
+</body>
+</html>

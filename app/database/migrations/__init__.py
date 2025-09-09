@@ -1,9 +1,9 @@
 # =============================================================================
-# ROUTES PACKAGE
+# MIGRATIONS PACKAGE
 # =============================================================================
-# Bu paket, uygulama rotalarını içerir.
+# Bu paket, veritabanı tablolarının oluşturulması için migration dosyalarını içerir.
 # =============================================================================
 
-from .main_routes import main_bp
+from .0000_models import create_models_table, drop_models_table
 
-__all__ = ['main_bp']
+__all__ = ['create_models_table', 'drop_models_table']

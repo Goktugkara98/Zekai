@@ -1,9 +1,10 @@
 # =============================================================================
-# ROUTES PACKAGE
+# API PACKAGE
 # =============================================================================
-# Bu paket, uygulama rotalarını içerir.
+# Bu paket, API endpoint'lerini içerir.
 # =============================================================================
 
-from .main_routes import main_bp
+from .models import models_bp
+from .health import health_bp
 
-__all__ = ['main_bp']
+__all__ = ['models_bp', 'health_bp']

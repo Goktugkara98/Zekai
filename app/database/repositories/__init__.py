@@ -1,9 +1,9 @@
 # =============================================================================
-# ROUTES PACKAGE
+# REPOSITORIES PACKAGE
 # =============================================================================
-# Bu paket, uygulama rotalarını içerir.
+# Bu paket, veritabanı CRUD işlemleri için repository sınıflarını içerir.
 # =============================================================================
 
-from .main_routes import main_bp
+from .model_repository import ModelRepository
 
-__all__ = ['main_bp']
+__all__ = ['ModelRepository']

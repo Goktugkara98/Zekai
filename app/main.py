@@ -1,56 +1,46 @@
 import sys
 import os
-import secrets
-import logging
+from flask import Flask
+from dotenv import load_dotenv
 
-# Projenin kök dizinini (app klasörünün ebeveyni olan Zekai klasörü) sys.path'e ekle.
-# Bu, app/main.py'den bir üst dizin.
-# Böylece 'from app.models import ...' gibi importlar çalışır.
+# Projenin kök dizinini sys.path'e ekle
 PACKAGE_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if PACKAGE_PARENT not in sys.path:
     sys.path.insert(0, PACKAGE_PARENT)
 
-from flask import Flask
-from flask_cors import CORS
-from app.models.migrations import DatabaseMigrations  # app. öneki eklendi
-from app.routes.main_routes import main_bp  # app. öneki eklendi
-from app.routes.admin_routes import admin_bp  # app. öneki eklendi
+# .env dosyasını yükle
+load_dotenv()
 
-# Uygulama oluştur
+# Database ve routes import
+import importlib.util
+import sys
+
+# 0000_models.py dosyasını import et
+spec = importlib.util.spec_from_file_location("models_migration", "app/database/migrations/0000_models.py")
+models_migration = importlib.util.module_from_spec(spec)
+sys.modules["models_migration"] = models_migration
+spec.loader.exec_module(models_migration)
+
+create_models_table = models_migration.create_models_table
+from app.routes.main_routes import main_bp
+from app.routes.api.models import models_bp
+from app.routes.api.health import health_bp
+
+# Flask uygulaması oluştur
 app = Flask(__name__)
 
-# Uygulama yapılandırması
-app.config.update(
-    SECRET_KEY=os.environ.get('SECRET_KEY', secrets.token_hex(16)),
-    SESSION_TYPE='filesystem',
-    SESSION_PERMANENT=False,
-    USE_MOCK_API='false'  # Test için mock modu
-)
-
-# Logging konfigürasyonu
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
-)
-
-# CORS'u etkinleştir
-cors = CORS(app, resources={
-    r"/api/*": {
-        "origins": "*",
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
+# Config'i .env'den çek
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
 
 # Blueprint'leri kaydet
 app.register_blueprint(main_bp)
-app.register_blueprint(admin_bp)
+app.register_blueprint(models_bp)
+app.register_blueprint(health_bp)
 
 if __name__ == '__main__':
-    db_migrations = DatabaseMigrations()  # Veritabanı başlatıcıyı çağır
-    db_migrations.create_all_tables()
+    # Veritabanı tablolarını oluştur
+    create_models_table()
+    
+    # Programı çalıştır
     app.run(debug=True)

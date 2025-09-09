@@ -1,224 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zekai</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap" rel="stylesheet">
+{% extends "base.html" %}
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/base/variables.css">
-    <link rel="stylesheet" href="/static/css/base/reset.css">
-    <link rel="stylesheet" href="/static/css/layout/sidebar.css">
-    <link rel="stylesheet" href="/static/css/layout/main-content.css">
-    <link rel="stylesheet" href="/static/css/layout/active-chats-sidebar.css">
-    <link rel="stylesheet" href="/static/css/components/buttons.css">
-    <link rel="stylesheet" href="/static/css/components/chat.css">
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-<div class="container-fluid p-0">
-    <div class="d-flex flex-row vh-100">
-        <!-- Sidebar -->
-        <nav id="sidebar" class="d-flex flex-column align-items-stretch">
-            <div class="sidebar-header py-4 px-3">
-                <h1 class="display-5 mb-3 fw-bold Zekai text-center">Zek<span class="AI">ai</span></h1>
+{% block title %}Zekai - AI Chat Platform{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <div class="hero-section mb-5">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-robot text-primary me-3"></i>Zekai
+                </h1>
+                <p class="lead text-muted mb-4">AI destekli sohbet platformu ile geleceğin teknolojisini deneyimleyin</p>
+                <a href="{{ url_for('main.chat') }}" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-comments me-2"></i>Sohbete Başla
+                </a>
             </div>
-            <div class="sidebar-search">
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control" placeholder="Search AI models...">
+        </div>
+    </div>
+    
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-bolt text-primary" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Hızlı</h5>
+                    <p class="card-text text-muted">Anında yanıt alın ve kesintisiz sohbet deneyimi yaşayın</p>
                 </div>
             </div>
-            <!-- AI Categories Section (Collapsible) -->
-            <div class="sidebar-section">
-                <div id="ai-categories-trigger" class="sidebar-heading d-flex justify-content-between align-items-center px-3 py-2 mb-1" 
-                     style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#ai-categories-menu" 
-                     aria-expanded="false" aria-controls="ai-categories-menu">
-                    <span>AI Categories</span>
-                    <i class="bi bi-chevron-down"></i> <!-- Icon to indicate dropdown -->
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-brain text-primary" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Akıllı</h5>
+                    <p class="card-text text-muted">Gelişmiş AI modelleri ile doğal ve akıllı konuşmalar</p>
                 </div>
-                <div id="ai-categories-menu" class="collapse">
-                    <div id="aiCategoriesAccordion">
-                        {% for category in ai_categories %}
-                        <div class="sidebar-category-item">
-                            <div class="sidebar-category-header d-flex justify-content-between align-items-center px-3 py-2" 
-                                 data-bs-toggle="collapse" data-bs-target="#collapse{{ category.name|replace(' ', '') }}" 
-                                 aria-expanded="false" aria-controls="collapse{{ category.name|replace(' ', '') }}"
-                                 style="cursor: pointer;">
-                                <span><i class="bi {{ category.icon }} me-2"></i>{{ category.name }}</span>
-                                <i class="bi bi-chevron-down category-chevron"></i>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 text-center border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-shield-alt text-primary" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Güvenli</h5>
+                    <p class="card-text text-muted">Verileriniz güvende, gizliliğiniz korunur</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center">
+                <h3 class="fw-bold mb-4">Neden Zekai?</h3>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
                             </div>
-                            <div class="collapse" id="collapse{{ category.name|replace(' ', '') }}" data-bs-parent="#aiCategoriesAccordion">
-                                <ul class="list-group list-group-flush">
-                                    {% for model in category.models %}
-                                    <li class="list-group-item list-group-item-action ai-model-selector-item" data-ai-index="{{ model.id }}">
-                                        <span class="ai-icon me-2"><i class="bi {{ model.icon }}"></i></span>
-                                        <span class="ai-name">{{ model.name }}</span>
-                                    </li>
-                                    {% endfor %}
-                                </ul>
+                            <div class="flex-grow-1 text-start">
+                                <h6 class="fw-bold mb-2">Kolay Kullanım</h6>
+                                <p class="text-muted mb-0">Sade ve kullanıcı dostu arayüz ile kolayca sohbet edin</p>
                             </div>
                         </div>
-                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="flex-grow-1 text-start">
+                                <h6 class="fw-bold mb-2">Çoklu Model Desteği</h6>
+                                <p class="text-muted mb-0">Farklı AI modelleri arasında seçim yapın</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="flex-grow-1 text-start">
+                                <h6 class="fw-bold mb-2">7/24 Erişim</h6>
+                                <p class="text-muted mb-0">İstediğiniz zaman, istediğiniz yerde sohbet edin</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div class="flex-grow-1 text-start">
+                                <h6 class="fw-bold mb-2">Gelişmiş Özellikler</h6>
+                                <p class="text-muted mb-0">Sohbet geçmişi, favoriler ve daha fazlası</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <!-- NEW Active Chats Dropdown Section -->
-            <div class="sidebar-section">
-                <div id="active-chats-dropdown-trigger" class="sidebar-heading d-flex justify-content-between align-items-center px-3 py-2 mb-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#active-chats-dropdown-menu" aria-expanded="false" aria-controls="active-chats-dropdown-menu">
-                    <span>Active Chats</span>
-                    <i class="bi bi-chevron-down"></i> <!-- Icon to indicate dropdown -->
-                </div>
-                <div id="active-chats-dropdown-menu" class="collapse">
-                    <ul id="active-chats-list" class="list-group list-group-flush ps-2">
-                        <!-- Active chat items will be dynamically inserted here by JavaScript -->
-                    </ul>
-                </div>
-            </div>
-
-            <!-- CHAT HISTORY Section -->
-            <div class="sidebar-section">
-                <div id="chat-history-trigger" class="sidebar-heading d-flex justify-content-between align-items-center px-3 py-2 mb-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#chat-history-menu" aria-expanded="false" aria-controls="chat-history-menu">
-                    <span>Chat History</span>
-                    <i class="bi bi-chevron-down"></i> <!-- Icon to indicate dropdown -->
-                </div>
-                <div id="chat-history-menu" class="collapse">
-                    <ul id="chat-history-list" class="list-group list-group-flush ps-2">
-                        <!-- Chat history items will be dynamically inserted here by JavaScript -->
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Profile Section and Footer Buttons -->
-            <div class="mt-auto sidebar-footer py-3 px-3">
-                <!-- NEW Profile Section -->
-                <div class="profile-section mb-3 d-flex align-items-center">
-                                        <i class="bi bi-person-circle me-2" style="font-size: 2.5rem; color: var(--bs-secondary-color);"></i>
-                    <div class="profile-info flex-grow-1">
-                        <span class="d-block fw-semibold">User Name</span>
-                        <small class="text-muted">View Profile</small> 
-                    </div>
-                    <button class="btn btn-sm btn-icon" title="Logout">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </button>
-                </div>
-                <!-- Existing Footer Buttons -->
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-icon" id="settings-btn" title="Settings"><i class="bi bi-gear"></i></button>
-                    <button class="btn btn-icon" id="help-btn" title="Help"><i class="bi bi-question-circle"></i></button>
-                    <button class="btn btn-icon" id="theme-toggle" title="Toggle Theme"><i class="bi bi-moon"></i></button>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Main Content Area -->
-        <main class="flex-grow-1 d-flex flex-column">
-            <!-- Chat Area Container -->
-            <div id="chat-container" class="flex-grow-1 d-flex flex-wrap">
-                <!-- Chat windows will be dynamically inserted here -->
-                <div id="welcome-screen" class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center">
-                    <h1 class="display-5 mb-3 fw-bold Zekai text-center">Zek<span class="AI">ai</span></h1>
-                    <p class="lead mb-4">Your AI assistant platform. Start a conversation to begin.</p>
-                    <button class="btn btn-primary btn-lg px-4 py-2" id="welcome-new-chat-btn">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            <span>Start New Chat</span>
-                        </div>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Control Bar -->
-            <div id="control-bar" class="d-flex align-items-center px-4 py-3">
-                <div class="d-flex align-items-center control-buttons me-3">
-                    <button class="btn btn-icon-control me-2" id="new-chat-btn" title="New Chat">
-                        <i class="bi bi-plus-circle"></i>
-                    </button>
-                    <button class="btn btn-icon-control me-2" id="clear-chats-btn" title="Clear All Chats">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-                <div class="flex-grow-1 d-flex align-items-center" id="broadcast-input-container">
-                    <input type="text" class="form-control me-2" id="broadcast-message-input" placeholder="Send a message to all active chats...">
-                    <button class="btn btn-icon-control" id="send-broadcast-btn" title="Send Broadcast">
-                        <i class="bi bi-send"></i>
-                    </button>
-                </div>
-                <!-- Layout controls removed - layout will be managed dynamically -->
-            </div>
-        </main>
+        </div>
     </div>
 </div>
-<script>
-  window.state = window.state || {}; // Ensure window.state exists
-
-  const aiCategoriesJsonString = '{{ ai_categories|tojson|safe }}'; // Output as string
-  let parsedAiCategories = [];
-  try {
-    parsedAiCategories = JSON.parse(aiCategoriesJsonString);
-  } catch (e) {
-    console.error("Error parsing AI categories JSON:", e, "JSON string:", aiCategoriesJsonString);
-    parsedAiCategories = []; // Fallback to empty
-  }
-
-  // ...
-window.state.aiTypes = [];
-if (Array.isArray(parsedAiCategories)) {
-  parsedAiCategories.forEach(category => {
-    if (category && Array.isArray(category.models)) {
-      category.models.forEach(model => {
-        // model objesi backend'den "id" (DB primary key) ve "data_ai_index" içeriyor olmalı.
-        // Biz burada AI modelini unique olarak tanımlamak için DB primary key'i olan "id"yi kullanacağız.
-        window.state.aiTypes.push({
-          name: model.name,
-          icon: model.icon,
-          id: model.id // <-- model.data_ai_index yerine model.id KULLANILDI
-          // defaultPrompt: "You are " + model.name
-        });
-      });
-    }
-  });
-}
-// ...
-  
-  window.state.allAiCategories = parsedAiCategories;
-
-  console.log('index.html - window.state.allAiCategories:', JSON.stringify(window.state.allAiCategories, null, 2));
-</script>
-
-<!-- Bootstrap JS & dependencies -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Core -->
-<script src="/static/js/core/eventBus.js"></script>
-<script src="/static/js/core/logger.js"></script>
-
-<!-- Managers -->
-<script src="/static/js/managers/stateManager.js"></script>
-<script src="/static/js/managers/apiManager.js"></script>
-<script src="/static/js/managers/chatManager.js"></script>
-<script src="/static/js/managers/uiManager.js"></script>
-
-<!-- Components -->
-<script src="/static/js/components/messageRenderer.js"></script>
-<script src="/static/js/components/modelSelector.js"></script>
-
-<!-- Handlers -->
-<script src="/static/js/handlers/chatHandlers.js"></script>
-<script src="/static/js/handlers/uiHandlers.js"></script>
-
-<!-- Core App -->
-<script src="/static/js/core/app.js"></script>
-
-<!-- Main -->
-<script src="/static/js/main.js"></script>
-</body>
-</html>
+{% endblock %}

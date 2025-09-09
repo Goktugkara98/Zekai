@@ -1,9 +1,9 @@
 # =============================================================================
-# ROUTES PACKAGE
+# DATABASE PACKAGE
 # =============================================================================
-# Bu paket, uygulama rotalarını içerir.
+# Bu paket, veritabanı bağlantısı ve migration işlemlerini içerir.
 # =============================================================================
 
-from .main_routes import main_bp
+from .db_connection import get_connection, execute_query, test_connection
 
-__all__ = ['main_bp']
+__all__ = ['get_connection', 'execute_query', 'test_connection']
