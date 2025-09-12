@@ -21,10 +21,18 @@ models_migration = importlib.util.module_from_spec(spec)
 sys.modules["models_migration"] = models_migration
 spec.loader.exec_module(models_migration)
 
+# 0001_messages.py dosyasını import et
+spec = importlib.util.spec_from_file_location("messages_migration", "app/database/migrations/0001_messages.py")
+messages_migration = importlib.util.module_from_spec(spec)
+sys.modules["messages_migration"] = messages_migration
+spec.loader.exec_module(messages_migration)
+
 create_models_table = models_migration.create_models_table
+run_messages_migration = messages_migration.run_migration
 from app.routes.main_routes import main_bp
 from app.routes.api.models import models_bp
 from app.routes.api.health import health_bp
+from app.routes.api.chat import chat_bp
 
 # Flask uygulaması oluştur
 app = Flask(__name__)
@@ -37,10 +45,12 @@ app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
 app.register_blueprint(main_bp)
 app.register_blueprint(models_bp)
 app.register_blueprint(health_bp)
+app.register_blueprint(chat_bp)
 
 if __name__ == '__main__':
     # Veritabanı tablolarını oluştur
     create_models_table()
+    run_messages_migration()
     
     # Programı çalıştır
     app.run(debug=True)

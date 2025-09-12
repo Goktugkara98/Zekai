@@ -13,8 +13,9 @@
     flex-direction: column;
     margin-left: 280px;
     background: #ffffff;
-    height: 100vh;
+    height: calc(100vh - 80px); /* Input bar için yer bırak */
     position: relative;
+    overflow: hidden;
 }
 
 /* Global Chat Styles */

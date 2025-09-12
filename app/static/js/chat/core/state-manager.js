@@ -319,4 +319,20 @@ export class StateManager {
         const chatHistory = this.state.chatHistory.filter(c => c.id !== chatId);
         this.setState('chatHistory', chatHistory);
     }
+
+    /**
+     * Aktif model'i ayarla
+     * @param {string} modelName - Model adı
+     */
+    setActiveModel(modelName) {
+        this.setState('activeModel', modelName);
+    }
+
+    /**
+     * Model seçimi yap
+     * @param {string} modelName - Model adı
+     */
+    selectModel(modelName) {
+        this.setActiveModel(modelName);
+    }
 }

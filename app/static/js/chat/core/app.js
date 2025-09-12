@@ -171,12 +171,10 @@ export class App {
      * @param {Object} data - Model seçim verisi
      */
     handleModelSelection(data) {
-        const { modelName } = data;
+        const { modelName } = data.data || data;
         
-        // Chat pane oluştur
-        if (this.controllers.chatPane) {
-            this.controllers.chatPane.createChatPane(modelName);
-        }
+        // Chat pane oluşturma işlemi chat pane controller'da yapılıyor
+        // Burada sadece state'i güncelle
         
         // State'i güncelle
         this.stateManager.setActiveModel(modelName);

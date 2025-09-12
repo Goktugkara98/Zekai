@@ -42,6 +42,9 @@ export class SidebarController {
         // Collapse işlevselliğini başlat
         this.initCollapse();
 
+        // Model listesini render et (eğer modeller yüklenmişse)
+        this.renderModels();
+
         console.log('SidebarController initialized');
     }
 
@@ -49,12 +52,8 @@ export class SidebarController {
      * Event listener'ları kur
      */
     setupEventListeners() {
-        // Model seçimi
-        this.modelItems.forEach(item => {
-            DOMUtils.on(item, 'click', (e) => {
-                this.handleModelSelection(e, item);
-            });
-        });
+        // Model event listener'ları renderModels'da kurulacak
+        // setupModelEventListeners() metodunu kullan
 
         // Category seçimi
         this.categoryItems.forEach(item => {
@@ -107,6 +106,11 @@ export class SidebarController {
         this.stateManager.subscribe('sidebarCollapsed', (collapsed) => {
             this.toggleSidebarCollapsed(collapsed);
         });
+
+        // Model service'den models yüklendiğinde render et
+        this.eventManager.on('models:loaded', () => {
+            this.renderModels();
+        });
     }
 
     /**
@@ -140,7 +144,7 @@ export class SidebarController {
         DOMUtils.addClass(item, 'active');
 
         // State'i güncelle
-        this.stateManager.selectModel(modelName);
+        this.stateManager.setActiveModel(modelName);
 
         // Event emit et
         this.eventManager.emit('model:selected', {
@@ -344,12 +348,96 @@ export class SidebarController {
     }
 
     /**
+     * Model listesini render et
+     */
+    async renderModels() {
+        try {
+            // Model service'den modelleri al
+            const modelService = window.ZekaiApp?.services?.modelService;
+            if (!modelService) {
+                console.warn('ModelService not available');
+                return;
+            }
+
+            const models = modelService.getModels({ available: true });
+            console.log('Rendering models:', models);
+            this.updateModelList(models);
+        } catch (error) {
+            console.error('Error rendering models:', error);
+        }
+    }
+
+    /**
      * Model listesini güncelle
      * @param {Array} models - Model listesi
      */
     updateModelList(models) {
-        // Bu fonksiyon dinamik model listesi için kullanılabilir
-        console.log('Updating model list:', models);
+        console.log('updateModelList called with:', models);
+        
+        const modelList = DOMUtils.$('#model-list');
+        if (!modelList) {
+            console.error('Model list container not found');
+            return;
+        }
+
+        console.log('Model list container found:', modelList);
+
+        // Mevcut model item'ları temizle
+        modelList.innerHTML = '';
+
+        if (!models || models.length === 0) {
+            console.log('No models available, showing placeholder');
+            modelList.innerHTML = '<div class="no-models">No models available</div>';
+            return;
+        }
+
+        console.log('Creating model items for', models.length, 'models');
+
+        // Her model için HTML oluştur
+        models.forEach(model => {
+            const modelItem = this.createModelItem(model);
+            modelList.appendChild(modelItem);
+        });
+
+        // Model item'ları güncelle
+        this.modelItems = DOMUtils.$$('.model-item');
+        
+        // Event listener'ları yeniden kur
+        this.setupModelEventListeners();
+
+        console.log('Model list updated:', models.length, 'models');
+    }
+
+    /**
+     * Model item HTML'i oluştur
+     * @param {Object} model - Model objesi
+     * @returns {Element} Model item elementi
+     */
+    createModelItem(model) {
+        const modelItem = DOMUtils.createElement('div', {
+            className: 'model-item',
+            'data-model-id': model.id,
+            'data-model-name': model.model_name || model.name,
+            innerHTML: `
+                <div class="model-icon" style="background-color: ${model.color}20; color: ${model.color}">
+                    <i class="${model.icon}"></i>
+                </div>
+                <span>${model.name}</span>
+            `
+        });
+
+        return modelItem;
+    }
+
+    /**
+     * Model event listener'larını kur
+     */
+    setupModelEventListeners() {
+        this.modelItems.forEach(item => {
+            DOMUtils.on(item, 'click', (e) => {
+                this.handleModelSelection(e, item);
+            });
+        });
     }
 
     /**

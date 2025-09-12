@@ -50,61 +50,8 @@
                 <i class="fas fa-chevron-down collapse-icon"></i>
             </div>
             <div class="collapsible-content" id="ai-models">
-                <div class="model-list">
-                    <div class="model-item">
-                        <div class="model-icon chatgpt-icon">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <span>ChatGPT-5</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon gemini-icon">
-                            <i class="fab fa-google"></i>
-                        </div>
-                        <span>Gemini 2.5 Flash</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon claude-icon">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <span>Claude Sonnet 4</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon deepseek-icon">
-                            <i class="fas fa-search"></i>
-                        </div>
-                        <span>DeepSeek V3 0324</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon llama-icon">
-                            <i class="fas fa-mountain"></i>
-                        </div>
-                        <span>Llama 4 Scout</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon perplexity-icon">
-                            <i class="fas fa-question-circle"></i>
-                        </div>
-                        <span>Perplexity Sonar Pro</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon gemini-icon">
-                            <i class="fab fa-google"></i>
-                        </div>
-                        <span>Gemini 2.0 Flash</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon gemini-icon">
-                            <i class="fab fa-google"></i>
-                        </div>
-                        <span>Gemini 1.5 Pro</span>
-                    </div>
-                    <div class="model-item">
-                        <div class="model-icon chatgpt-icon">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <span>ChatGPT-4o</span>
-                    </div>
+                <div class="model-list" id="model-list">
+                    <!-- Models will be loaded dynamically from database -->
                 </div>
                 <button class="pin-more-btn">
                     <i class="fas fa-plus"></i>
@@ -156,37 +103,8 @@
                 <i class="fas fa-chevron-down collapse-icon"></i>
             </div>
             <div class="collapsible-content" id="active-chats">
-                <div class="chat-list">
-                    <div class="chat-item">
-                        <div class="chat-avatar">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-name">ChatGPT-5</div>
-                            <div class="chat-preview">How to implement authentication...</div>
-                        </div>
-                        <div class="chat-time">2m</div>
-                    </div>
-                    <div class="chat-item">
-                        <div class="chat-avatar gemini-avatar">
-                            <i class="fab fa-google"></i>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-name">Gemini 2.5 Flash</div>
-                            <div class="chat-preview">Explain quantum computing...</div>
-                        </div>
-                        <div class="chat-time">5m</div>
-                    </div>
-                    <div class="chat-item">
-                        <div class="chat-avatar claude-avatar">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <div class="chat-info">
-                            <div class="chat-name">Claude Sonnet 4</div>
-                            <div class="chat-preview">Write a business plan for...</div>
-                        </div>
-                        <div class="chat-time">1h</div>
-                    </div>
+                <div class="chat-list" id="active-chat-list">
+                    <!-- Active chats will be loaded dynamically -->
                 </div>
             </div>
         </div>
@@ -198,40 +116,8 @@
                 <i class="fas fa-chevron-down collapse-icon"></i>
             </div>
             <div class="collapsible-content" id="chat-history">
-                <div class="history-list">
-                    <div class="history-group">
-                        <div class="history-date">Today</div>
-                        <div class="history-item">
-                            <i class="fas fa-robot"></i>
-                            <span>Python Web Development</span>
-                        </div>
-                        <div class="history-item">
-                            <i class="fab fa-google"></i>
-                            <span>Machine Learning Basics</span>
-                        </div>
-                    </div>
-                    <div class="history-group">
-                        <div class="history-date">Yesterday</div>
-                        <div class="history-item">
-                            <i class="fas fa-brain"></i>
-                            <span>Creative Writing Workshop</span>
-                        </div>
-                        <div class="history-item">
-                            <i class="fas fa-search"></i>
-                            <span>Data Analysis Project</span>
-                        </div>
-                    </div>
-                    <div class="history-group">
-                        <div class="history-date">This Week</div>
-                        <div class="history-item">
-                            <i class="fas fa-mountain"></i>
-                            <span>Business Strategy</span>
-                        </div>
-                        <div class="history-item">
-                            <i class="fas fa-question-circle"></i>
-                            <span>Research Questions</span>
-                        </div>
-                    </div>
+                <div class="history-list" id="history-list">
+                    <!-- Chat history will be loaded dynamically -->
                 </div>
             </div>
         </div>

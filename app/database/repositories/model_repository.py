@@ -20,14 +20,16 @@ class ModelRepository:
         Yeni bir model kaydı oluşturur.
         """
         query = """
-            INSERT INTO models (model_name, model_type, provider_name, api_key, is_active)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO models (model_name, model_type, provider_name, provider_type, api_key, base_url, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
         params = (
             model_data.get('model_name'),
             model_data.get('model_type'),
             model_data.get('provider_name'),
+            model_data.get('provider_type'),
             model_data.get('api_key'),
+            model_data.get('base_url'),
             model_data.get('is_active', True)
         )
         try:

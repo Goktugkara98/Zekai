@@ -19,7 +19,7 @@ export class ModelService {
      */
     async init() {
         // Model'leri yükle
-        this.loadModels();
+        await this.loadModels();
         
         // Model konfigürasyonlarını yükle
         this.loadModelConfigs();
@@ -48,87 +48,105 @@ export class ModelService {
     /**
      * Model'leri yükle
      */
-    loadModels() {
-        this.models = [
-            {
-                id: 'chatgpt-5',
-                name: 'ChatGPT-5',
-                provider: 'OpenAI',
-                type: 'text',
-                description: 'Latest GPT model with enhanced capabilities',
-                icon: 'fas fa-robot',
-                color: '#10a37f',
-                capabilities: ['text', 'code', 'reasoning'],
-                maxTokens: 128000,
-                isAvailable: true,
-                isPinned: true
-            },
-            {
-                id: 'gemini-2.5-flash',
-                name: 'Gemini 2.5 Flash',
-                provider: 'Google',
-                type: 'multimodal',
-                description: 'Fast and efficient multimodal model',
-                icon: 'fab fa-google',
-                color: '#4285f4',
-                capabilities: ['text', 'image', 'code'],
-                maxTokens: 1000000,
-                isAvailable: true,
-                isPinned: true
-            },
-            {
-                id: 'claude-sonnet-4',
-                name: 'Claude Sonnet 4',
-                provider: 'Anthropic',
-                type: 'text',
-                description: 'Advanced reasoning and analysis',
-                icon: 'fas fa-brain',
-                color: '#d97706',
-                capabilities: ['text', 'reasoning', 'analysis'],
-                maxTokens: 200000,
-                isAvailable: true,
-                isPinned: false
-            },
-            {
-                id: 'deepseek-v3-0324',
-                name: 'DeepSeek V3 0324',
-                provider: 'DeepSeek',
-                type: 'text',
-                description: 'Specialized in coding and technical tasks',
-                icon: 'fas fa-search',
-                color: '#7c3aed',
-                capabilities: ['text', 'code', 'math'],
-                maxTokens: 64000,
-                isAvailable: true,
-                isPinned: false
-            },
-            {
-                id: 'llama-4-scout',
-                name: 'Llama 4 Scout',
-                provider: 'Meta',
-                type: 'text',
-                description: 'Open source language model',
-                icon: 'fas fa-mountain',
-                color: '#059669',
-                capabilities: ['text', 'reasoning'],
-                maxTokens: 128000,
-                isAvailable: true,
-                isPinned: false
-            },
-            {
-                id: 'perplexity-sonar-pro',
-                name: 'Perplexity Sonar Pro',
-                provider: 'Perplexity',
-                type: 'search',
-                description: 'Real-time web search and analysis',
-                icon: 'fas fa-question-circle',
-                color: '#dc2626',
-                capabilities: ['text', 'search', 'web'],
-                maxTokens: 32000,
-                isAvailable: true,
-                isPinned: false
+    async loadModels() {
+        try {
+            console.log('Loading models from API...');
+            const response = await fetch('/api/models');
+            const result = await response.json();
+            
+            console.log('API response:', result);
+            
+            if (result.success) {
+                this.models = result.data.map(model => this.transformModelData(model));
+                console.log('Models loaded from API:', this.models.length, this.models);
+                
+                // Event emit et
+                this.eventManager.emit('models:loaded', {
+                    models: this.models,
+                    count: this.models.length
+                });
+            } else {
+                console.error('Failed to load models:', result.error);
+                this.models = [];
             }
-        ];
+        } catch (error) {
+            console.error('Error loading models:', error);
+            this.models = [];
+        }
+    }
+
+    /**
+     * Database model verisini frontend formatına dönüştür
+     * @param {Object} dbModel - Database model verisi
+     * @returns {Object} Frontend model objesi
+     */
+    transformModelData(dbModel) {
+        console.log('Transforming model data:', dbModel);
+        
+        // Provider'a göre icon ve color belirle
+        const providerConfig = this.getProviderConfig(dbModel.provider_name);
+        
+        const transformedModel = {
+            id: `model-${dbModel.model_id}`,
+            name: dbModel.model_name,
+            model_name: dbModel.model_name, // Backend ile uyumluluk için
+            provider: dbModel.provider_name || 'Unknown',
+            type: dbModel.model_type || 'text',
+            description: `AI model by ${dbModel.provider_name || 'Unknown'}`,
+            icon: providerConfig.icon,
+            color: providerConfig.color,
+            capabilities: this.getModelCapabilities(dbModel.model_type),
+            maxTokens: 32000, // Default value
+            isAvailable: Boolean(dbModel.is_active),
+            isPinned: false, // Default value
+            modelId: dbModel.model_id,
+            apiKey: dbModel.api_key,
+            createdAt: dbModel.created_at,
+            updatedAt: dbModel.updated_at
+        };
+        
+        console.log('Transformed model:', transformedModel);
+        return transformedModel;
+    }
+
+    /**
+     * Provider konfigürasyonunu al
+     * @param {string} provider - Provider adı
+     * @returns {Object} Provider konfigürasyonu
+     */
+    getProviderConfig(provider) {
+        const configs = {
+            'OpenAI': { icon: 'fas fa-robot', color: '#10a37f' },
+            'Google': { icon: 'fab fa-google', color: '#4285f4' },
+            'Anthropic': { icon: 'fas fa-brain', color: '#d97706' },
+            'DeepSeek': { icon: 'fas fa-search', color: '#7c3aed' },
+            'Meta': { icon: 'fas fa-mountain', color: '#059669' },
+            'Perplexity': { icon: 'fas fa-question-circle', color: '#dc2626' },
+            'default': { icon: 'fas fa-cog', color: '#6b7280' }
+        };
+        
+        return configs[provider] || configs.default;
+    }
+
+    /**
+     * Model tipine göre capabilities belirle
+     * @param {string} modelType - Model tipi
+     * @returns {Array} Capabilities listesi
+     */
+    getModelCapabilities(modelType) {
+        const capabilities = {
+            'text': ['text', 'reasoning'],
+            'TEXT': ['text', 'reasoning'],
+            'multimodal': ['text', 'image', 'code'],
+            'MULTIMODAL': ['text', 'image', 'code'],
+            'code': ['text', 'code', 'math'],
+            'CODE': ['text', 'code', 'math'],
+            'search': ['text', 'search', 'web'],
+            'SEARCH': ['text', 'search', 'web'],
+            'default': ['text']
+        };
+        
+        return capabilities[modelType] || capabilities.default;
     }
 
     /**

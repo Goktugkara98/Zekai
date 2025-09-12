@@ -22,8 +22,10 @@ def create_models_table():
                 model_id INT AUTO_INCREMENT PRIMARY KEY,
                 model_name VARCHAR(255) NOT NULL,
                 model_type VARCHAR(100),
-                provider_name VARCHAR(100),
+                provider_name VARCHAR(100) NOT NULL,
+                provider_type ENUM('gemini', 'openrouter', 'openai', 'anthropic') NOT NULL,
                 api_key VARCHAR(500),
+                base_url VARCHAR(500),
                 is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -31,6 +33,7 @@ def create_models_table():
                 -- Indexler
                 INDEX idx_model_name (model_name),
                 INDEX idx_provider_name (provider_name),
+                INDEX idx_provider_type (provider_type),
                 INDEX idx_is_active (is_active)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """

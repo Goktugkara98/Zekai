@@ -5,6 +5,7 @@
 
 import { DOMUtils } from '../utils/dom-utils.js';
 import { Helpers } from '../utils/helpers.js';
+import { ChatPane } from '../core/chat-pane.js';
 
 export class ChatPaneController {
     constructor(stateManager, eventManager) {
@@ -12,7 +13,10 @@ export class ChatPaneController {
         this.eventManager = eventManager;
         this.chatPanesContainer = null;
         this.activePane = null;
+        this.chatPanes = new Map(); // paneId -> ChatPane object mapping
         this.chatCounter = 1;
+        this.maxPanes = 4; // Maksimum 4 pane
+        this.currentLayout = 'single';
     }
 
     /**
@@ -52,18 +56,23 @@ export class ChatPaneController {
         this.eventManager.on('layout:changed', (event) => {
             this.handleLayoutChange(event.data);
         });
+
+        // Pane focus event'i
+        this.eventManager.on('pane:focus', (event) => {
+            this.handlePaneFocus(event.data);
+        });
+
+        // Pane close request event'i
+        this.eventManager.on('pane:close-requested', (event) => {
+            this.handlePaneCloseRequest(event.data);
+        });
     }
 
     /**
      * State listener'ları kur
      */
     setupStateListeners() {
-        // Active model değişikliği
-        this.stateManager.subscribe('activeModel', (newModel) => {
-            if (newModel) {
-                this.createChatPane(newModel);
-            }
-        });
+        // Active model değişikliği - kaldırıldı çünkü handleModelSelection'da zaten yapılıyor
 
         // Messages değişikliği
         this.stateManager.subscribe('messages', (messages) => {
@@ -81,8 +90,38 @@ export class ChatPaneController {
      * @param {Object} data - Event data
      */
     handleModelSelection(data) {
-        const { modelName } = data;
-        this.createChatPane(modelName);
+        console.log('ChatPaneController handleModelSelection data:', data);
+        const { modelName, element } = data.data || data;
+        
+        // Model ID'sini dataset'ten al (integer olarak)
+        const modelId = parseInt(element?.dataset?.modelId?.replace('model-', '')) || 1;
+        const baseModelId = `model-${modelId}`;
+        
+        // Aynı model için benzersiz pane ID oluştur
+        const paneId = this.generateUniquePaneId(baseModelId);
+        
+        console.log('Creating pane with modelName:', modelName, 'modelId:', modelId, 'paneId:', paneId);
+        
+        // Yeni pane oluştur
+        this.createChatPane(modelName, paneId, modelId);
+    }
+
+    /**
+     * Benzersiz pane ID oluştur
+     * @param {string} baseModelId - Base model ID
+     * @returns {string} Benzersiz pane ID
+     */
+    generateUniquePaneId(baseModelId) {
+        let counter = 1;
+        let paneId = `${baseModelId}-${counter}`;
+        
+        // Benzersiz ID bulana kadar dene
+        while (this.chatPanes.has(paneId)) {
+            counter++;
+            paneId = `${baseModelId}-${counter}`;
+        }
+        
+        return paneId;
     }
 
     /**
@@ -101,171 +140,216 @@ export class ChatPaneController {
      */
     handleLayoutChange(data) {
         const { layout } = data;
+        this.currentLayout = layout;
         this.applyLayout(layout);
+    }
+
+    /**
+     * Pane focus işle
+     * @param {Object} data - Event data
+     */
+    handlePaneFocus(data) {
+        const { paneId } = data;
+        this.activatePane(paneId);
+    }
+
+    /**
+     * Pane close request işle
+     * @param {Object} data - Event data
+     */
+    handlePaneCloseRequest(data) {
+        const { paneId, hasMessages } = data;
+        
+        // Eğer mesaj yazılmamışsa direkt kapat
+        if (!hasMessages) {
+            this.closePane(paneId);
+            return;
+        }
+
+        // Mesaj yazılmışsa onay iste (şimdilik direkt kapat)
+        this.closePane(paneId);
     }
 
     /**
      * Chat pane oluştur
      * @param {string} modelName - Model adı
+     * @param {string} paneId - Pane ID (benzersiz)
+     * @param {number} modelId - Model ID (integer)
      */
-    createChatPane(modelName) {
-        // Mevcut pane'i temizle
-        DOMUtils.clear(this.chatPanesContainer);
-
-        // Yeni pane oluştur
-        const chatPane = DOMUtils.createElement('div', {
-            className: 'chat-pane'
-        }, '');
-
-        chatPane.innerHTML = `
-            <div class="pane-header">
-                <div class="pane-title-section">
-                    <div class="model-info">
-                        <span class="model-name">${modelName}</span>
-                        <span class="chat-number">Chat #${this.chatCounter}</span>
-                    </div>
-                </div>
-                <div class="pane-controls">
-                    <button class="control-btn minimize-btn" title="Minimize">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <button class="control-btn close-btn" title="Close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="pane-content">
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <p>Start a conversation with ${modelName}</p>
-                </div>
-            </div>
-        `;
-
-        // Chat counter'ı artır
-        this.chatCounter++;
-
-        this.chatPanesContainer.appendChild(chatPane);
-        this.activePane = chatPane;
-
-        // Pane event listener'ları kur
-        this.setupPaneEventListeners(chatPane);
-
-        // Event emit et
-        this.eventManager.emit('pane:created', {
-            modelName,
-            element: chatPane
-        });
-    }
-
-    /**
-     * Pane event listener'ları kur
-     * @param {Element} pane - Chat pane
-     */
-    setupPaneEventListeners(pane) {
-        const controlBtns = DOMUtils.$$('.control-btn', pane);
-        controlBtns.forEach(btn => {
-            DOMUtils.on(btn, 'click', (e) => {
-                this.handleControlButtonClick(e, btn);
+    async createChatPane(modelName, paneId, modelId = 1) {
+        // Maksimum pane sayısını kontrol et
+        if (this.chatPanes.size >= this.maxPanes) {
+            console.warn(`Maximum number of panes (${this.maxPanes}) reached`);
+            this.stateManager.addNotification({
+                type: 'warning',
+                message: `Maximum ${this.maxPanes} chat panes allowed`
             });
-        });
-    }
+            return;
+        }
 
-    /**
-     * Control button click işle
-     * @param {Event} e - Click event
-     * @param {Element} btn - Button element
-     */
-    handleControlButtonClick(e, btn) {
-        e.preventDefault();
-        
-        const icon = DOMUtils.$('i', btn);
-        if (!icon) return;
+        try {
+            // Backend'de chat oluştur
+            const chatResponse = await fetch('/api/chat/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model_id: modelId, // Artık integer olarak geliyor
+                    title: `${modelName} Chat`
+                })
+            });
 
-        const iconClass = icon.className;
-        
-        if (iconClass.includes('minus')) {
-            this.handleMinimizePane();
-        } else if (iconClass.includes('times')) {
-            this.handleClosePane();
+            const chatResult = await chatResponse.json();
+            
+            if (!chatResult.success) {
+                throw new Error(chatResult.error || 'Chat oluşturulamadı');
+            }
+
+            // Backend'den gelen chat_id'yi kullan
+            const backendChatId = chatResult.chat_id;
+
+            // Yeni ChatPane nesnesi oluştur
+            const chatPane = new ChatPane(backendChatId, modelName, modelId, this.eventManager);
+
+            // İlk pane ise empty state'i temizle
+            if (this.chatPanes.size === 0) {
+                this.chatPanesContainer.innerHTML = '';
+            }
+            
+            // Pane'i container'a ekle
+            this.chatPanesContainer.appendChild(chatPane.element);
+            
+            // Pane'i map'e ekle
+            this.chatPanes.set(backendChatId, chatPane);
+            
+            // Pane'i aktif et
+            this.activatePane(backendChatId);
+
+            // Chat counter'ı artır
+            this.chatCounter++;
+
+            // Layout'u güncelle
+            this.updateLayout();
+
+            // Event emit et
+            this.eventManager.emit('pane:created', {
+                modelName,
+                paneId: backendChatId,
+                modelId: modelId,
+                element: chatPane.element,
+                pane: chatPane,
+                totalPanes: this.chatPanes.size
+            });
+
+            console.log('Chat pane created:', chatPane.getInfo());
+            
+        } catch (error) {
+            console.error('Chat oluşturma hatası:', error);
+            this.stateManager.addNotification({
+                type: 'error',
+                message: `Chat oluşturulamadı: ${error.message}`
+            });
         }
     }
 
     /**
-     * Pane küçültme işle
+     * Pane'i aktif et
+     * @param {string} paneId - Pane ID
      */
-    handleMinimizePane() {
-        if (!this.activePane) return;
+    activatePane(paneId) {
+        // Tüm pane'leri deaktive et
+        this.chatPanes.forEach((pane, id) => {
+            pane.setActive(false);
+        });
 
-        // Eğer zaten minimize ise restore et
-        if (this.activePane.classList.contains('minimized')) {
-            this.handleRestorePane();
-        } else {
-            // Pane'i küçült
-            DOMUtils.addClass(this.activePane, 'minimized');
+        // Seçilen pane'i aktif et
+        const pane = this.chatPanes.get(paneId);
+        if (pane) {
+            pane.setActive(true);
+            this.activePane = pane;
             
             // Event emit et
-            this.eventManager.emit('pane:minimized', {
-                element: this.activePane
+            this.eventManager.emit('pane:activated', {
+                paneId,
+                element: pane.element,
+                pane: pane
             });
-
-            console.log('Pane minimized');
         }
     }
 
     /**
-     * Pane restore işle
+     * Tüm pane'leri temizle
      */
-    handleRestorePane() {
-        if (!this.activePane) return;
-
-        // Pane'i restore et
-        DOMUtils.removeClass(this.activePane, 'minimized');
-        
-        // Event emit et
-        this.eventManager.emit('pane:restored', {
-            element: this.activePane
+    clearAllPanes() {
+        this.chatPanes.forEach((pane) => {
+            pane.destroy();
         });
-
-        console.log('Pane restored');
+        this.chatPanes.clear();
+        this.activePane = null;
     }
 
     /**
-     * Pane kapatma işle
+     * Layout'u güncelle
      */
-    handleClosePane() {
-        if (!this.activePane) return;
-
-        // Pane'i kapat
-        this.closePane(this.activePane);
+    updateLayout() {
+        const paneCount = this.chatPanes.size;
         
-        // Event emit et
-        this.eventManager.emit('pane:closed', {
-            element: this.activePane
-        });
-
-        console.log('Pane closed');
+        // Container class'larını temizle
+        this.chatPanesContainer.className = 'chat-panes-container';
+        
+        // Layout class'ını ekle
+        if (paneCount === 1) {
+            this.chatPanesContainer.classList.add('single-pane');
+        } else if (paneCount === 2) {
+            this.chatPanesContainer.classList.add('two-panes');
+        } else if (paneCount === 3) {
+            this.chatPanesContainer.classList.add('three-panes');
+        } else if (paneCount === 4) {
+            this.chatPanesContainer.classList.add('four-panes');
+        }
     }
+
+
 
     /**
      * Pane kapat
-     * @param {Element} pane - Pane elementi
+     * @param {string} paneId - Pane ID
      */
-    closePane(pane) {
+    closePane(paneId) {
+        const pane = this.chatPanes.get(paneId);
         if (!pane) return;
 
-        // Pane'i container'dan kaldır
-        if (pane.parentNode) {
-            pane.parentNode.removeChild(pane);
+        // Pane'i map'den kaldır
+        this.chatPanes.delete(paneId);
+
+        // Pane'i destroy et
+        pane.destroy();
+
+        // Eğer kapatılan pane aktif pane ise
+        if (this.activePane === pane) {
+            this.activePane = null;
+
+            // Başka pane varsa, ilkini aktif et
+            if (this.chatPanes.size > 0) {
+                const firstPane = this.chatPanes.values().next().value;
+                this.activatePane(firstPane.id);
+            } else {
+                // Hiç pane kalmadıysa empty state göster
+                this.showEmptyState();
+            }
         }
 
-        // Active pane'i temizle
-        this.activePane = null;
+        // Layout'u güncelle
+        this.updateLayout();
 
-        // Empty state'i göster
-        this.showEmptyState();
+        // Event emit et
+        this.eventManager.emit('pane:closed', {
+            paneId,
+            element: pane.element,
+            pane: pane,
+            totalPanes: this.chatPanes.size
+        });
     }
 
     /**
@@ -274,6 +358,8 @@ export class ChatPaneController {
     showEmptyState() {
         if (!this.chatPanesContainer) return;
 
+        // Sadece pane yoksa empty state göster
+        if (this.chatPanes.size === 0) {
         this.chatPanesContainer.innerHTML = `
             <div class="empty-chat-state">
                 <div class="empty-chat-icon">
@@ -284,66 +370,9 @@ export class ChatPaneController {
             </div>
         `;
     }
-
-    /**
-     * Chat pane oluştur
-     * @param {string} modelName - Model adı
-     */
-    createChatPane(modelName) {
-        if (!this.chatPanesContainer) return;
-
-        // Mevcut içeriği temizle
-        this.chatPanesContainer.innerHTML = '';
-
-        // Yeni pane oluştur
-        const chatPane = DOMUtils.createElement('div', {
-            className: 'chat-pane'
-        }, '');
-
-        chatPane.innerHTML = `
-            <div class="pane-header">
-                <div class="pane-title-section">
-                    <div class="model-info">
-                        <span class="model-name">${modelName}</span>
-                        <span class="chat-number">Chat #${this.chatCounter}</span>
-                    </div>
-                </div>
-                <div class="pane-controls">
-                    <button class="control-btn minimize-btn" title="Minimize">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <button class="control-btn close-btn" title="Close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="pane-content">
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <p>Start a conversation with ${modelName}</p>
-                </div>
-            </div>
-        `;
-
-        // Chat counter'ı artır
-        this.chatCounter++;
-
-        this.chatPanesContainer.appendChild(chatPane);
-        this.activePane = chatPane;
-
-        // Pane event listener'ları kur
-        this.setupPaneEventListeners(chatPane);
-
-        // Event emit et
-        this.eventManager.emit('pane:created', {
-            element: chatPane,
-            modelName: modelName
-        });
-
-        console.log(`Chat pane created for ${modelName}`);
     }
+
+
 
 
     /**
@@ -353,45 +382,18 @@ export class ChatPaneController {
     updateMessages(messages) {
         if (!this.activePane) return;
 
-        const paneContent = DOMUtils.$('.pane-content', this.activePane);
-        if (!paneContent) return;
-
-        // Empty state'i kaldır
-        const emptyState = DOMUtils.$('.empty-state', paneContent);
-        if (emptyState) {
-            emptyState.remove();
-        }
-
-        // Mesajları ekle
+        // Mesajları aktif pane'e ekle
         messages.forEach(message => {
-            this.addMessageToPane(message);
+            // Mesajı doğru formata çevir
+            const formattedMessage = {
+                type: message.isUser ? 'user' : 'assistant',
+                content: message.content,
+                timestamp: message.timestamp
+            };
+            this.activePane.addMessage(formattedMessage);
         });
-
-        // Scroll to bottom
-        this.scrollToBottom();
     }
 
-    /**
-     * Pane'e mesaj ekle
-     * @param {Object} message - Mesaj objesi
-     */
-    addMessageToPane(message) {
-        if (!this.activePane) return;
-
-        const paneContent = DOMUtils.$('.pane-content', this.activePane);
-        if (!paneContent) return;
-
-        const messageElement = DOMUtils.createElement('div', {
-            className: `message ${message.isUser ? 'user' : 'assistant'} fade-in`
-        }, '');
-
-        messageElement.innerHTML = `
-            <div class="message-content">${message.content}</div>
-            <div class="message-time">${Helpers.formatDate(message.timestamp, 'HH:mm')}</div>
-        `;
-
-        paneContent.appendChild(messageElement);
-    }
 
     /**
      * Typing indicator'ı güncelle
@@ -400,31 +402,10 @@ export class ChatPaneController {
     updateTypingIndicator(isTyping) {
         if (!this.activePane) return;
 
-        const paneContent = DOMUtils.$('.pane-content', this.activePane);
-        if (!paneContent) return;
-
-        // Mevcut typing indicator'ı kaldır
-        const existingIndicator = DOMUtils.$('.typing-indicator', paneContent);
-        if (existingIndicator) {
-            existingIndicator.remove();
-        }
-
         if (isTyping) {
-            // Yeni typing indicator ekle
-            const typingIndicator = DOMUtils.createElement('div', {
-                className: 'message assistant typing-indicator'
-            }, '');
-
-            typingIndicator.innerHTML = `
-                <div class="typing-dots">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-            `;
-
-            paneContent.appendChild(typingIndicator);
-            this.scrollToBottom();
+            this.activePane.showTypingIndicator();
+        } else {
+            this.activePane.hideTypingIndicator();
         }
     }
 
@@ -434,9 +415,9 @@ export class ChatPaneController {
     scrollToBottom() {
         if (!this.activePane) return;
 
-        const paneContent = DOMUtils.$('.pane-content', this.activePane);
-        if (paneContent) {
-            paneContent.scrollTop = paneContent.scrollHeight;
+        const messagesContainer = DOMUtils.$('.pane-messages', this.activePane.element);
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
     }
 
@@ -445,6 +426,8 @@ export class ChatPaneController {
      * @param {string} layout - Layout adı
      */
     applyLayout(layout) {
+        if (!this.chatPanesContainer) return;
+
         // Layout class'larını kaldır
         this.chatPanesContainer.className = 'chat-panes-container';
         
@@ -453,10 +436,14 @@ export class ChatPaneController {
             DOMUtils.addClass(this.chatPanesContainer, layout);
         }
 
+        // Pane sayısına göre layout'u güncelle
+        this.updateLayout();
+
         // Event emit et
         this.eventManager.emit('layout:applied', {
             layout,
-            element: this.chatPanesContainer
+            element: this.chatPanesContainer,
+            paneCount: this.chatPanes.size
         });
     }
 
@@ -465,14 +452,19 @@ export class ChatPaneController {
      */
     clearPane() {
         if (this.activePane) {
-            const paneContent = DOMUtils.$('.pane-content', this.activePane);
-            if (paneContent) {
-                paneContent.innerHTML = `
+            // Mesajları temizle
+            this.activePane.messages = [];
+            this.activePane.hasMessages = false;
+            
+            // Empty state'i göster
+            const messagesContainer = DOMUtils.$('.pane-messages', this.activePane.element);
+            if (messagesContainer) {
+                messagesContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">
                             <i class="fas fa-comments"></i>
                         </div>
-                        <p>Start a conversation</p>
+                        <p>Start a conversation with ${this.activePane.modelName}</p>
                     </div>
                 `;
             }
@@ -483,13 +475,8 @@ export class ChatPaneController {
      * Controller'ı temizle
      */
     destroy() {
-        // Event listener'ları kaldır
-        if (this.activePane) {
-            const controlBtns = DOMUtils.$$('.control-btn', this.activePane);
-            controlBtns.forEach(btn => {
-                DOMUtils.off(btn, 'click');
-            });
-        }
+        // Tüm pane'leri temizle
+        this.clearAllPanes();
 
         console.log('ChatPaneController destroyed');
     }
