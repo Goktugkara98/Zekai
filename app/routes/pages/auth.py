@@ -5,10 +5,7 @@
 # =============================================================================
 
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, session, flash
-import logging
 from app.services.auth_service import AuthService
-
-logger = logging.getLogger(__name__)
 
 # Auth Blueprint oluştur
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -76,7 +73,6 @@ def login():
         return render_template('login.html')
         
     except Exception as e:
-        logger.error(f"Login sayfası hatası: {str(e)}")
         if request.is_json:
             return jsonify({
                 'success': False,
@@ -153,7 +149,6 @@ def register():
         return render_template('register.html')
         
     except Exception as e:
-        logger.error(f"Register sayfası hatası: {str(e)}")
         if request.is_json:
             return jsonify({
                 'success': False,
@@ -174,7 +169,6 @@ def logout():
         return redirect(url_for('main.index'))
         
     except Exception as e:
-        logger.error(f"Logout hatası: {str(e)}")
         flash('Çıkış yapılırken hata oluştu', 'error')
         return redirect(url_for('main.index'))
 
@@ -196,7 +190,6 @@ def check_auth():
             })
             
     except Exception as e:
-        logger.error(f"Auth kontrol hatası: {str(e)}")
         return jsonify({
             'authenticated': False,
             'error': 'Kimlik doğrulama kontrol edilemedi'

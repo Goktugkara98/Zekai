@@ -104,7 +104,7 @@ export class StateManager {
                 try {
                     callback(newValue, oldValue, key);
                 } catch (error) {
-                    console.error('State listener error:', error);
+                    // State listener error - silently continue
                 }
             });
         }

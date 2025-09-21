@@ -4,12 +4,9 @@
 # app.services.provider_factory -> app.services.providers.factory
 # =============================================================================
 
-import logging
 from typing import Dict, Any, Optional
 from app.services.providers.gemini import GeminiService
 from app.services.providers.openrouter import OpenRouterService
-
-logger = logging.getLogger(__name__)
 
 class ProviderFactory:
     """Provider türüne göre uygun servisi döndüren factory sınıfı"""
@@ -29,10 +26,8 @@ class ProviderFactory:
             elif provider_type == 'anthropic':
                 return cls._get_anthropic_service(**kwargs)
             else:
-                logger.error(f"Desteklenmeyen provider türü: {provider_type}")
                 return None
         except Exception as e:
-            logger.error(f"Provider servis oluşturma hatası: {str(e)}")
             return None
     
     @classmethod
@@ -49,12 +44,10 @@ class ProviderFactory:
     
     @classmethod
     def _get_openai_service(cls, **kwargs):
-        logger.warning("OpenAI servisi henüz implement edilmedi")
         return None
     
     @classmethod
     def _get_anthropic_service(cls, **kwargs):
-        logger.warning("Anthropic servisi henüz implement edilmedi")
         return None
     
     @classmethod
@@ -68,7 +61,6 @@ class ProviderFactory:
                 service.set_model(model)
             return service.test_connection()
         except Exception as e:
-            logger.error(f"Provider bağlantı testi hatası: {str(e)}")
             return {"success": False, "error": f"Bağlantı testi hatası: {str(e)}"}
     
     @classmethod
@@ -85,13 +77,11 @@ class ProviderFactory:
             else:
                 return {"success": False, "error": "Bu provider model listesi desteklemiyor"}
         except Exception as e:
-            logger.error(f"Model listesi alma hatası: {str(e)}")
             return {"success": False, "error": f"Model listesi alma hatası: {str(e)}"}
     
     @classmethod
     def clear_cache(cls):
         cls._services.clear()
-        logger.info("Provider servis cache'i temizlendi")
     
     @classmethod
     def get_supported_providers(cls) -> list:

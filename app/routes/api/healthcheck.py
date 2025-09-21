@@ -5,10 +5,7 @@
 # =============================================================================
 
 from flask import Blueprint, jsonify
-import logging
 from app.services.health_service import HealthService
-
-logger = logging.getLogger(__name__)
 
 # Health API Blueprint
 health_bp = Blueprint('health', __name__, url_prefix='/api/health')

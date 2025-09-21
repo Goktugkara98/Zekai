@@ -27,8 +27,6 @@ export class ModelService {
         
         // Event listener'ları kur
         this.setupEventListeners();
-
-        console.log('ModelService initialized');
     }
 
     /**
@@ -51,15 +49,11 @@ export class ModelService {
      */
     async loadModels() {
         try {
-            console.log('Loading models from API...');
             const response = await fetch('/api/models');
             const result = await response.json();
             
-            console.log('API response:', result);
-            
             if (result.success) {
                 this.models = result.data.map(model => this.transformModelData(model));
-                console.log('Models loaded from API:', this.models.length, this.models);
                 
                 // Event emit et
                 this.eventManager.emit('models:loaded', {
@@ -67,11 +61,9 @@ export class ModelService {
                     count: this.models.length
                 });
             } else {
-                console.error('Failed to load models:', result.error);
                 this.models = [];
             }
         } catch (error) {
-            console.error('Error loading models:', error);
             this.models = [];
         }
     }
@@ -82,7 +74,6 @@ export class ModelService {
      * @returns {Object} Frontend model objesi
      */
     transformModelData(dbModel) {
-        console.log('Transforming model data:', dbModel);
         
         // Provider'a göre icon ve color belirle
         const providerConfig = this.getProviderConfig(dbModel.provider_name);
@@ -93,7 +84,7 @@ export class ModelService {
             model_name: dbModel.model_name, // Backend ile uyumluluk için
             provider: dbModel.provider_name || 'Unknown',
             type: dbModel.model_type || 'text',
-            description: i18n.t('model_by_provider', { provider: dbModel.provider_name || i18n.t('unknown_provider') }),
+            description: dbModel.description || i18n.t('model_by_provider', { provider: dbModel.provider_name || i18n.t('unknown_provider') }),
             icon: providerConfig.icon,
             color: providerConfig.color,
             logoUrl: dbModel.logo_path || null,
@@ -109,7 +100,6 @@ export class ModelService {
             updatedAt: dbModel.updated_at
         };
         
-        console.log('Transformed model:', transformedModel);
         return transformedModel;
     }
 
@@ -555,7 +545,5 @@ export class ModelService {
         // Event listener'ları kaldır
         this.eventManager.off('model:selected');
         this.eventManager.off('model:change');
-
-        console.log('ModelService destroyed');
     }
 }

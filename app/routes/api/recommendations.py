@@ -5,11 +5,9 @@
 # =============================================================================
 
 from flask import Blueprint, request, jsonify
-import logging
 from app.services.recommendations_service import RecommendationsService
 
 recommendations_bp = Blueprint('recommendations', __name__, url_prefix='/api/recommendations')
-logger = logging.getLogger(__name__)
 service = RecommendationsService()
 
 
@@ -29,5 +27,4 @@ def recommend_models():
         status = 200 if result.get('success') else 400
         return jsonify(result), status
     except Exception as e:
-        logger.error(f"Recommendations error: {e}")
         return jsonify({ 'success': False, 'error': 'Server error' }), 500

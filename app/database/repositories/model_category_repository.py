@@ -4,11 +4,8 @@
 # model_categories ilişki tablosu için CRUD ve toplu işlemler
 # =============================================================================
 
-import logging
 from typing import List, Optional, Dict
 from app.database.db_connection import get_connection, get_cursor, execute_query
-
-logger = logging.getLogger(__name__)
 
 
 class ModelCategoryRepository:
@@ -22,7 +19,6 @@ class ModelCategoryRepository:
             )
             return [int(r['category_id']) for r in rows] if rows else []
         except Exception as e:
-            logger.error(f"Kategori ID'leri alınamadı (model_id={model_id}): {e}")
             return []
 
     @staticmethod
@@ -48,7 +44,6 @@ class ModelCategoryRepository:
             conn.commit()
             return True
         except Exception as e:
-            logger.error(f"replace_model_categories hata: {e}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback()
@@ -79,7 +74,6 @@ class ModelCategoryRepository:
                 conn.close()
             return True
         except Exception as e:
-            logger.error(f"add_model_categories hata: {e}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()
@@ -103,7 +97,6 @@ class ModelCategoryRepository:
                 conn.close()
             return True
         except Exception as e:
-            logger.error(f"remove_model_categories hata: {e}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()
@@ -136,7 +129,6 @@ class ModelCategoryRepository:
                 conn.close()
             return True
         except Exception as e:
-            logger.error(f"bulk_replace hata: {e}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()

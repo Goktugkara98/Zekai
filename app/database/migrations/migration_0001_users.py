@@ -5,10 +5,7 @@
 # is_admin kolonu ana tablo oluşturma migration'ına dahildir.
 # =============================================================================
 
-import logging
 from app.database.db_connection import execute_query
-
-logger = logging.getLogger(__name__)
 
 
 def create_users_table():
@@ -42,11 +39,9 @@ def create_users_table():
         """
 
         execute_query(create_sql, fetch=False)
-        logger.info("Users tablosu oluşturuldu")
         return True
 
     except Exception as e:
-        logger.error(f"Users tablosu oluşturma hatası: {str(e)}")
         return False
 
 
@@ -59,11 +54,9 @@ def drop_users_table():
     """
     try:
         execute_query("DROP TABLE IF EXISTS users", fetch=False)
-        logger.info("Users tablosu silindi")
         return True
 
     except Exception as e:
-        logger.error(f"Users tablosu silme hatası: {str(e)}")
         return False
 
 
@@ -75,14 +68,8 @@ def run_migration():
         bool: Başarılı ise True
     """
     try:
-        logger.info("Users migration başlatılıyor...")
         success = create_users_table()
-        if success:
-            logger.info("✅ Users migration başarılı!")
-        else:
-            logger.error("❌ Users migration başarısız!")
         return success
 
     except Exception as e:
-        logger.error(f"Users migration hatası: {str(e)}")
         return False

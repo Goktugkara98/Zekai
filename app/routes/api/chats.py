@@ -5,7 +5,6 @@
 # =============================================================================
 
 from flask import Blueprint, request, jsonify
-import logging
 from app.services.chat_service import ChatService
 from app.services.providers.gemini import GeminiService
 from app.database.db_connection import execute_query
@@ -18,8 +17,6 @@ chats_bp = Blueprint('chats', __name__, url_prefix='/api/chats')
 # Servisleri başlat
 chat_service = ChatService()
 gemini_service = GeminiService()
-
-logger = logging.getLogger(__name__)
 
 @chats_bp.route('/create', methods=['POST'])
 def create_chat():
@@ -46,7 +43,6 @@ def create_chat():
         else:
             return jsonify(result), 400
     except Exception as e:
-        logger.error(f"Chat oluşturma API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
 @chats_bp.route('/<chat_id>', methods=['GET'])
@@ -65,7 +61,6 @@ def get_chat(chat_id):
         else:
             return jsonify(result), 404
     except Exception as e:
-        logger.error(f"Chat alma API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
 @chats_bp.route('/<chat_id>/messages', methods=['GET'])
@@ -87,7 +82,6 @@ def get_chat_messages(chat_id):
         else:
             return jsonify(result), 404
     except Exception as e:
-        logger.error(f"Mesaj alma API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
 @chats_bp.route('/<chat_id>/send', methods=['POST'])
@@ -140,7 +134,6 @@ def send_message(chat_id):
         else:
             return jsonify(result), 400
     except Exception as e:
-        logger.error(f"Mesaj gönderme API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
 @chats_bp.route('/list', methods=['GET'])
@@ -166,31 +159,30 @@ def get_user_chats():
         else:
             return jsonify(result), 400
     except Exception as e:
-        logger.error(f"Chat listesi alma API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
 @chats_bp.route('/gemini/test/<model_id>', methods=['POST'])
 def test_gemini_connection(model_id):
     try:
-        model_sql = "SELECT model_name, api_key FROM models WHERE model_id = %s"
+        model_sql = "SELECT model_name, request_model_name, api_key FROM models WHERE model_id = %s"
         model_result = execute_query(model_sql, (model_id,), fetch=True)
         if not model_result:
             return jsonify({"success": False, "error": "Model bulunamadı"}), 404
 
         model_name = model_result[0]["model_name"]
+        request_model_name = model_result[0].get("request_model_name") or model_name
         api_key = model_result[0]["api_key"]
         if not api_key:
             return jsonify({"success": False, "error": "Model için API anahtarı tanımlanmamış"}), 400
 
         gemini_service.set_api_key(api_key)
-        gemini_service.set_model(model_name)
+        gemini_service.set_model(request_model_name)
         result = gemini_service.test_connection()
         if result["success"]:
             return jsonify(result), 200
         else:
             return jsonify(result), 400
     except Exception as e:
-        logger.error(f"Gemini test API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
 @chats_bp.route('/gemini/models', methods=['GET'])
@@ -199,7 +191,6 @@ def get_gemini_models():
         models = gemini_service.get_available_models()
         return jsonify({"success": True, "models": models}), 200
     except Exception as e:
-        logger.error(f"Gemini modelleri alma API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500
 
 
@@ -230,5 +221,4 @@ def soft_delete_chat(chat_id):
         else:
             return jsonify({"success": False, "error": "Chat güncellenemedi"}), 400
     except Exception as e:
-        logger.error(f"Chat soft delete API hatası: {str(e)}")
         return jsonify({"success": False, "error": f"Sunucu hatası: {str(e)}"}), 500

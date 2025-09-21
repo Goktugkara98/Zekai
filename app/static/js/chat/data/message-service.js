@@ -23,8 +23,6 @@ export class MessageService {
         
         // Event listener'ları kur
         this.setupEventListeners();
-
-        console.log('MessageService initialized');
     }
 
     /**
@@ -415,7 +413,5 @@ export class MessageService {
         this.eventManager.off('message:received');
         this.eventManager.off('message:delete');
         this.eventManager.off('messages:clear');
-
-        console.log('MessageService destroyed');
     }
 }

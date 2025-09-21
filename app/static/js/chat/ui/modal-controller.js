@@ -460,9 +460,7 @@ export class ModalController {
                         grid.innerHTML = `<div class="no-models">${emptyMsg}</div>`;
                     }
                 }
-            } catch (err) {
-                console.error('Kategori modelleri yüklenemedi', err);
-            }
+            } catch (err) {}
         })();
 
         return modal;
@@ -489,8 +487,6 @@ export class ModalController {
     async init() {
         // Event listener'ları kur
         this.setupEventListeners();
-
-        console.log('ModalController initialized');
     }
 
     /**
@@ -1353,7 +1349,5 @@ export class ModalController {
 
         // Event listener'ları kaldır
         document.removeEventListener('keydown', this.handleEscapeKey);
-
-        console.log('ModalController destroyed');
     }
 }

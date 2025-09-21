@@ -58,12 +58,11 @@ export class Helpers {
      * @param {any} value - Value
      * @returns {boolean}
      */
-    static setStorage(key, value) {
+static setStorage(key, value) {
         try {
             localStorage.setItem(key, JSON.stringify(value));
             return true;
         } catch (error) {
-            console.error('Storage write error:', error);
             return false;
         }
     }
@@ -79,7 +78,6 @@ export class Helpers {
             const item = localStorage.getItem(key);
             return item ? JSON.parse(item) : defaultValue;
         } catch (error) {
-            console.error('Storage read error:', error);
             return defaultValue;
         }
     }
@@ -94,7 +92,6 @@ export class Helpers {
             localStorage.removeItem(key);
             return true;
         } catch (error) {
-            console.error('Storage remove error:', error);
             return false;
         }
     }

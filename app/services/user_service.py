@@ -4,12 +4,9 @@
 # Kullanıcı işlemleri için servis sınıfı.
 # =============================================================================
 
-import logging
 from typing import Dict, Any
 from app.database.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
-
-logger = logging.getLogger(__name__)
 
 
 class UserService:
@@ -18,7 +15,6 @@ class UserService:
             users = UserRepository.list_users()
             return {'success': True, 'data': users, 'count': len(users)}
         except Exception as e:
-            logger.error(f"Kullanıcıları listeleme hatası: {str(e)}")
             return {'success': False, 'error': 'Kullanıcılar getirilemedi'}
 
     def get_user(self, user_id: int) -> Dict[str, Any]:
@@ -28,7 +24,6 @@ class UserService:
                 return {'success': False, 'error': 'Kullanıcı bulunamadı'}
             return {'success': True, 'data': user}
         except Exception as e:
-            logger.error(f"Kullanıcı getirme hatası: {str(e)}")
             return {'success': False, 'error': 'Kullanıcı getirilemedi'}
 
     def create_user(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -54,7 +49,6 @@ class UserService:
                 return {'success': True, 'data': {'user_id': new_id}, 'message': 'Kullanıcı oluşturuldu'}
             return {'success': False, 'error': 'Kullanıcı oluşturulamadı'}
         except Exception as e:
-            logger.error(f"Kullanıcı oluşturma hatası: {str(e)}")
             return {'success': False, 'error': 'Kullanıcı oluşturulamadı'}
 
     def update_user(self, user_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -64,7 +58,6 @@ class UserService:
             ok = UserRepository.update_user(user_id, data)
             return {'success': True, 'message': 'Kullanıcı güncellendi'} if ok else {'success': False, 'error': 'Kullanıcı güncellenemedi'}
         except Exception as e:
-            logger.error(f"Kullanıcı güncelleme hatası: {str(e)}")
             return {'success': False, 'error': 'Kullanıcı güncellenemedi'}
 
     def update_password(self, user_id: int, new_password: str) -> Dict[str, Any]:
@@ -75,7 +68,6 @@ class UserService:
             ok = UserRepository.update_password(user_id, ph)
             return {'success': True, 'message': 'Şifre güncellendi'} if ok else {'success': False, 'error': 'Şifre güncellenemedi'}
         except Exception as e:
-            logger.error(f"Şifre güncelleme hatası: {str(e)}")
             return {'success': False, 'error': 'Şifre güncellenemedi'}
 
     def delete_user(self, user_id: int) -> Dict[str, Any]:
@@ -83,5 +75,4 @@ class UserService:
             ok = UserRepository.delete_user(user_id)
             return {'success': True, 'message': 'Kullanıcı silindi'} if ok else {'success': False, 'error': 'Kullanıcı silinemedi'}
         except Exception as e:
-            logger.error(f"Kullanıcı silme hatası: {str(e)}")
             return {'success': False, 'error': 'Kullanıcı silinemedi'}

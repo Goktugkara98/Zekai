@@ -9,13 +9,10 @@ import os
 import mysql.connector
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
-import logging
 
 # .env dosyasını yükle
 load_dotenv()
 
-# Logger ayarla
-logger = logging.getLogger(__name__)
 
 def get_db_config():
     """
@@ -45,10 +42,8 @@ def get_connection():
     try:
         config = get_db_config()
         connection = mysql.connector.connect(**config)
-        logger.info(f"Veritabanı bağlantısı oluşturuldu: {config['database']}")
         return connection
     except Exception as e:
-        logger.error(f"Veritabanı bağlantı hatası: {str(e)}")
         raise
 
 def get_cursor(connection, dictionary=True):
@@ -93,7 +88,6 @@ def execute_query(query, params=None, fetch=True):
             return None
             
     except Exception as e:
-        logger.error(f"Sorgu çalıştırma hatası: {str(e)}")
         raise
     finally:
         if connection and connection.is_connected():
@@ -110,8 +104,7 @@ def test_connection():
     try:
         result = execute_query("SELECT 1", fetch=True)
         return result is not None and len(result) > 0
-    except Exception as e:
-        logger.error(f"Veritabanı bağlantı testi başarısız: {str(e)}")
+    except Exception:
         return False
 
 def get_database_info():
@@ -134,17 +127,10 @@ def get_database_info():
             'database_name': db_name,
             'mysql_version': version
         }
-    except Exception as e:
-        logger.error(f"Veritabanı bilgisi alınamadı: {str(e)}")
+    except Exception:
         return {}
 
 # Modül import edildiğinde bağlantıyı test et
 if __name__ == "__main__":
-    if test_connection():
-        print("✅ Veritabanı bağlantısı başarılı!")
-        info = get_database_info()
-        print(f"📊 Veritabanı: {info.get('database_name', 'Bilinmiyor')}")
-        print(f"🔧 MySQL Versiyonu: {info.get('mysql_version', 'Bilinmiyor')}")
-    else:
-        print("❌ Veritabanı bağlantısı başarısız!")
-        print("🔧 Lütfen .env dosyasındaki veritabanı ayarlarını kontrol edin.")
+    # No output in standalone mode
+    pass

@@ -51,7 +51,7 @@ export class AssistantService {
             });
             const json = await res.json();
             if (!json.success) {
-                console.warn('Assistant API failed, falling back to defaults:', json.error);
+                // API failed, will use fallback logic below
             }
 
             let suggestions = Array.isArray(json.data?.suggestions) ? json.data.suggestions : [];
@@ -84,7 +84,6 @@ export class AssistantService {
 
             return { success: true, suggestions: enriched };
         } catch (e) {
-            console.error('AssistantService.recommend error', e);
             // Fallback on unexpected error as well
             try {
                 const modelService = window.ZekaiApp?.services?.modelService;

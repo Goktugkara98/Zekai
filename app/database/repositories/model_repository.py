@@ -4,10 +4,7 @@
 # Bu dosya, models tablosu için basit CRUD işlemlerini yönetir.
 # =============================================================================
 
-import logging
 from app.database.db_connection import get_connection, get_cursor, execute_query
-
-logger = logging.getLogger(__name__)
 
 class ModelRepository:
     """
@@ -20,16 +17,19 @@ class ModelRepository:
         Yeni bir model kaydı oluşturur.
         """
         query = """
-            INSERT INTO models (model_name, model_type, provider_name, provider_type, api_key, base_url, is_active)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO models (model_name, request_model_name, model_type, provider_name, provider_type, api_key, base_url, logo_path, description, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         params = (
-            model_data.get('model_name'),
+            model_data.get('model_name'),  # display name
+            model_data.get('request_model_name'),  # provider'a gönderilecek gerçek model id
             model_data.get('model_type'),
             model_data.get('provider_name'),
             model_data.get('provider_type'),
             model_data.get('api_key'),
             model_data.get('base_url'),
+            model_data.get('logo_path'),
+            model_data.get('description'),
             model_data.get('is_active', True)
         )
         try:
@@ -40,10 +40,8 @@ class ModelRepository:
             model_id = cursor.lastrowid
             cursor.close()
             connection.close()
-            logger.info(f"Model oluşturuldu: {model_data.get('model_name')} (ID: {model_id})")
             return model_id
         except Exception as e:
-            logger.error(f"Model oluşturma hatası: {str(e)}")
             if connection and connection.is_connected():
                 connection.rollback()
                 connection.close()
@@ -58,7 +56,6 @@ class ModelRepository:
         try:
             return execute_query(query)
         except Exception as e:
-            logger.error(f"Tüm modelleri getirme hatası: {str(e)}")
             return []
 
     @staticmethod
@@ -116,7 +113,6 @@ class ModelRepository:
                 })
             return mapping
         except Exception as e:
-            logger.error(f"Model kategorileri alınamadı: {str(e)}")
             return {}
 
     @staticmethod
@@ -130,7 +126,6 @@ class ModelRepository:
             result = execute_query(query, params)
             return result[0] if result else None
         except Exception as e:
-            logger.error(f"Model ID {model_id} getirme hatası: {str(e)}")
             return None
 
     @staticmethod
@@ -141,12 +136,11 @@ class ModelRepository:
         set_clauses = []
         params = []
         for key, value in model_data.items():
-            if key in ['model_name', 'model_type', 'provider_name', 'provider_type', 'api_key', 'base_url', 'is_active']:
+            if key in ['model_name', 'request_model_name', 'model_type', 'provider_name', 'provider_type', 'api_key', 'base_url', 'logo_path', 'description', 'is_active']:
                 set_clauses.append(f"{key} = %s")
                 params.append(value)
         
         if not set_clauses:
-            logger.warning(f"Model ID {model_id} için güncellenecek veri bulunamadı.")
             return False
 
         query = f"UPDATE models SET {', '.join(set_clauses)} WHERE model_id = %s"
@@ -160,11 +154,9 @@ class ModelRepository:
             affected_rows = cursor.rowcount
             cursor.close()
             connection.close()
-            logger.info(f"Model ID {model_id} güncellendi. Etkilenen satır: {affected_rows}")
             # rowcount 0 olabilir (değerler değişmemiş), bu durumda da işlem başarılı kabul edilir
             return affected_rows >= 0
         except Exception as e:
-            logger.error(f"Model ID {model_id} güncelleme hatası: {str(e)}")
             if connection and connection.is_connected():
                 connection.rollback()
                 connection.close()
@@ -185,10 +177,8 @@ class ModelRepository:
             affected_rows = cursor.rowcount
             cursor.close()
             connection.close()
-            logger.info(f"Model ID {model_id} silindi. Etkilenen satır: {affected_rows}")
             return affected_rows > 0
         except Exception as e:
-            logger.error(f"Model ID {model_id} silme hatası: {str(e)}")
             if connection and connection.is_connected():
                 connection.rollback()
                 connection.close()

@@ -6,6 +6,16 @@
  * =============================================================================
  */
 
+// Silence all console output on index page
+try {
+    const noop = () => {};
+    ['log','warn','error','debug','info','trace'].forEach(fn => {
+        if (typeof console !== 'undefined' && console[fn]) {
+            console[fn] = noop;
+        }
+    });
+} catch (_) {}
+
 class IndexPage {
     constructor() {
         this.loginBtn = document.getElementById('login-btn');
@@ -21,7 +31,6 @@ class IndexPage {
         this.bindEvents();
         this.checkTheme();
         this.addKeyboardSupport();
-        console.log('Index page initialized');
     }
 
     /**
@@ -59,7 +68,6 @@ class IndexPage {
         
         // Simulate API call delay
         setTimeout(() => {
-            console.log('Login button clicked');
             // TODO: Implement actual login logic
             // For now, redirect to chat page
             window.location.href = '/chat';
@@ -77,7 +85,6 @@ class IndexPage {
         
         // Simulate API call delay
         setTimeout(() => {
-            console.log('Register button clicked');
             // TODO: Implement actual registration logic
             // For now, show alert
             alert('Kayıt olma özelliği yakında eklenecek!');
@@ -188,10 +195,8 @@ class IndexPage {
     handleVisibilityChange() {
         if (document.hidden) {
             // Page is hidden - pause any ongoing operations
-            console.log('Page hidden');
         } else {
             // Page is visible - resume operations
-            console.log('Page visible');
         }
     }
 
@@ -199,7 +204,6 @@ class IndexPage {
      * Hata yönetimi
      */
     handleError(error, context) {
-        console.error(`Error in ${context}:`, error);
         
         // Show user-friendly error message
         const errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
@@ -267,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         new IndexPage();
     } catch (error) {
-        console.error('Failed to initialize index page:', error);
+        // Failed to initialize index page - silently handle
     }
 });
 
@@ -279,7 +283,6 @@ document.addEventListener('visibilitychange', () => {
 // Sayfa kapanmadan önce temizlik
 window.addEventListener('beforeunload', () => {
     // Cleanup if needed
-    console.log('Page unloading');
 });
 
 // Export for potential module usage

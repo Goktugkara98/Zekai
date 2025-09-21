@@ -125,8 +125,17 @@
               <input class="form-control" name="model_name" type="text" placeholder="Örn: GPT-4" required />
             </div>
             <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Request Model (API ID)</label>
+              <input class="form-control" name="request_model_name" type="text" placeholder="Örn: openrouter/model:id veya gemini-1.5-pro" />
+              <div class="form-text">Sağlayıcıya gönderilecek gerçek model kimliği</div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
               <label class="form-label">Model Türü</label>
               <input class="form-control" name="model_type" type="text" placeholder="Örn: text-generation" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Açıklama</label>
+              <textarea class="form-control" name="description" rows="2" placeholder="Bu model hakkında kısa bir açıklama..."></textarea>
             </div>
             <div class="col-12 col-md-6 col-lg-3">
               <label class="form-label">Sağlayıcı Adı <span class="text-danger">*</span></label>
@@ -197,8 +206,17 @@
               <input class="form-control" name="e_model_name" id="e_model_name" type="text" required />
             </div>
             <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Request Model (API ID)</label>
+              <input class="form-control" name="e_request_model_name" id="e_request_model_name" type="text" placeholder="Örn: openrouter/model:id veya gemini-1.5-pro" />
+              <div class="form-text">Sağlayıcıya gönderilecek gerçek model kimliği</div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
               <label class="form-label">Model Türü</label>
               <input class="form-control" name="e_model_type" id="e_model_type" type="text" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Açıklama</label>
+              <textarea class="form-control" name="e_description" id="e_description" rows="2" placeholder="Bu model hakkında kısa bir açıklama..."></textarea>
             </div>
             <div class="col-12 col-md-6 col-lg-3">
               <label class="form-label">Sağlayıcı Adı <span class="text-danger">*</span></label>
@@ -235,6 +253,20 @@
             <div class="col-12 col-md-6">
               <label class="form-label">Base URL</label>
               <input class="form-control" name="e_base_url" id="e_base_url" type="url" placeholder="https://api.example.com" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Icon (PNG/JPG/SVG/WEBP)</label>
+              <div class="d-flex align-items-center gap-3">
+                <img id="e_icon_preview" src="" alt="Icon" style="width:42px;height:42px;object-fit:contain;border-radius:6px;border:1px solid #eee;display:none;" />
+                <input class="form-control" type="file" id="e_icon_file" accept=".png,.jpg,.jpeg,.svg,.webp" />
+                <button type="button" class="btn btn-outline-primary" onclick="uploadModelIcon()">
+                  <i class="fas fa-upload me-1"></i> Yükle
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#iconLibraryModal">
+                  <i class="fas fa-images me-1"></i> Kütüphaneden Seç
+                </button>
+              </div>
+              <div class="form-text">Yükledikten sonra önizleme güncellenecektir</div>
             </div>
           </div>
 
@@ -355,7 +387,9 @@ async function createModel(ev) {
   const f = ev.target;
   const payload = {
     model_name: f.model_name.value,
+    request_model_name: f.request_model_name.value,
     model_type: f.model_type.value,
+    description: f.description.value,
     provider_name: f.provider_name.value,
     provider_type: f.provider_type.value,
     api_key: f.api_key.value,
@@ -383,12 +417,25 @@ async function openEditModelModal(modelId, modelName) {
     const resDetail = await api(`/api/models/${modelId}`);
     const detail = resDetail.data || resDetail || {};
     document.getElementById('e_model_name').value = detail.model_name || '';
+    document.getElementById('e_request_model_name').value = detail.request_model_name || '';
     document.getElementById('e_model_type').value = detail.model_type || '';
+    document.getElementById('e_description').value = detail.description || '';
     document.getElementById('e_provider_name').value = detail.provider_name || '';
     document.getElementById('e_provider_type').value = detail.provider_type || '';
     document.getElementById('e_is_active').checked = !!detail.is_active;
     document.getElementById('e_base_url').value = detail.base_url || '';
     document.getElementById('e_api_key').value = '';
+    // Icon preview
+    try {
+      const img = document.getElementById('e_icon_preview');
+      if (detail.logo_path) {
+        img.src = detail.logo_path;
+        img.style.display = 'inline-block';
+      } else {
+        img.src = '';
+        img.style.display = 'none';
+      }
+    } catch (e) {}
 
     // Load categories
     const result = await api(`/admin/api/models/${modelId}/categories`);
@@ -508,7 +555,9 @@ async function saveModelEdit(ev) {
   saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Kaydediliyor...';
   const payload = {
     model_name: f.e_model_name.value,
+    request_model_name: f.e_request_model_name.value,
     model_type: f.e_model_type.value,
+    description: f.e_description.value,
     provider_name: f.e_provider_name.value,
     provider_type: f.e_provider_type.value,
     base_url: f.e_base_url.value,
@@ -546,7 +595,102 @@ document.addEventListener('click', function(e) {
     return;
   }
 });
+
+async function uploadModelIcon() {
+  try {
+    const modelId = parseInt(document.getElementById('editModelId').value);
+    const fileInput = document.getElementById('e_icon_file');
+    if (!fileInput.files || fileInput.files.length === 0) {
+      AdminUI.showToast('Lütfen bir dosya seçin', 'warning');
+      return;
+    }
+    const fd = new FormData();
+    fd.append('icon', fileInput.files[0]);
+    const res = await fetch(`/api/models/${modelId}/icon`, { method: 'POST', body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) throw new Error(data.error || 'Yükleme başarısız');
+    const url = data.logo_path;
+    const img = document.getElementById('e_icon_preview');
+    img.src = url;
+    img.style.display = 'inline-block';
+    AdminUI.showToast('Icon yüklendi', 'success');
+  } catch (e) {
+    AdminUI.showToast(e.message || 'Icon yüklenemedi', 'error');
+  }
+}
 </script>
+
+<!-- Icon Library Modal -->
+<div class="modal fade" id="iconLibraryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-images text-primary me-2"></i>
+          İkon Kütüphanesi
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <div id="iconLibraryGrid" class="row g-3"></div>
+        <div id="iconLibraryEmpty" class="text-muted" style="display:none;">Henüz yüklenmiş ikon bulunmuyor.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.getElementById('iconLibraryModal').addEventListener('show.bs.modal', async () => {
+      try {
+        const res = await fetch('/api/models/icons');
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) throw new Error(data.error || 'İkonlar alınamadı');
+        const grid = document.getElementById('iconLibraryGrid');
+        const empty = document.getElementById('iconLibraryEmpty');
+        grid.innerHTML = '';
+        if (!data.data || data.data.length === 0) {
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        data.data.forEach(item => {
+          const col = document.createElement('div');
+          col.className = 'col-6 col-md-3';
+          col.innerHTML = `
+            <div class="border rounded p-2 text-center hover-select" style="cursor:pointer;">
+              <img src="${item.path}" alt="${item.name}" style="width:64px;height:64px;object-fit:contain;" />
+              <div class="small text-muted mt-1" title="${item.name}">${item.name}</div>
+            </div>
+          `;
+          col.querySelector('.hover-select').addEventListener('click', async () => {
+            try {
+              const modelId = parseInt(document.getElementById('editModelId').value);
+              const resp = await fetch(`/api/models/${modelId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logo_path: item.path })
+              });
+              const js = await resp.json().catch(() => ({}));
+              if (!resp.ok || !js.success) throw new Error(js.error || 'Güncellenemedi');
+              const img = document.getElementById('e_icon_preview');
+              img.src = item.path;
+              img.style.display = 'inline-block';
+              AdminUI.showToast('Icon güncellendi', 'success');
+              const mdl = bootstrap.Modal.getInstance(document.getElementById('iconLibraryModal'));
+              mdl.hide();
+            } catch (e) {
+              AdminUI.showToast(e.message || 'Icon seçilemedi', 'error');
+            }
+          });
+          grid.appendChild(col);
+        });
+      } catch (e) {
+        AdminUI.showToast(e.message || 'İkonlar yüklenemedi', 'error');
+      }
+    });
+  </script>
+</div>
 
 <style>
 .provider-badge {

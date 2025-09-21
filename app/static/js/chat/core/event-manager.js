@@ -93,7 +93,7 @@ export class EventManager {
                 
                 listener.callback(event);
             } catch (error) {
-                console.error(`Event listener error for ${eventName}:`, error);
+                // Event listener error - silently continue
             }
         });
     }

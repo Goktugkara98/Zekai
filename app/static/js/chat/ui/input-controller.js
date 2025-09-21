@@ -34,7 +34,6 @@ export class InputController {
         this.layoutBtns = DOMUtils.$$('.layout-btn');
 
         if (!this.messageInput) {
-            console.error('Message input not found');
             return;
         }
 
@@ -46,8 +45,6 @@ export class InputController {
 
         // Input validasyonu kur
         this.setupValidation();
-
-        console.log('InputController initialized');
     }
 
     /**
@@ -474,7 +471,6 @@ export class InputController {
         } catch (err) {
             this.stateManager.setTyping?.(false);
             this.stateManager.addNotification?.({ type: 'error', message: i18n.t('assistant_error') });
-            console.error('handleAssistantRecommend error', err);
         }
     }
 
@@ -540,7 +536,5 @@ export class InputController {
         this.layoutBtns.forEach(btn => {
             DOMUtils.off(btn, 'click');
         });
-
-        console.log('InputController destroyed');
     }
 }

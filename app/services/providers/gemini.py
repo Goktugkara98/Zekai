@@ -6,11 +6,8 @@
 
 import requests
 import json
-import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-
-logger = logging.getLogger(__name__)
 
 class GeminiService:
     """
@@ -31,14 +28,12 @@ class GeminiService:
         API anahtarını ayarla
         """
         self.api_key = api_key
-        logger.info("Gemini API anahtarı ayarlandı")
         
     def set_model(self, model_name: str):
         """
         Model adını ayarla
         """
         self.model_name = model_name
-        logger.info(f"Gemini model ayarlandı: {model_name}")
         
     def set_parameters(self, max_tokens: int = None, temperature: float = None, 
                       top_p: float = None, top_k: int = None):
@@ -54,8 +49,7 @@ class GeminiService:
         if top_k is not None:
             self.top_k = top_k
             
-        logger.info(f"Gemini parametreleri güncellendi: max_tokens={self.max_tokens}, "
-                   f"temperature={self.temperature}, top_p={self.top_p}, top_k={self.top_k}")
+        # silent update; no logging
     
     def generate_content(self, prompt: str, system_prompt: str = None, 
                         conversation_history: List[Dict] = None) -> Dict[str, Any]:
@@ -118,15 +112,12 @@ class GeminiService:
                 ]
             }
             
-            logger.info(f"Gemini API isteği gönderiliyor: {self.model_name}")
-            logger.debug(f"Payload: {json.dumps(payload, indent=2, ensure_ascii=False)}")
+            # silent request; no logging
             
             response = requests.post(url, headers=headers, json=payload)
             response.raise_for_status()
             
             result = response.json()
-            logger.info("Gemini API yanıtı alındı")
-            logger.debug(f"Response: {json.dumps(result, indent=2, ensure_ascii=False)}")
             
             if "candidates" in result and len(result["candidates"]) > 0:
                 candidate = result["candidates"][0]
@@ -148,13 +139,10 @@ class GeminiService:
                 return {"success": False, "error": "Yanıt alınamadı", "raw_response": result}
                 
         except requests.exceptions.Timeout:
-            logger.error("Gemini API isteği zaman aşımına uğradı")
             return {"success": False, "error": "API isteği zaman aşımına uğradı"}
         except requests.exceptions.RequestException as e:
-            logger.error(f"Gemini API isteği hatası: {str(e)}")
             return {"success": False, "error": f"API isteği hatası: {str(e)}"}
         except Exception as e:
-            logger.error(f"Gemini servis hatası: {str(e)}")
             return {"success": False, "error": f"Beklenmeyen hata: {str(e)}"}
     
     def test_connection(self) -> Dict[str, Any]:
@@ -169,7 +157,6 @@ class GeminiService:
             else:
                 return {"success": False, "error": result.get("error", "Bilinmeyen hata")}
         except Exception as e:
-            logger.error(f"Gemini bağlantı testi hatası: {str(e)}")
             return {"success": False, "error": f"Bağlantı testi hatası: {str(e)}"}
     
     def get_available_models(self) -> List[Dict[str, Any]]:

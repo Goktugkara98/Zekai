@@ -8,10 +8,7 @@
 # (DDL) içerir; veri ekleme/seed işlemleri bu dosyadan kaldırılmıştır.
 # =============================================================================
 
-import logging
 from app.database.db_connection import execute_query, get_db_config
-
-logger = logging.getLogger(__name__)
 
 
 def create_categories_table():
@@ -35,10 +32,8 @@ def create_categories_table():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
         execute_query(create_sql, fetch=False)
-        logger.info("Categories tablosu oluşturuldu")
         return True
     except Exception as e:
-        logger.error(f"Categories tablosu oluşturma hatası: {str(e)}")
         return False
 
 
@@ -83,17 +78,14 @@ def alter_models_table_add_columns():
         # logo_path sütununu kontrol et ve ekle
         if not _check_if_exists('models', column_name='logo_path'):
             execute_query("ALTER TABLE models ADD COLUMN logo_path VARCHAR(500) NULL AFTER base_url", fetch=False)
-            logger.info("models.logo_path sütunu eklendi.")
 
         # primary_category_id sütununu kontrol et ve ekle
         if not _check_if_exists('models', column_name='primary_category_id'):
             execute_query("ALTER TABLE models ADD COLUMN primary_category_id INT NULL AFTER is_active", fetch=False)
-            logger.info("models.primary_category_id sütunu eklendi.")
 
         # Index'i kontrol et ve ekle
         if not _check_if_exists('models', index_name='idx_primary_category_id'):
             execute_query("ALTER TABLE models ADD INDEX idx_primary_category_id (primary_category_id)", fetch=False)
-            logger.info("idx_primary_category_id index'i eklendi.")
 
         # Foreign key'i kontrol et ve ekle
         if not _check_if_exists('models', constraint_name='fk_models_primary_category'):
@@ -101,12 +93,9 @@ def alter_models_table_add_columns():
                 "ALTER TABLE models ADD CONSTRAINT fk_models_primary_category FOREIGN KEY (primary_category_id) REFERENCES categories(category_id) ON DELETE SET NULL",
                 fetch=False
             )
-            logger.info("fk_models_primary_category foreign key'i eklendi.")
 
-        logger.info("Models tablosu revize edildi (logo_path, primary_category_id)")
         return True
     except Exception as e:
-        logger.error(f"Models tablosu revizyon hatası: {str(e)}")
         return False
 
 
@@ -133,10 +122,8 @@ def create_model_categories_table():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
         execute_query(create_sql, fetch=False)
-        logger.info("model_categories tablosu oluşturuldu")
         return True
     except Exception as e:
-        logger.error(f"model_categories tablosu oluşturma hatası: {str(e)}")
         return False
 
 def run_migration():
@@ -153,8 +140,6 @@ def run_migration():
             return False
         if not create_model_categories_table():
             return False
-        logger.info("Categories migration başarıyla tamamlandı")
         return True
     except Exception as e:
-        logger.error(f"Categories migration hatası: {str(e)}")
         return False

@@ -5,11 +5,8 @@
 # Migration'lardan bağımsızdır ve güvenle tekrar çalıştırılabilir (idempotent).
 # =============================================================================
 
-import logging
 from typing import List, Tuple
 from app.database.db_connection import execute_query
-
-logger = logging.getLogger(__name__)
 
 
 def seed_categories() -> bool:
@@ -50,8 +47,6 @@ def seed_categories() -> bool:
             VALUES {values_clause}
         """
         execute_query(insert_sql, params=tuple(flat_params), fetch=False)
-        logger.info("Categories başlangıç verileri eklendi (var olanlar atlandı)")
         return True
     except Exception as e:
-        logger.error(f"Categories başlangıç verileri eklenemedi: {str(e)}")
         return False

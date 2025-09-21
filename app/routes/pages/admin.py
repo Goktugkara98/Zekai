@@ -5,13 +5,10 @@
 # =============================================================================
 
 from flask import Blueprint, render_template
-import logging
 from app.routes.auth_decorators import admin_required
 from app.services.user_service import UserService
 from app.services.model_service import ModelService
 from app.services.category_service import CategoryService
-
-logger = logging.getLogger(__name__)
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -68,7 +65,6 @@ def dashboard():
             provider_by_name=provider_by_name,
         )
     except Exception as e:
-        logger.error(f"Admin dashboard hatası: {str(e)}")
         return "Admin paneli yüklenirken hata oluştu", 500
 
 
@@ -80,7 +76,6 @@ def users_page():
         users = result.get('data', []) if result.get('success') else []
         return render_template('admin/users.html', users=users)
     except Exception as e:
-        logger.error(f"Admin users sayfası hatası: {str(e)}")
         return "Kullanıcı listesi yüklenirken hata oluştu", 500
 
 
@@ -94,7 +89,6 @@ def models_page():
         categories = cats_result.get('data', []) if cats_result.get('success') else []
         return render_template('admin/models.html', models=models, categories=categories)
     except Exception as e:
-        logger.error(f"Admin models sayfası hatası: {str(e)}")
         return "Model listesi yüklenirken hata oluştu", 500
 
 
@@ -106,5 +100,4 @@ def categories_page():
         categories = result.get('data', []) if result.get('success') else []
         return render_template('admin/categories.html', categories=categories)
     except Exception as e:
-        logger.error(f"Admin categories sayfası hatası: {str(e)}")
         return "Kategori listesi yüklenirken hata oluştu", 500

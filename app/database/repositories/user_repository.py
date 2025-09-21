@@ -4,11 +4,8 @@
 # Users tablosu için CRUD işlemlerini yönetir.
 # =============================================================================
 
-import logging
 from typing import List, Dict, Any, Optional
 from app.database.db_connection import get_connection, get_cursor, execute_query
-
-logger = logging.getLogger(__name__)
 
 
 class UserRepository:
@@ -24,7 +21,6 @@ class UserRepository:
             )
             return rows or []
         except Exception as e:
-            logger.error(f"Kullanıcıları getirme hatası: {str(e)}")
             return []
 
     @staticmethod
@@ -40,7 +36,6 @@ class UserRepository:
             )
             return rows[0] if rows else None
         except Exception as e:
-            logger.error(f"Kullanıcı getirme hatası (id={user_id}): {str(e)}")
             return None
 
     @staticmethod
@@ -56,7 +51,6 @@ class UserRepository:
             )
             return rows[0] if rows else None
         except Exception as e:
-            logger.error(f"Kullanıcı getirme hatası (email={email}): {str(e)}")
             return None
 
     @staticmethod
@@ -75,10 +69,8 @@ class UserRepository:
             new_id = cursor.lastrowid
             cursor.close()
             connection.close()
-            logger.info(f"Kullanıcı oluşturuldu: {email} (ID: {new_id})")
             return new_id
         except Exception as e:
-            logger.error(f"Kullanıcı oluşturma hatası: {str(e)}")
             try:
                 if connection and connection.is_connected():
                     connection.rollback()
@@ -111,7 +103,6 @@ class UserRepository:
             connection.close()
             return affected > 0
         except Exception as e:
-            logger.error(f"Kullanıcı güncelleme hatası (id={user_id}): {str(e)}")
             try:
                 if connection and connection.is_connected():
                     connection.rollback()
@@ -134,7 +125,6 @@ class UserRepository:
             connection.close()
             return affected > 0
         except Exception as e:
-            logger.error(f"Şifre güncelleme hatası (id={user_id}): {str(e)}")
             try:
                 if connection and connection.is_connected():
                     connection.rollback()
@@ -157,7 +147,6 @@ class UserRepository:
             connection.close()
             return affected > 0
         except Exception as e:
-            logger.error(f"Kullanıcı silme hatası (id={user_id}): {str(e)}")
             try:
                 if connection and connection.is_connected():
                     connection.rollback()

@@ -30,12 +30,10 @@ export class App {
      */
     async init() {
         if (this.isInitialized) {
-            console.warn('App already initialized');
             return;
         }
 
         try {
-            console.log('Initializing Zekai Chat App...');
             // Initialize i18n before services/controllers
             try { i18n.init(); } catch (_) {}
             
@@ -55,13 +53,10 @@ export class App {
             this.isInitialized = true;
             this.eventManager.emit('app:ready');
             
-            console.log('Zekai Chat App initialized successfully');
-            
             // Apply translations to the whole document once initialized
             try { i18n.apply(document); } catch (_) {}
             
         } catch (error) {
-            console.error('App initialization failed:', error);
             this.stateManager.setError(i18n.t('app_init_failed'));
         }
     }
@@ -106,13 +101,11 @@ export class App {
     setupEventListeners() {
         // Global error handling
         window.addEventListener('error', (event) => {
-            console.error('Global error:', event.error);
             this.stateManager.setError(i18n.t('unexpected_error'));
         });
 
         // Unhandled promise rejection
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('Unhandled promise rejection:', event.reason);
             this.stateManager.setError(i18n.t('unexpected_error'));
         });
 
@@ -197,8 +190,6 @@ export class App {
         
         // State'i güncelle
         this.stateManager.setActiveModel(modelName);
-        
-        console.log(`Model selected: ${modelName}`);
     }
 
     /**

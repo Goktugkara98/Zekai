@@ -117,7 +117,6 @@ export class ChatPane {
                     }));
                 }
             } catch (e) {
-                console.warn('History load failed, using empty messages', e);
                 messages = [];
             }
         }

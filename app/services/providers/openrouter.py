@@ -4,12 +4,11 @@
 # OpenRouter entegrasyonu. app.services.providers altına taşındı.
 # =============================================================================
 
-import logging
 import requests
 import json
+import os
+import logging
 from typing import Dict, Any, List, Optional
-
-logger = logging.getLogger(__name__)
 
 class OpenRouterService:
     """OpenRouter API servisi"""
@@ -20,6 +19,12 @@ class OpenRouterService:
         self.model = None
         self.site_url = "https://zekai.ai"  # Optional
         self.site_name = "Zekai AI"  # Optional
+        # Debug logging (optional): set env PROVIDER_DEBUG=1 to enable
+        try:
+            dbg = os.getenv("PROVIDER_DEBUG", "0")
+            self.debug = str(dbg).lower() in ("1", "true", "yes", "on")
+        except Exception:
+            self.debug = False
         
     def set_api_key(self, api_key: str):
         self.api_key = api_key
@@ -40,7 +45,6 @@ class OpenRouterService:
             test_result = self.generate_content(prompt="Test", conversation_history=[])
             return {"success": test_result["success"], "message": "OpenRouter bağlantısı başarılı" if test_result["success"] else "Bağlantı hatası", "error": test_result.get("error")}
         except Exception as e:
-            logger.error(f"OpenRouter bağlantı testi hatası: {str(e)}")
             return {"success": False, "error": f"Bağlantı testi hatası: {str(e)}"}
     
     def get_available_models(self) -> List[Dict[str, Any]]:
@@ -64,7 +68,6 @@ class OpenRouterService:
                 })
             return models
         except Exception as e:
-            logger.error(f"OpenRouter modelleri alma hatası: {str(e)}")
             return []
     
     def generate_content(self, prompt: str, conversation_history: List[Dict] = None, **kwargs) -> Dict[str, Any]:
@@ -96,7 +99,32 @@ class OpenRouterService:
                 "presence_penalty": kwargs.get("presence_penalty", 0)
             }
             data = {k: v for k, v in data.items() if v is not None}
-            response = requests.post(url=url, headers=headers, data=json.dumps(data))
+            # Optional safe debug log
+            if self.debug:
+                try:
+                    safe_headers = {k: ("***" if k.lower() == "authorization" else v) for k, v in headers.items()}
+                    logging.warning("[OpenRouter] Request URL=%s model=%s messages=%d", url, self.model, len(messages))
+                    logging.warning("[OpenRouter] Headers=%s", safe_headers)
+                    logging.warning("[OpenRouter] PayloadKeys=%s", list(data.keys()))
+                    # Also print to stdout to guarantee visibility
+                    print(f"[OpenRouter] Request URL={url} model={self.model} messages={len(messages)}")
+                    print(f"[OpenRouter] Headers={safe_headers}")
+                    print(f"[OpenRouter] PayloadKeys={list(data.keys())}")
+                except Exception:
+                    pass
+
+            response = requests.post(url=url, headers=headers, json=data)
+            if self.debug:
+                try:
+                    logging.warning("[OpenRouter] Response status=%s", response.status_code)
+                    # Print first chars only to avoid huge console spam
+                    body_snippet = response.text[:1000]
+                    print(f"[OpenRouter] Response status={response.status_code}")
+                    if response.status_code >= 400:
+                        logging.warning("[OpenRouter] Response body=%s", body_snippet)
+                        print(f"[OpenRouter] Response body={body_snippet}")
+                except Exception:
+                    pass
             response.raise_for_status()
             result = response.json()
             if "choices" in result and len(result["choices"]) > 0:
@@ -116,10 +144,8 @@ class OpenRouterService:
             else:
                 return {"success": False, "error": "Geçersiz yanıt formatı"}
         except requests.exceptions.RequestException as e:
-            logger.error(f"OpenRouter API isteği hatası: {str(e)}")
             return {"success": False, "error": f"API isteği hatası: {str(e)}"}
         except Exception as e:
-            logger.error(f"OpenRouter içerik oluşturma hatası: {str(e)}")
             return {"success": False, "error": f"İçerik oluşturma hatası: {str(e)}"}
     
     def get_model_info(self, model_name: str) -> Dict[str, Any]:
@@ -130,7 +156,6 @@ class OpenRouterService:
                     return model
             return {}
         except Exception as e:
-            logger.error(f"Model bilgisi alma hatası: {str(e)}")
             return {}
     
     def validate_model(self, model_name: str) -> bool:
@@ -138,5 +163,4 @@ class OpenRouterService:
             model_info = self.get_model_info(model_name)
             return bool(model_info)
         except Exception as e:
-            logger.error(f"Model doğrulama hatası: {str(e)}")
             return False

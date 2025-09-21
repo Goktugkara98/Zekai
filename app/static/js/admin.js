@@ -2,6 +2,16 @@
 (function(){
   'use strict';
 
+  // Silence all console output on admin pages
+  try {
+    const noop = () => {};
+    ['log','warn','error','debug','info','trace'].forEach(fn => {
+      if (typeof console !== 'undefined' && console[fn]) {
+        console[fn] = noop;
+      }
+    });
+  } catch (_) {}
+
   // Initialize tooltips
   function initTooltips() {
     try {
@@ -11,9 +21,7 @@
           new window.bootstrap.Tooltip(tooltipTriggerEl);
         }
       });
-    } catch (e) {
-      console.warn('Tooltips initialization failed:', e);
-    }
+    } catch (e) {}
   }
 
   // Enhanced toast system
@@ -96,9 +104,7 @@
         block: 'start',
         inline: 'nearest'
       });
-    } catch (e) {
-      console.warn('Smooth scroll failed:', e);
-    }
+    } catch (e) {}
   }
 
   // Loading states

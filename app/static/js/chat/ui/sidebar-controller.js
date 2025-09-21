@@ -36,9 +36,7 @@ export class SidebarController {
             if (jsonActive && jsonActive.success && Array.isArray(jsonActive.chats)) {
                 this.renderActiveChatsFromServer(jsonActive.chats, activeListEl);
             }
-        } catch (e) {
-            console.warn('Active chats fetch failed:', e);
-        }
+        } catch (e) {}
 
         // Geçmiş (pasif) sohbetleri getir
         try {
@@ -47,9 +45,7 @@ export class SidebarController {
             if (jsonHist && jsonHist.success && Array.isArray(jsonHist.chats)) {
                 this.renderHistoryChatsFromServer(jsonHist.chats, historyListEl);
             }
-        } catch (e) {
-            console.warn('History chats fetch failed:', e);
-        }
+        } catch (e) {}
     }
 
     /**
@@ -143,7 +139,6 @@ export class SidebarController {
     async init() {
         this.sidebar = DOMUtils.$('.chat-sidebar');
         if (!this.sidebar) {
-            console.error('Sidebar element not found');
             return;
         }
 
@@ -179,11 +174,7 @@ export class SidebarController {
         // Kullanıcıya ait sohbetleri yükle (aktif ve geçmiş)
         try {
             await this.loadUserChats();
-        } catch (e) {
-            console.warn('Failed to load user chats:', e);
-        }
-
-        console.log('SidebarController initialized');
+        } catch (e) {}
     }
 
     /**
@@ -347,8 +338,6 @@ export class SidebarController {
             modelName,
             element: item
         });
-
-        console.log('Model selected:', modelName);
     }
 
     /**
@@ -373,7 +362,6 @@ export class SidebarController {
             categoryName,
             element: item
         });
-        console.log('Category selected:', categoryName);
     }
 
     /**
@@ -398,8 +386,6 @@ export class SidebarController {
             chatName,
             element: item
         });
-
-        console.log('Chat selected:', chatName);
     }
 
     /**
@@ -426,8 +412,6 @@ export class SidebarController {
             modelName,
             element: item
         });
-
-        console.log('History selected:', paneId, modelName);
     }
 
     /**
@@ -441,8 +425,6 @@ export class SidebarController {
         this.eventManager.emit('models:pin-more', {
             element: e.target
         });
-
-        console.log('Pin More Models clicked');
     }
 
     // Old bottom link handler removed
@@ -530,16 +512,12 @@ export class SidebarController {
             // Model service'den modelleri al
             const modelService = window.ZekaiApp?.services?.modelService;
             if (!modelService) {
-                console.warn('ModelService not available');
                 return;
             }
 
             const models = modelService.getModels({ available: true });
-            console.log('Rendering models:', models);
             this.updateModelList(models);
-        } catch (error) {
-            console.error('Error rendering models:', error);
-        }
+        } catch (error) {}
     }
 
     /**
@@ -547,12 +525,10 @@ export class SidebarController {
      * @param {Array} models - Model listesi
      */
     updateModelList(models) {
-        console.log('updateModelList called with:', models);
 
         const favList = DOMUtils.$('#favorite-model-list');
         const allList = DOMUtils.$('#all-model-list');
         if (!favList || !allList) {
-            console.error('Favorite or All model list containers not found');
             return;
         }
 
@@ -593,8 +569,6 @@ export class SidebarController {
         if (!favList.children.length) {
             favList.innerHTML = `<div class="no-models">${i18n.t('fav_hint')}</div>`;
         }
-
-        console.log('Model lists updated:', sorted.length, 'models');
     }
 
     /**
@@ -683,9 +657,7 @@ export class SidebarController {
                 // Prefetch models for this category in background
                 this.prefetchCategoryModels(cat.category_id);
             });
-        } catch (e) {
-            console.error('Kategoriler yüklenemedi', e);
-        }
+        } catch (e) {}
     }
 
     /**
@@ -769,7 +741,6 @@ export class SidebarController {
      */
     updateChatList(chats) {
         // Bu fonksiyon dinamik chat listesi için kullanılabilir
-        console.log('Updating chat list:', chats);
     }
 
     /**
@@ -778,7 +749,6 @@ export class SidebarController {
      */
     updateHistoryList(history) {
         // Bu fonksiyon dinamik history listesi için kullanılabilir
-        console.log('Updating history list:', history);
     }
 
     /** Active chat item tıklandığında restore isteği gönder */
@@ -932,8 +902,6 @@ export class SidebarController {
         this.historyItems.forEach(item => {
             DOMUtils.off(item, 'click');
         });
-
-        console.log('SidebarController destroyed');
     }
 
     /**

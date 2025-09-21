@@ -5,13 +5,11 @@
 # =============================================================================
 
 from flask import Blueprint, request, jsonify
-import logging
 from app.routes.auth_decorators import admin_required
 from app.services.user_service import UserService
 from app.services.model_category_service import ModelCategoryService
 from app.services.category_service import CategoryService
 
-logger = logging.getLogger(__name__)
 
 admin_api_bp = Blueprint('admin_api', __name__, url_prefix='/admin/api')
 
@@ -249,5 +247,4 @@ def api_model_categories_auto(model_id: int):
         }
         return jsonify({ 'success': True, 'data': payload }), 200
     except Exception as e:
-        logger.error(f"api_model_categories_auto error: {e}")
         return jsonify({ 'success': False, 'error': 'AI auto-categorization error' }), 500

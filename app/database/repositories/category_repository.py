@@ -4,10 +4,7 @@
 # Categories ve ilişkili modeller için DB erişim katmanı
 # =============================================================================
 
-import logging
 from app.database.db_connection import execute_query, get_connection, get_cursor
-
-logger = logging.getLogger(__name__)
 
 
 class CategoryRepository:
@@ -20,7 +17,6 @@ class CategoryRepository:
             )
             return rows or []
         except Exception as e:
-            logger.error(f"Kategorileri getirme hatası: {str(e)}")
             return []
 
     @staticmethod
@@ -38,7 +34,6 @@ class CategoryRepository:
             )
             return rows or []
         except Exception as e:
-            logger.error(f"Kategori modellerini getirme hatası (id={category_id}): {str(e)}")
             return []
 
     @staticmethod
@@ -51,7 +46,6 @@ class CategoryRepository:
             )
             return rows[0] if rows else None
         except Exception as e:
-            logger.error(f"Kategori getirme hatası (id={category_id}): {str(e)}")
             return None
 
     @staticmethod
@@ -71,7 +65,6 @@ class CategoryRepository:
             cur.close(); conn.close()
             return int(new_id) if new_id else None
         except Exception as e:
-            logger.error(f"Kategori oluşturma hatası: {str(e)}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()
@@ -96,7 +89,6 @@ class CategoryRepository:
             cur.close(); conn.close()
             return affected > 0
         except Exception as e:
-            logger.error(f"Kategori güncelleme hatası (id={category_id}): {str(e)}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()
@@ -120,7 +112,6 @@ class CategoryRepository:
             cur.close(); conn.close()
             return affected > 0
         except Exception as e:
-            logger.error(f"Kategori silme hatası (id={category_id}): {str(e)}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()

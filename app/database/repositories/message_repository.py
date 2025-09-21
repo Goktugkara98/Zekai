@@ -4,13 +4,10 @@
 # Messages tablosu için CRUD işlemlerini yönetir.
 # =============================================================================
 
-import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.database.db_connection import get_connection, get_cursor, execute_query
-
-logger = logging.getLogger(__name__)
 
 
 class MessageRepository:
@@ -35,7 +32,6 @@ class MessageRepository:
             cur.close(); conn.close()
             return int(msg_id) if msg_id else None
         except Exception as e:
-            logger.error(f"Mesaj oluşturulamadı (chat_id={chat_id}): {e}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()
@@ -54,7 +50,6 @@ class MessageRepository:
             rows = execute_query(sql, (chat_id, limit, offset), fetch=True)
             return rows or []
         except Exception as e:
-            logger.error(f"Mesajlar getirilemedi (chat_id={chat_id}): {e}")
             return []
 
     @staticmethod
@@ -67,7 +62,6 @@ class MessageRepository:
             )
             return rows[0] if rows else None
         except Exception as e:
-            logger.error(f"Mesaj getirilemedi (id={message_id}): {e}")
             return None
 
     # --------------------------- UPDATE --------------------------- #
@@ -83,7 +77,6 @@ class MessageRepository:
             )
             return True
         except Exception as e:
-            logger.error(f"Mesaj güncellenemedi (id={message_id}): {e}")
             return False
 
     # --------------------------- DELETE --------------------------- #
@@ -93,7 +86,6 @@ class MessageRepository:
             execute_query("DELETE FROM messages WHERE message_id = %s", (message_id,), fetch=False)
             return True
         except Exception as e:
-            logger.error(f"Mesaj silinemedi (id={message_id}): {e}")
             return False
 
     @staticmethod
@@ -102,7 +94,6 @@ class MessageRepository:
             execute_query("DELETE FROM messages WHERE chat_id = %s", (chat_id,), fetch=False)
             return True
         except Exception as e:
-            logger.error(f"Mesajlar silinemedi (chat_id={chat_id}): {e}")
             return False
 
     # --------------------------- HELPERS --------------------------- #
@@ -112,5 +103,4 @@ class MessageRepository:
             rows = execute_query("SELECT COUNT(*) AS cnt FROM messages WHERE chat_id = %s", (chat_id,), fetch=True)
             return int(rows[0]["cnt"]) if rows else 0
         except Exception as e:
-            logger.error(f"Mesaj sayısı alınamadı (chat_id={chat_id}): {e}")
             return 0

@@ -4,10 +4,7 @@
 # Bu dosya, messages tablosunun oluşturulması için migration işlemlerini tanımlar.
 # =============================================================================
 
-import logging
 from app.database.db_connection import execute_query
-
-logger = logging.getLogger(__name__)
 
 
 def create_messages_table():
@@ -43,11 +40,9 @@ def create_messages_table():
         """
 
         execute_query(create_sql, fetch=False)
-        logger.info("Messages tablosu oluşturuldu")
         return True
 
     except Exception as e:
-        logger.error(f"Messages tablosu oluşturma hatası: {str(e)}")
         return False
 
 
@@ -60,11 +55,9 @@ def drop_messages_table():
     """
     try:
         execute_query("DROP TABLE IF EXISTS messages", fetch=False)
-        logger.info("Messages tablosu silindi")
         return True
 
     except Exception as e:
-        logger.error(f"Messages tablosu silme hatası: {str(e)}")
         return False
 
 
@@ -78,9 +71,7 @@ def run_migration():
     try:
         if not create_messages_table():
             return False
-        logger.info("Messages migration başarıyla tamamlandı")
         return True
 
     except Exception as e:
-        logger.error(f"Messages migration hatası: {str(e)}")
         return False

@@ -4,11 +4,8 @@
 # Kategoriler ve kategoriye göre modeller için servis katmanı
 # =============================================================================
 
-import logging
 from typing import Dict, Any
 from app.database.repositories.category_repository import CategoryRepository
-
-logger = logging.getLogger(__name__)
 
 
 class CategoryService:
@@ -21,7 +18,6 @@ class CategoryService:
                 'count': len(categories)
             }
         except Exception as e:
-            logger.error(f"Kategorileri getirme hatası: {str(e)}")
             return { 'success': False, 'error': 'Kategoriler getirilemedi' }
 
     def get_models_by_category(self, category_id: int) -> Dict[str, Any]:
@@ -33,7 +29,6 @@ class CategoryService:
                 'count': len(models)
             }
         except Exception as e:
-            logger.error(f"Kategori modellerini getirme hatası: {str(e)}")
             return { 'success': False, 'error': 'Kategori modelleri getirilemedi' }
 
     def get_category(self, category_id: int) -> Dict[str, Any]:
@@ -47,7 +42,6 @@ class CategoryService:
             else:
                 return { 'success': False, 'error': 'Kategori bulunamadı' }
         except Exception as e:
-            logger.error(f"Kategori getirme hatası: {str(e)}")
             return { 'success': False, 'error': 'Kategori getirilemedi' }
 
     def create_category(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -71,7 +65,6 @@ class CategoryService:
                 'message': 'Kategori başarıyla oluşturuldu'
             }
         except Exception as e:
-            logger.error(f"Kategori oluşturma hatası: {str(e)}")
             return { 'success': False, 'error': 'Kategori oluşturulamadı' }
 
     def update_category(self, category_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -97,7 +90,6 @@ class CategoryService:
             else:
                 return { 'success': False, 'error': 'Kategori güncellenemedi' }
         except Exception as e:
-            logger.error(f"Kategori güncelleme hatası: {str(e)}")
             return { 'success': False, 'error': 'Kategori güncellenemedi' }
 
     def delete_category(self, category_id: int) -> Dict[str, Any]:
@@ -111,5 +103,4 @@ class CategoryService:
             else:
                 return { 'success': False, 'error': 'Kategori silinemedi' }
         except Exception as e:
-            logger.error(f"Kategori silme hatası: {str(e)}")
             return { 'success': False, 'error': 'Kategori silinemedi' }

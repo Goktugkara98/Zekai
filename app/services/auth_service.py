@@ -5,13 +5,10 @@
 # Werkzeug ile şifreleme ve session yönetimi yapar.
 # =============================================================================
 
-import logging
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import session
 from app.database.db_connection import execute_query, get_connection, get_cursor
-
-logger = logging.getLogger(__name__)
 
 class AuthService:
     """
@@ -32,7 +29,6 @@ class AuthService:
         try:
             return generate_password_hash(password)
         except Exception as e:
-            logger.error(f"Şifre hash'leme hatası: {str(e)}")
             raise
     
     @staticmethod
@@ -50,7 +46,6 @@ class AuthService:
         try:
             return check_password_hash(password_hash, password)
         except Exception as e:
-            logger.error(f"Şifre doğrulama hatası: {str(e)}")
             return False
     
     @staticmethod
@@ -105,15 +100,12 @@ class AuthService:
                 fetch=False
             )
             
-            logger.info(f"Yeni kullanıcı oluşturuldu: {email}")
-            
             return {
                 'success': True,
                 'message': 'Kullanıcı başarıyla oluşturuldu'
             }
             
         except Exception as e:
-            logger.error(f"Kullanıcı oluşturma hatası: {str(e)}")
             return {
                 'success': False,
                 'message': 'Kullanıcı oluşturulurken hata oluştu'
@@ -167,8 +159,6 @@ class AuthService:
             # Basit kontrol isteyen yapılar için ek bayrak
             session['logged_in'] = True
             
-            logger.info(f"Kullanıcı giriş yaptı: {email}")
-            
             return {
                 'success': True,
                 'message': 'Giriş başarılı',
@@ -182,7 +172,6 @@ class AuthService:
             }
             
         except Exception as e:
-            logger.error(f"Kullanıcı doğrulama hatası: {str(e)}")
             return {
                 'success': False,
                 'message': 'Giriş yapılırken hata oluştu'
@@ -214,7 +203,6 @@ class AuthService:
             return None
             
         except Exception as e:
-            logger.error(f"Kullanıcı bulma hatası: {str(e)}")
             return None
     
     @staticmethod
@@ -243,7 +231,6 @@ class AuthService:
             return None
             
         except Exception as e:
-            logger.error(f"Kullanıcı bulma hatası: {str(e)}")
             return None
     
     @staticmethod
@@ -256,11 +243,9 @@ class AuthService:
         """
         try:
             session.clear()
-            logger.info("Kullanıcı çıkış yaptı")
             return True
             
         except Exception as e:
-            logger.error(f"Çıkış yapma hatası: {str(e)}")
             return False
     
     @staticmethod
@@ -335,6 +320,7 @@ class AuthService:
         try:
             update_sql = "UPDATE users SET last_login = NOW() WHERE user_id = %s"
             execute_query(update_sql, (user_id,), fetch=False)
-            
-        except Exception as e:
-            logger.error(f"Son giriş zamanı güncelleme hatası: {str(e)}")
+        except Exception:
+            pass
+
+ 

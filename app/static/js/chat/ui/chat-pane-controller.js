@@ -28,7 +28,6 @@ export class ChatPaneController {
     async init() {
         this.chatPanesContainer = DOMUtils.$('.chat-panes-container');
         if (!this.chatPanesContainer) {
-            console.error('Chat panes container not found');
             return;
         }
 
@@ -38,7 +37,6 @@ export class ChatPaneController {
         // State listener'ları kur
         this.setupStateListeners();
 
-        console.log('ChatPaneController initialized');
     }
 
     /**
@@ -115,7 +113,6 @@ export class ChatPaneController {
      * @param {Object} data - Event data
      */
     handleModelSelection(data) {
-        console.log('ChatPaneController handleModelSelection data:', data);
         let { modelName, element, modelId: providedModelId, initialMessage } = data.data || data;
         // Fallback: try reading initial message from assistant modal attribute
         if (!initialMessage || !String(initialMessage).trim().length) {
@@ -145,7 +142,6 @@ export class ChatPaneController {
         // Aynı model için benzersiz pane ID oluştur
         const paneId = this.generateUniquePaneId(baseModelId);
         
-        console.log('Creating pane with modelName:', modelName, 'modelId:', modelId, 'paneId:', paneId);
         
         // Yeni pane oluştur
         this.createChatPane(modelName, paneId, modelId, initialMessage);
@@ -176,7 +172,6 @@ export class ChatPaneController {
     handleChatSelection(data) {
         const { chatName } = data;
         // Chat yükleme işlemi burada yapılabilir
-        console.log('Loading chat:', chatName);
     }
 
     /**
@@ -222,7 +217,6 @@ export class ChatPaneController {
     restorePane(paneId) {
         const pane = this.chatPanes.get(paneId);
         if (!pane) {
-            console.warn('restorePane: Pane not found, loading from backend', paneId);
             // Pane yoksa backend'den yükleyip oluştur
             this.openExistingChatFromBackend(paneId);
             return;
@@ -311,7 +305,6 @@ export class ChatPaneController {
                 });
             }
         } catch (e) {
-            console.error('Existing chat load failed:', e);
             this.stateManager.addNotification?.({ type: 'error', message: i18n.t('chat_load_failed') });
         } finally {
             if (reserved) this.releaseVisibleSlot();
@@ -364,9 +357,7 @@ export class ChatPaneController {
                         timestamp: m.timestamp ? Date.parse(m.timestamp) : Date.now()
                     }));
                 }
-            } catch (e) {
-                console.warn('Failed to load history from backend', e);
-            }
+            } catch (e) {}
         }
 
         if (this.chatPanes.size === 0) {
@@ -412,7 +403,6 @@ export class ChatPaneController {
             totalPanes: this.chatPanes.size
         });
 
-        console.log('History pane opened (read-only):', paneId);
         if (reserved) this.releaseVisibleSlot();
     }
 
@@ -451,7 +441,6 @@ export class ChatPaneController {
     async createChatPane(modelName, paneId, modelId = 1, initialMessage = '') {
         // Slot rezervasyonu (eşzamanlı oluşturmalarda limiti koru)
         if (!this.reserveVisibleSlot()) {
-            console.warn(`Maximum visible panes (${this.maxPanes}) reached`);
             this.stateManager.addNotification?.({
                 type: 'warning',
                 message: i18n.t('max_panes_warning', { count: this.maxPanes })
@@ -529,7 +518,6 @@ export class ChatPaneController {
                 totalPanes: this.chatPanes.size
             });
 
-            console.log('Chat pane created:', chatPane.getInfo());
             
             // Eğer assistant modalından geldi ve ilk mesaj varsa, hemen gönder
             if (initialMessage && String(initialMessage).trim().length) {
@@ -539,13 +527,10 @@ export class ChatPaneController {
                     // Kullanıcı mesajını ekle ve AI yanıtını tetikle
                     chatPane.addMessage({ type: 'user', content: initialMessage, timestamp: Date.now() });
                     chatPane.getAIResponse(initialMessage);
-                } catch (e) {
-                    console.warn('Initial message send failed:', e);
-                }
+                } catch (e) {}
             }
             
         } catch (error) {
-            console.error('Chat oluşturma hatası:', error);
             this.stateManager.addNotification({
                 type: 'error',
                 message: i18n.t('chat_create_failed', { error: error.message })
@@ -678,14 +663,11 @@ export class ChatPaneController {
                 try {
                     const res = await fetch(`/api/chats/${paneId}/delete`, { method: 'DELETE' });
                     if (!res.ok) {
-                        console.warn('Chat deactivate failed:', res.status);
                     } else {
                         // Optionally inspect response
                         try { await res.json(); } catch (_) {}
                     }
-                } catch (e) {
-                    console.warn('Chat deactivate request error', e);
-                }
+                } catch (e) {}
             })();
         }
 
@@ -698,9 +680,7 @@ export class ChatPaneController {
                     modelId: pane.modelId,
                     messages: [...pane.messages]
                 });
-            } catch (e) {
-                console.warn('Snapshot save failed', e);
-            }
+            } catch (e) {}
         }
 
         // Pane'i map'den kaldır
@@ -858,6 +838,5 @@ export class ChatPaneController {
         // Tüm pane'leri temizle
         this.clearAllPanes();
 
-        console.log('ChatPaneController destroyed');
     }
 }

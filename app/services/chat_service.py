@@ -4,13 +4,12 @@
 # Bu dosya, chat işlemlerini yönetir ve veritabanı ile haberleşir.
 # =============================================================================
 
-import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
+import os
+import logging
 from app.services.providers.factory import ProviderFactory
 from app.database.repositories import ChatRepository, MessageRepository, ModelRepository
-
-logger = logging.getLogger(__name__)
 
 class ChatService:
     """
@@ -35,7 +34,6 @@ class ChatService:
             chat_id = ChatRepository.create_chat(model_id=model_id, title=title, user_id=user_id)
             if not chat_id:
                 return {"success": False, "error": "Chat oluşturulamadı"}
-            logger.info(f"Yeni chat oluşturuldu: {chat_id}")
             return {
                 "success": True,
                 "chat_id": chat_id,
@@ -46,7 +44,6 @@ class ChatService:
             }
             
         except Exception as e:
-            logger.error(f"Chat oluşturma hatası: {str(e)}")
             return {
                 "success": False,
                 "error": f"Chat oluşturma hatası: {str(e)}"
@@ -83,7 +80,6 @@ class ChatService:
             }
                 
         except Exception as e:
-            logger.error(f"Chat alma hatası: {str(e)}")
             return {
                 "success": False,
                 "error": f"Chat alma hatası: {str(e)}"
@@ -119,7 +115,6 @@ class ChatService:
             return {"success": True, "messages": messages, "count": len(messages)}
             
         except Exception as e:
-            logger.error(f"Mesaj alma hatası: {str(e)}")
             return {
                 "success": False,
                 "error": f"Mesaj alma hatası: {str(e)}"
@@ -144,11 +139,9 @@ class ChatService:
             if not msg_id:
                 return {"success": False, "error": "Mesaj kaydedilemedi"}
             ChatRepository.update_last_message_time(chat_id, when=now)
-            logger.info(f"Mesaj kaydedildi: chat_id={chat_id}, is_user={is_user}")
             return {"success": True, "message": "Mesaj başarıyla kaydedildi"}
             
         except Exception as e:
-            logger.error(f"Mesaj kaydetme hatası: {str(e)}")
             return {
                 "success": False,
                 "error": f"Mesaj kaydetme hatası: {str(e)}"
@@ -180,28 +173,37 @@ class ChatService:
                     "error": "Model bulunamadı"
                 }
             
-            model_name = model["model_name"]
-            provider_name = model["provider_name"]
-            
-            # Provider type'ı provider_name'den belirle
-            if provider_name == 'Google':
-                provider_type = 'gemini'
-            elif provider_name == 'OpenRouter':
-                provider_type = 'openrouter'
-            else:
-                provider_type = 'unknown'
+            model_name = model.get("model_name")
+            provider_name = model.get("provider_name")
+            # Backend'de tutulan provider_type bilgisini kullan
+            provider_type = (model.get("provider_type") or "").lower()
+            # İsteklerde kullanılacak model kimliği (örn. openrouter id). Boş ise model_name'e geri dön.
+            request_model_name = model.get("request_model_name") or model_name
+            debug = str(os.getenv('PROVIDER_DEBUG', '0')).lower() in ('1','true','yes','on')
+            if debug:
+                try:
+                    logging.warning("[ChatService] provider_type=%s provider_name=%s request_model=%s display_model=%s", provider_type, provider_name, request_model_name, model_name)
+                    print(f"[ChatService] provider_type={provider_type} provider_name={provider_name} request_model={request_model_name} display_model={model_name}")
+                except Exception:
+                    pass
             
             # Provider servisini al
             provider_service = self.provider_factory.get_service(provider_type)
             if not provider_service:
+                if debug:
+                    try:
+                        logging.warning("[ChatService] Unsupported provider_type=%s", provider_type)
+                        print(f"[ChatService] Unsupported provider_type={provider_type}")
+                    except Exception:
+                        pass
                 return {
                     "success": False,
-                    "error": f"Desteklenmeyen provider türü: {provider_type}"
+                    "error": f"Desteklenmeyen provider türü: {provider_type or 'undefined'}"
                 }
             
             # Servisi yapılandır
             provider_service.set_api_key(api_key)
-            provider_service.set_model(model_name)
+            provider_service.set_model(request_model_name)
             
             # Kullanıcı mesajını kaydet
             save_result = self.save_message(chat_id, user_message, True, model_id)
@@ -236,20 +238,18 @@ class ChatService:
             if not save_ai_result["success"]:
                 return save_ai_result
             
-            logger.info(f"Mesaj işlendi: chat_id={chat_id}, provider={provider_name}")
             
             return {
                 "success": True,
                 "user_message": user_message,
                 "ai_response": ai_response,
-                "model": model_name,
+                "model": model_name,  # kullanıcıya görünen isim
                 "provider": provider_name,
                 "usage": ai_result.get("usage", {}),
                 "timestamp": datetime.now().isoformat()
             }
             
         except Exception as e:
-            logger.error(f"Mesaj gönderme hatası: {str(e)}")
             return {
                 "success": False,
                 "error": f"Mesaj gönderme hatası: {str(e)}"
@@ -285,7 +285,6 @@ class ChatService:
             return {"success": True, "chats": chats, "count": len(chats)}
             
         except Exception as e:
-            logger.error(f"Chat listesi alma hatası: {str(e)}")
             return {
                 "success": False,
                 "error": f"Chat listesi alma hatası: {str(e)}"
@@ -314,17 +313,14 @@ class ChatService:
                 ok = ChatRepository.hard_delete(chat_id, user_id=user_id)
                 if not ok:
                     return {"success": False, "error": "Chat silinemedi"}
-                logger.info(f"Chat hard-deleted (no messages): {chat_id}")
             else:
                 ok = ChatRepository.soft_delete(chat_id)
                 if not ok:
                     return {"success": False, "error": "Chat arşivlenemedi"}
-                logger.info(f"Chat soft-deleted (archived): {chat_id}")
 
             return {"success": True, "message": "Chat silindi"}
             
         except Exception as e:
-            logger.error(f"Chat silme hatası: {str(e)}")
             return {
                 "success": False,
                 "error": f"Chat silme hatası: {str(e)}"

@@ -5,13 +5,11 @@
 # =============================================================================
 
 import json
-import logging
 from typing import Dict, Any, List
 
 from app.services.providers.gemini import GeminiService
 from app.database.db_connection import execute_query
 
-logger = logging.getLogger(__name__)
 
 
 class RecommendationsService:
@@ -23,27 +21,31 @@ class RecommendationsService:
             # Prefer explicit gemini 2.5 flash, else fallback to any gemini flash
             row = execute_query(
                 """
-                SELECT model_name, api_key
+                SELECT model_name, request_model_name, api_key
                 FROM models
-                WHERE (LOWER(model_name) LIKE 'gemini-2.5-flash%' OR LOWER(model_name) LIKE 'gemini-2.0-flash%' OR LOWER(provider_name)='google')
-                      AND api_key IS NOT NULL AND api_key <> ''
-                ORDER BY CASE WHEN LOWER(model_name) LIKE 'gemini-2.5-flash%' THEN 0 ELSE 1 END, model_id ASC
+                WHERE LOWER(provider_type) = 'gemini' AND api_key IS NOT NULL AND api_key <> ''
+                ORDER BY
+                  CASE
+                    WHEN LOWER(COALESCE(request_model_name, model_name)) LIKE 'gemini-2.5-flash%' THEN 0
+                    WHEN LOWER(COALESCE(request_model_name, model_name)) LIKE 'gemini-2.0-flash%' THEN 1
+                    ELSE 2
+                  END,
+                  model_id ASC
                 LIMIT 1
                 """,
                 fetch=True
             )
             if not row:
-                logger.error("No Gemini API key found in models table")
                 return False
             model_name = row[0]['model_name']
+            request_model_name = row[0].get('request_model_name') or model_name
             api_key = row[0]['api_key']
             self.gemini.set_api_key(api_key)
-            self.gemini.set_model(model_name)
+            self.gemini.set_model(request_model_name)
             # Make responses more deterministic for recommendations
             self.gemini.set_parameters(temperature=0.2)
             return True
         except Exception as e:
-            logger.error(f"Failed to ensure Gemini credentials: {e}")
             return False
 
     def recommend(self, query: str, models: List[Dict[str, Any]], categories: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -72,6 +74,7 @@ class RecommendationsService:
                     'model_name': m.get('model_name') or m.get('name'),
                     'provider': m.get('provider_name') or m.get('provider'),
                     'type': m.get('model_type') or m.get('type'),
+                    'description': m.get('description') or '',
                     'categories': categories
                 })
             except Exception:
@@ -89,8 +92,9 @@ class RecommendationsService:
 
         system_prompt = (
             "You are a routing assistant. Given a user query and a catalog of AI models\n"
-            "(with provider, type, and categories), recommend 3-6 models that would best\n"
-            "answer the query. Always return STRICT JSON with this exact schema:\n\n"
+            "(with provider, type, description, and categories), recommend 3-6 models that would best\n"
+            "answer the query. Use each model's description when available to better match the query.\n"
+            "Always return STRICT JSON with this exact schema:\n\n"
             "{\n"
             "  \"suggestions\": [\n"
             "    { \"model_id\": number, \"confidence\": number, \"reason\": string, \"description\": string }\n"
@@ -141,7 +145,6 @@ class RecommendationsService:
 
             return { 'success': True, 'data': { 'suggestions': out }, 'count': len(out) }
         except Exception as e:
-            logger.error(f"Recommendations error: {e}")
             return { 'success': False, 'error': 'Assistant error' }
 
     def _safe_parse_json(self, text: str) -> Dict[str, Any]:

@@ -7,11 +7,8 @@
 # =============================================================================
 
 import os
-import logging
 from app.database.db_connection import execute_query
 from app.services.auth_service import AuthService
-
-logger = logging.getLogger(__name__)
 
 
 def seed_admin_user() -> bool:
@@ -19,7 +16,6 @@ def seed_admin_user() -> bool:
         # Read config from environment
         enabled = os.getenv('SEED_ADMIN_ENABLED', 'true').lower() == 'true'
         if not enabled:
-            logger.info("Default admin seeding disabled by env (SEED_ADMIN_ENABLED=false)")
             return True
 
         email = os.getenv('SEED_ADMIN_EMAIL', 'admin@admin.com')
@@ -38,7 +34,6 @@ def seed_admin_user() -> bool:
         )
         total_users = (user_count_rows[0].get('cnt') if user_count_rows else 0) or 0
         if total_users > 0:
-            logger.info("Users already exist (%s). Skipping default admin seeding.", total_users)
             return True
 
         # Hash the default password
@@ -52,8 +47,6 @@ def seed_admin_user() -> bool:
         params = (email, password_hash, first_name, last_name, True, is_verified, is_admin)
         execute_query(insert_sql, params, fetch=False)
 
-        logger.info("Default admin user created: %s", email)
         return True
     except Exception as e:
-        logger.error("Admin user seed failed: %s", str(e))
         return False

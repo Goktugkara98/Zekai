@@ -7,6 +7,16 @@
  * =============================================================================
  */
 
+// Silence all console output on login page
+try {
+    const noop = () => {};
+    ['log','warn','error','debug','info','trace'].forEach(fn => {
+        if (typeof console !== 'undefined' && console[fn]) {
+            console[fn] = noop;
+        }
+    });
+} catch (_) {}
+
 class LoginPage {
     constructor() {
         this.form = document.getElementById('login-form');
@@ -28,7 +38,6 @@ class LoginPage {
         this.checkAuthStatus();
         this.loadSavedCredentials();
         this.addKeyboardSupport();
-        console.log('Login page initialized');
     }
 
     /**
@@ -136,7 +145,6 @@ class LoginPage {
             }
 
         } catch (error) {
-            console.error('Login error:', error);
             this.showErrorMessage('Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
         } finally {
             this.setButtonLoading(false);
@@ -327,7 +335,7 @@ class LoginPage {
                 window.location.href = '/chat';
             }
         } catch (error) {
-            console.log('Auth status check failed:', error);
+            // Auth status check failed - silently handle
         }
     }
 
@@ -416,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         new LoginPage();
     } catch (error) {
-        console.error('Failed to initialize login page:', error);
+        // Failed to initialize login page - silently handle
     }
 });
 

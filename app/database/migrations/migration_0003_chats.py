@@ -4,10 +4,7 @@
 # Bu dosya, chats tablosunun oluşturulması için migration işlemlerini tanımlar.
 # =============================================================================
 
-import logging
 from app.database.db_connection import execute_query
-
-logger = logging.getLogger(__name__)
 
 
 def create_chats_table():
@@ -43,11 +40,9 @@ def create_chats_table():
         """
 
         execute_query(create_sql, fetch=False)
-        logger.info("Chats tablosu oluşturuldu")
         return True
 
     except Exception as e:
-        logger.error(f"Chats tablosu oluşturma hatası: {str(e)}")
         return False
 
 
@@ -60,11 +55,9 @@ def drop_chats_table():
     """
     try:
         execute_query("DROP TABLE IF EXISTS chats", fetch=False)
-        logger.info("Chats tablosu silindi")
         return True
 
     except Exception as e:
-        logger.error(f"Chats tablosu silme hatası: {str(e)}")
         return False
 
 
@@ -78,8 +71,6 @@ def run_migration():
     try:
         if not create_chats_table():
             return False
-        logger.info("Chats migration başarıyla tamamlandı")
         return True
     except Exception as e:
-        logger.error(f"Chats migration hatası: {str(e)}")
         return False

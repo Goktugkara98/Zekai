@@ -4,15 +4,12 @@
 # Model <-> Category atamalarını yönetir, toplu işlemler ve AI destekli öneriler
 # =============================================================================
 
-import logging
 import json
 from typing import Dict, Any, List, Optional
 from app.database.repositories.model_category_repository import ModelCategoryRepository
 from app.database.repositories.model_repository import ModelRepository
 from app.database.repositories.category_repository import CategoryRepository
 from app.services.recommendations_service import RecommendationsService
-
-logger = logging.getLogger(__name__)
 
 
 class ModelCategoryService:
@@ -27,7 +24,6 @@ class ModelCategoryService:
             primary = model.get('primary_category_id')
             return { 'success': True, 'data': { 'model_id': model_id, 'category_ids': cat_ids, 'primary_category_id': primary } }
         except Exception as e:
-            logger.error(f"get_for_model error: {e}")
             return { 'success': False, 'error': 'Atamalar getirilemedi' }
 
     def replace_for_model(self, model_id: int, category_ids: List[int], primary_category_id: Optional[int] = None) -> Dict[str, Any]:
@@ -35,7 +31,6 @@ class ModelCategoryService:
             ok = ModelCategoryRepository.replace_model_categories(model_id, category_ids or [], primary_category_id)
             return { 'success': True } if ok else { 'success': False, 'error': 'Güncelleme başarısız' }
         except Exception as e:
-            logger.error(f"replace_for_model error: {e}")
             return { 'success': False, 'error': 'Güncelleme başarısız' }
 
     def add_for_model(self, model_id: int, category_ids: List[int]) -> Dict[str, Any]:
@@ -43,7 +38,6 @@ class ModelCategoryService:
             ok = ModelCategoryRepository.add_model_categories(model_id, category_ids or [])
             return { 'success': True } if ok else { 'success': False, 'error': 'Ekleme başarısız' }
         except Exception as e:
-            logger.error(f"add_for_model error: {e}")
             return { 'success': False, 'error': 'Ekleme başarısız' }
 
     def remove_for_model(self, model_id: int, category_ids: List[int]) -> Dict[str, Any]:
@@ -51,7 +45,6 @@ class ModelCategoryService:
             ok = ModelCategoryRepository.remove_model_categories(model_id, category_ids or [])
             return { 'success': True } if ok else { 'success': False, 'error': 'Silme başarısız' }
         except Exception as e:
-            logger.error(f"remove_for_model error: {e}")
             return { 'success': False, 'error': 'Silme başarısız' }
 
     # --------- Bulk operations ---------
@@ -62,7 +55,6 @@ class ModelCategoryService:
             ok = ModelCategoryRepository.bulk_replace(model_ids, category_ids or [], primary_category_id)
             return { 'success': True } if ok else { 'success': False, 'error': 'Toplu güncelleme başarısız' }
         except Exception as e:
-            logger.error(f"bulk_replace error: {e}")
             return { 'success': False, 'error': 'Toplu güncelleme başarısız' }
 
     def bulk_add(self, model_ids: List[int], category_ids: List[int]) -> Dict[str, Any]:
@@ -75,7 +67,6 @@ class ModelCategoryService:
                 ok_all = ok_all and ok
             return { 'success': ok_all }
         except Exception as e:
-            logger.error(f"bulk_add error: {e}")
             return { 'success': False, 'error': 'Toplu ekleme başarısız' }
 
     def bulk_remove(self, model_ids: List[int], category_ids: List[int]) -> Dict[str, Any]:
@@ -88,7 +79,6 @@ class ModelCategoryService:
                 ok_all = ok_all and ok
             return { 'success': ok_all }
         except Exception as e:
-            logger.error(f"bulk_remove error: {e}")
             return { 'success': False, 'error': 'Toplu silme başarısız' }
 
     # --------- AI-assisted suggestions ---------
@@ -153,16 +143,12 @@ class ModelCategoryService:
                         'category_ids': [int(x) for x in (s.get('category_ids') or [])],
                         'reason': str(s.get('reason') or '')[:300]
                     }
-                    try:
-                        logger.debug(f"AI suggest -> model_id={item['model_id']} category_count={len(item['category_ids'])}")
-                    except Exception:
-                        pass
+                    # silent: do not log any debug information
                     out.append(item)
                 except Exception:
                     continue
 
             return { 'success': True, 'data': { 'suggestions': out }, 'count': len(out) }
         except Exception as e:
-            logger.error(f"ai_suggest error: {e}")
             return { 'success': False, 'error': 'AI suggestion error' }
 

@@ -4,11 +4,8 @@
 # Bu dosya, model işlemleri için servis sınıfını tanımlar.
 # =============================================================================
 
-import logging
 from typing import List, Dict, Any, Optional
 from app.database.repositories.model_repository import ModelRepository
-
-logger = logging.getLogger(__name__)
 
 class ModelService:
     """
@@ -30,7 +27,6 @@ class ModelService:
                 'count': len(models)
             }
         except Exception as e:
-            logger.error(f"Modelleri getirme hatası: {str(e)}")
             return {
                 'success': False,
                 'error': 'Modeller getirilemedi'
@@ -59,7 +55,6 @@ class ModelService:
                     'error': 'Model bulunamadı'
                 }
         except Exception as e:
-            logger.error(f"Model getirme hatası: {str(e)}")
             return {
                 'success': False,
                 'error': 'Model getirilemedi'
@@ -99,7 +94,6 @@ class ModelService:
                 }
                 
         except Exception as e:
-            logger.error(f"Model oluşturma hatası: {str(e)}")
             return {
                 'success': False,
                 'error': 'Model oluşturulamadı'
@@ -138,7 +132,6 @@ class ModelService:
                 }
                 
         except Exception as e:
-            logger.error(f"Model güncelleme hatası: {str(e)}")
             return {
                 'success': False,
                 'error': 'Model güncellenemedi'
@@ -169,7 +162,6 @@ class ModelService:
                 }
                 
         except Exception as e:
-            logger.error(f"Model silme hatası: {str(e)}")
             return {
                 'success': False,
                 'error': 'Model silinemedi'

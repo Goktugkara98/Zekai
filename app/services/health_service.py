@@ -4,12 +4,9 @@
 # Bu dosya, sistem sağlık kontrolü için servis sınıfını tanımlar.
 # =============================================================================
 
-import logging
 from typing import Dict, Any
 from datetime import datetime
 from app.database.db_connection import test_connection
-
-logger = logging.getLogger(__name__)
 
 class HealthService:
     """
@@ -33,7 +30,6 @@ class HealthService:
                 'timestamp': str(datetime.now())
             }
         except Exception as e:
-            logger.error(f"Health check hatası: {str(e)}")
             return {
                 'success': False,
                 'status': 'unhealthy',

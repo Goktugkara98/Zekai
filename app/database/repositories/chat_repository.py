@@ -4,14 +4,11 @@
 # Chats tablosu için CRUD ve yardımcı işlemleri yönetir.
 # =============================================================================
 
-import logging
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.database.db_connection import get_connection, get_cursor, execute_query
-
-logger = logging.getLogger(__name__)
 
 
 class ChatRepository:
@@ -40,7 +37,6 @@ class ChatRepository:
             conn.close()
             return chat_id
         except Exception as e:
-            logger.error(f"Chat oluşturulamadı: {e}")
             try:
                 if conn and conn.is_connected():
                     conn.rollback(); conn.close()
@@ -64,7 +60,6 @@ class ChatRepository:
             rows = execute_query(sql, tuple(params), fetch=True)
             return rows[0] if rows else None
         except Exception as e:
-            logger.error(f"Chat getirilemedi (chat_id={chat_id}): {e}")
             return None
 
     @staticmethod
@@ -86,7 +81,6 @@ class ChatRepository:
             rows = execute_query(base_sql, tuple(params), fetch=True)
             return rows or []
         except Exception as e:
-            logger.error(f"Kullanıcı chat'leri alınamadı (user_id={user_id}): {e}")
             return []
 
     # --------------------------- UPDATE --------------------------- #
@@ -98,7 +92,6 @@ class ChatRepository:
             execute_query(sql, (when, when, chat_id), fetch=False)
             return True
         except Exception as e:
-            logger.error(f"last_message_at güncellenemedi (chat_id={chat_id}): {e}")
             return False
 
     @staticmethod
@@ -107,7 +100,6 @@ class ChatRepository:
             execute_query("UPDATE chats SET title = %s, updated_at = %s WHERE chat_id = %s", (title, datetime.now(), chat_id), fetch=False)
             return True
         except Exception as e:
-            logger.error(f"Chat başlığı güncellenemedi (chat_id={chat_id}): {e}")
             return False
 
     @staticmethod
@@ -116,7 +108,6 @@ class ChatRepository:
             execute_query("UPDATE chats SET is_active = %s, updated_at = %s WHERE chat_id = %s", (active, datetime.now(), chat_id), fetch=False)
             return True
         except Exception as e:
-            logger.error(f"Chat aktiflik durumu güncellenemedi (chat_id={chat_id}): {e}")
             return False
 
     # --------------------------- DELETE --------------------------- #
@@ -129,7 +120,6 @@ class ChatRepository:
                 execute_query("DELETE FROM chats WHERE chat_id = %s", (chat_id,), fetch=False)
             return True
         except Exception as e:
-            logger.error(f"Chat silinemedi (chat_id={chat_id}): {e}")
             return False
 
     @staticmethod
@@ -138,7 +128,6 @@ class ChatRepository:
             execute_query("UPDATE chats SET is_active = FALSE, updated_at = %s WHERE chat_id = %s", (datetime.now(), chat_id), fetch=False)
             return True
         except Exception as e:
-            logger.error(f"Chat soft delete başarısız (chat_id={chat_id}): {e}")
             return False
 
     # --------------------------- HELPERS --------------------------- #
@@ -148,5 +137,4 @@ class ChatRepository:
             rows = execute_query("SELECT COUNT(*) AS cnt FROM messages WHERE chat_id = %s", (chat_id,), fetch=True)
             return int(rows[0]["cnt"]) if rows else 0
         except Exception as e:
-            logger.error(f"Mesaj sayısı alınamadı (chat_id={chat_id}): {e}")
             return 0

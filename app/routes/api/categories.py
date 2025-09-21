@@ -5,10 +5,7 @@
 # =============================================================================
 
 from flask import Blueprint, jsonify
-import logging
 from app.services.category_service import CategoryService
-
-logger = logging.getLogger(__name__)
 
 categories_bp = Blueprint('categories_api', __name__, url_prefix='/api/categories')
 service = CategoryService()
