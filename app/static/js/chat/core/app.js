@@ -11,8 +11,10 @@ import { InputController } from '../ui/input-controller.js';
 import { ModalController } from '../ui/modal-controller.js';
 import { MessageService } from '../data/message-service.js';
 import { ModelService } from '../data/model-service.js';
+import { AssistantService } from '../data/assistant-service.js';
 import { DOMUtils } from '../utils/dom-utils.js';
 import { Helpers } from '../utils/helpers.js';
+import { i18n } from '../utils/i18n.js';
 
 export class App {
     constructor() {
@@ -34,6 +36,8 @@ export class App {
 
         try {
             console.log('Initializing Zekai Chat App...');
+            // Initialize i18n before services/controllers
+            try { i18n.init(); } catch (_) {}
             
             // Servisleri başlat
             await this.initServices();
@@ -53,9 +57,12 @@ export class App {
             
             console.log('Zekai Chat App initialized successfully');
             
+            // Apply translations to the whole document once initialized
+            try { i18n.apply(document); } catch (_) {}
+            
         } catch (error) {
             console.error('App initialization failed:', error);
-            this.stateManager.setError('Uygulama başlatılamadı');
+            this.stateManager.setError(i18n.t('app_init_failed'));
         }
     }
 
@@ -65,11 +72,13 @@ export class App {
     async initServices() {
         this.services.messageService = new MessageService(this.stateManager, this.eventManager);
         this.services.modelService = new ModelService(this.stateManager, this.eventManager);
+        this.services.assistantService = new AssistantService(this.stateManager, this.eventManager);
         
         // Servisleri başlat
         await Promise.all([
             this.services.messageService.init(),
-            this.services.modelService.init()
+            this.services.modelService.init(),
+            this.services.assistantService.init()
         ]);
     }
 
@@ -98,13 +107,13 @@ export class App {
         // Global error handling
         window.addEventListener('error', (event) => {
             console.error('Global error:', event.error);
-            this.stateManager.setError('Beklenmeyen bir hata oluştu');
+            this.stateManager.setError(i18n.t('unexpected_error'));
         });
 
         // Unhandled promise rejection
         window.addEventListener('unhandledrejection', (event) => {
             console.error('Unhandled promise rejection:', event.reason);
-            this.stateManager.setError('Beklenmeyen bir hata oluştu');
+            this.stateManager.setError(i18n.t('unexpected_error'));
         });
 
         // Visibility change (tab değişimi)
@@ -121,7 +130,7 @@ export class App {
             this.eventManager.emit('app:online');
             this.stateManager.addNotification({
                 type: 'success',
-                message: 'İnternet bağlantısı sağlandı'
+                message: i18n.t('internet_online')
             });
         });
 
@@ -129,7 +138,7 @@ export class App {
             this.eventManager.emit('app:offline');
             this.stateManager.addNotification({
                 type: 'warning',
-                message: 'İnternet bağlantısı kesildi'
+                message: i18n.t('internet_offline')
             });
         });
 
@@ -141,6 +150,16 @@ export class App {
         // Model selection event
         this.eventManager.on('model:selected', (data) => {
             this.handleModelSelection(data);
+        });
+
+        // Language change: Sidebar emits 'settings:language-changed'
+        this.eventManager.on('settings:language-changed', (event) => {
+            const { language } = event.data || {};
+            if (!language) return;
+            try {
+                i18n.setLanguage(language);
+                i18n.apply(document);
+            } catch (_) {}
         });
     }
 

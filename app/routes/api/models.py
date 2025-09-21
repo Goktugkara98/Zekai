@@ -7,6 +7,7 @@
 from flask import Blueprint, request, jsonify
 import logging
 from app.services.model_service import ModelService
+from app.routes.auth_decorators import admin_required
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ def get_model(model_id):
     return jsonify(result), status_code
 
 @models_bp.route('/', methods=['POST'])
+@admin_required
 def create_new_model():
     """
     Yeni model oluşturur.
@@ -45,6 +47,7 @@ def create_new_model():
     return jsonify(result), status_code
 
 @models_bp.route('/<int:model_id>', methods=['PUT'])
+@admin_required
 def update_existing_model(model_id):
     """
     Model günceller.
@@ -55,6 +58,7 @@ def update_existing_model(model_id):
     return jsonify(result), status_code
 
 @models_bp.route('/<int:model_id>', methods=['DELETE'])
+@admin_required
 def delete_existing_model(model_id):
     """
     Model siler.

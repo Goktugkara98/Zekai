@@ -3,6 +3,8 @@
  * Form validasyonu ve input kontrolü
  */
 
+import { i18n } from './i18n.js';
+
 export class Validation {
     /**
      * Email validasyonu
@@ -107,31 +109,31 @@ export class Validation {
         let score = 0;
 
         if (password.length < 8) {
-            feedback.push('En az 8 karakter olmalı');
+            feedback.push(i18n.t('pw_min_length'));
         } else {
             score += 1;
         }
 
         if (!/[a-z]/.test(password)) {
-            feedback.push('En az bir küçük harf içermeli');
+            feedback.push(i18n.t('pw_lowercase'));
         } else {
             score += 1;
         }
 
         if (!/[A-Z]/.test(password)) {
-            feedback.push('En az bir büyük harf içermeli');
+            feedback.push(i18n.t('pw_uppercase'));
         } else {
             score += 1;
         }
 
         if (!/\d/.test(password)) {
-            feedback.push('En az bir rakam içermeli');
+            feedback.push(i18n.t('pw_digit'));
         } else {
             score += 1;
         }
 
         if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-            feedback.push('En az bir özel karakter içermeli');
+            feedback.push(i18n.t('pw_special'));
         } else {
             score += 1;
         }
@@ -160,25 +162,25 @@ export class Validation {
 
             fieldRules.forEach(rule => {
                 if (rule.required && !Validation.isNotEmpty(value)) {
-                    fieldErrors.push(rule.message || `${field} gerekli`);
+                    fieldErrors.push(rule.message || i18n.t('val_required_field'));
                 } else if (value && rule.minLength && !Validation.minLength(value, rule.minLength)) {
-                    fieldErrors.push(rule.message || `En az ${rule.minLength} karakter olmalı`);
+                    fieldErrors.push(rule.message || i18n.t('val_min_length', { min: rule.minLength }));
                 } else if (value && rule.maxLength && !Validation.maxLength(value, rule.maxLength)) {
-                    fieldErrors.push(rule.message || `En fazla ${rule.maxLength} karakter olmalı`);
+                    fieldErrors.push(rule.message || i18n.t('val_max_length', { max: rule.maxLength }));
                 } else if (value && rule.email && !Validation.isValidEmail(value)) {
-                    fieldErrors.push(rule.message || 'Geçerli bir email adresi girin');
+                    fieldErrors.push(rule.message || i18n.t('val_email'));
                 } else if (value && rule.phone && !Validation.isValidPhone(value)) {
-                    fieldErrors.push(rule.message || 'Geçerli bir telefon numarası girin');
+                    fieldErrors.push(rule.message || i18n.t('val_phone'));
                 } else if (value && rule.url && !Validation.isValidURL(value)) {
-                    fieldErrors.push(rule.message || 'Geçerli bir URL girin');
+                    fieldErrors.push(rule.message || i18n.t('val_url'));
                 } else if (value && rule.alpha && !Validation.isAlpha(value)) {
-                    fieldErrors.push(rule.message || 'Sadece harf içermeli');
+                    fieldErrors.push(rule.message || i18n.t('val_alpha'));
                 } else if (value && rule.numeric && !Validation.isNumeric(value)) {
-                    fieldErrors.push(rule.message || 'Sadece sayı içermeli');
+                    fieldErrors.push(rule.message || i18n.t('val_numeric'));
                 } else if (value && rule.alphaNumeric && !Validation.isAlphaNumeric(value)) {
-                    fieldErrors.push(rule.message || 'Sadece harf ve sayı içermeli');
+                    fieldErrors.push(rule.message || i18n.t('val_alphanumeric'));
                 } else if (value && rule.custom && !rule.custom(value)) {
-                    fieldErrors.push(rule.message || 'Geçersiz değer');
+                    fieldErrors.push(rule.message || i18n.t('val_invalid'));
                 }
             });
 
@@ -206,15 +208,15 @@ export class Validation {
 
             rules.forEach(rule => {
                 if (rule.required && !Validation.isNotEmpty(value)) {
-                    errors.push(rule.message || 'Bu alan gerekli');
+                    errors.push(rule.message || i18n.t('val_required_field'));
                 } else if (value && rule.minLength && !Validation.minLength(value, rule.minLength)) {
-                    errors.push(rule.message || `En az ${rule.minLength} karakter olmalı`);
+                    errors.push(rule.message || i18n.t('val_min_length', { min: rule.minLength }));
                 } else if (value && rule.maxLength && !Validation.maxLength(value, rule.maxLength)) {
-                    errors.push(rule.message || `En fazla ${rule.maxLength} karakter olmalı`);
+                    errors.push(rule.message || i18n.t('val_max_length', { max: rule.maxLength }));
                 } else if (value && rule.email && !Validation.isValidEmail(value)) {
-                    errors.push(rule.message || 'Geçerli bir email adresi girin');
+                    errors.push(rule.message || i18n.t('val_email'));
                 } else if (value && rule.custom && !rule.custom(value)) {
-                    errors.push(rule.message || 'Geçersiz değer');
+                    errors.push(rule.message || i18n.t('val_invalid'));
                 }
             });
 

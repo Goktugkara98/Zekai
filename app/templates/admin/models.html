@@ -1,0 +1,609 @@
+{% extends 'admin/layout.html' %}
+{% block page_header_title %}<h1>Modeller</h1>{% endblock %}
+{% block page_header_subtitle %}<p class="text-muted">Model yönetimi</p>{% endblock %}
+{% block page_header_actions %}
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModelModal">
+    <i class="fas fa-robot me-1"></i>
+    Yeni Model
+  </button>
+{% endblock %}
+{% block content %}
+<div class="page-container">
+  <!-- Models Table -->
+  <div class="page-content-section">
+    <div class="standard-card-header">
+      <h5>
+        <i class="fas fa-robot icon"></i>
+        Modeller
+        <span class="standard-stats-badge">{{ models|length }} model</span>
+      </h5>
+      
+    </div>
+    <div class="standard-table-container">
+      <div class="table-responsive">
+        <table class="table standard-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Sağlayıcı</th>
+                <th>Durum</th>
+                <th>Oluşturma</th>
+                <th style="width: 200px;">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in models %}
+              <tr>
+                <td>
+                  <div>
+                    <div class="fw-medium">{{ m.model_name }}</div>
+                    <div class="text-muted small">
+                      {% if m.model_type %}{{ m.model_type }} • {% endif %}
+                      ID: {{ m.model_id }}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="provider-badge me-2">
+                      {% if m.provider_type == 'gemini' %}
+                        <i class="fas fa-gem text-info"></i>
+                      {% elif m.provider_type == 'openai' %}
+                        <i class="fas fa-brain text-success"></i>
+                      {% elif m.provider_type == 'openrouter' %}
+                        <i class="fas fa-route text-warning"></i>
+                      {% elif m.provider_type == 'anthropic' %}
+                        <i class="fas fa-robot text-danger"></i>
+                      {% else %}
+                        <i class="fas fa-cube text-secondary"></i>
+                      {% endif %}
+                    </div>
+                    <div>
+                      <div class="fw-medium">{{ m.provider_name }}</div>
+                      <div class="text-muted small text-capitalize">{{ m.provider_type }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-{{ 'success' if m.is_active else 'secondary' }}">
+                    <i class="fas fa-{{ 'check-circle' if m.is_active else 'times-circle' }} me-1"></i>
+                    {{ 'Aktif' if m.is_active else 'Pasif' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-muted small">{{ m.created_at }}</span>
+                </td>
+                <td>
+                  <div class="standard-btn-group">
+                    <button class="btn btn-outline-{{ 'success' if not m.is_active else 'secondary' }}" 
+                            data-model-id="{{ m.model_id }}" 
+                            data-next-active="{{ 'false' if m.is_active else 'true' }}" 
+                            onclick="toggleModelActive(this)"
+                            title="{{ 'Aktif Yap' if not m.is_active else 'Deaktif Et' }}">
+                      <i class="fas fa-{{ 'play' if not m.is_active else 'pause' }}"></i>
+                    </button>
+                    <button class="btn btn-outline-primary btn-open-edit-model-modal" 
+                            data-model-id="{{ m.model_id }}" 
+                            data-model-name="{{ m.model_name }}"
+                            title="Düzenle">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" 
+                            data-model-id="{{ m.model_id }}" 
+                            onclick="deleteModel(this)"
+                            title="Modeli Sil">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Model Modal -->
+<div class="modal fade" id="createModelModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-robot text-primary me-2"></i>
+          Yeni Model Ekle
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createModelForm" onsubmit="return createModel(event)">
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Model Adı <span class="text-danger">*</span></label>
+              <input class="form-control" name="model_name" type="text" placeholder="Örn: GPT-4" required />
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Model Türü</label>
+              <input class="form-control" name="model_type" type="text" placeholder="Örn: text-generation" />
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Sağlayıcı Adı <span class="text-danger">*</span></label>
+              <input class="form-control" name="provider_name" type="text" placeholder="Örn: OpenAI" required />
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Sağlayıcı Türü <span class="text-danger">*</span></label>
+              <select class="form-select" name="provider_type" required>
+                <option value="">Seçiniz</option>
+                <option value="gemini">Gemini</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">API Key</label>
+              <input class="form-control" name="api_key" type="password" placeholder="API anahtarı (opsiyonel)" />
+              <div class="form-text">Güvenlik için şifreli olarak saklanır</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Base URL</label>
+              <input class="form-control" name="base_url" type="url" placeholder="https://api.example.com" />
+              <div class="form-text">Özel API endpoint'i (opsiyonel)</div>
+            </div>
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="m_is_active" checked />
+                <label class="form-check-label fw-medium" for="m_is_active">
+                  <i class="fas fa-check-circle text-success me-1"></i>
+                  Modeli aktif olarak oluştur
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-plus me-1"></i>
+              Model Oluştur
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Model Modal (General + Credentials + Categories) -->
+<div class="modal fade" id="editModelModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-edit text-primary me-2"></i>
+          <span id="editModalModelName">Model</span> - Düzenle
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editModelForm" onsubmit="return saveModelEdit(event)">
+          <input type="hidden" id="editModelId" />
+
+          <!-- General -->
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Model Adı <span class="text-danger">*</span></label>
+              <input class="form-control" name="e_model_name" id="e_model_name" type="text" required />
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Model Türü</label>
+              <input class="form-control" name="e_model_type" id="e_model_type" type="text" />
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Sağlayıcı Adı <span class="text-danger">*</span></label>
+              <input class="form-control" name="e_provider_name" id="e_provider_name" type="text" required />
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+              <label class="form-label">Sağlayıcı Türü <span class="text-danger">*</span></label>
+              <select class="form-select" name="e_provider_type" id="e_provider_type" required>
+                <option value="">Seçiniz</option>
+                <option value="gemini">Gemini</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="e_is_active" />
+                <label class="form-check-label fw-medium" for="e_is_active">
+                  <i class="fas fa-check-circle text-success me-1"></i>
+                  Aktif
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Credentials -->
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">API Key</label>
+              <input class="form-control" name="e_api_key" id="e_api_key" type="password" placeholder="Güncellemek için girin" />
+              <div class="form-text">Boş bırakırsanız API Key değişmez</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Base URL</label>
+              <input class="form-control" name="e_base_url" id="e_base_url" type="url" placeholder="https://api.example.com" />
+            </div>
+          </div>
+
+          <!-- Categories -->
+          <div class="mb-2">
+            <h6 class="mb-2">Kategoriler</h6>
+            <div class="row g-2 align-items-end mb-2">
+              <div class="col-12 col-md-8">
+                <label class="form-label">Dil / İçerik ipucu (opsiyonel)</label>
+                <input id="edit_language_input" class="form-control" type="text" placeholder="Örn: tr, en veya kısa açıklama" />
+              </div>
+              <div class="col-12 col-md-4 d-grid">
+                <button type="button" id="btnAutoCats" class="btn btn-outline-secondary" onclick="autoDetermineCategories()">
+                  <i class="fas fa-wand-magic-sparkles me-1"></i>
+                  Kategorileri Otomatik Belirle
+                </button>
+              </div>
+            </div>
+            <div id="editCurrentCategories" class="current-categories-list mb-3"></div>
+            <div class="row g-2">
+              <div class="col-12 col-md-8">
+                <select id="editAddCategorySelect" class="form-select">
+                  <option value="">Kategori seçin...</option>
+                  {% for c in categories %}
+                    <option value="{{ c.category_id }}" data-name="{{ c.name }}">{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 col-md-4 d-grid">
+                <button type="button" class="btn btn-outline-primary" onclick="editAddCategoryToModel()">
+                  <i class="fas fa-plus me-1"></i>
+                  Kategori Ekle
+                </button>
+              </div>
+            </div>
+            <div class="mt-2">
+              <label class="form-label">Birincil Kategori</label>
+              <select id="editPrimaryCategorySelect" class="form-select">
+                <option value="">Birincil kategori yok</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-1"></i>
+              Değişiklikleri Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Global variables
+let editModelCategories = [];
+let editModelModal;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  editModelModal = new bootstrap.Modal(document.getElementById('editModelModal'));
+});
+
+async function api(path, method='GET', body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'İstek başarısız');
+  return data;
+}
+
+// Model operations
+async function toggleModelActive(btn) {
+  try {
+    const modelId = btn.dataset.modelId;
+    const val = btn.dataset.nextActive === 'true';
+    await api(`/api/models/${modelId}`, 'PUT', { is_active: val });
+    AdminUI.showToast('Model durumu güncellendi', 'success');
+    location.reload();
+  } catch (e) { 
+    AdminUI.showToast(e.message || 'Model güncellenemedi', 'error');
+  }
+}
+
+async function updateApiKey(btn) {
+  const key = prompt('Yeni API Key girin');
+  if (!key) return;
+  try {
+    const modelId = btn.dataset.modelId;
+    await api(`/api/models/${modelId}`, 'PUT', { api_key: key });
+    AdminUI.showToast('API Key güncellendi', 'success');
+  } catch (e) { 
+    AdminUI.showToast(e.message || 'API Key güncellenemedi', 'error');
+  }
+}
+
+async function deleteModel(btn) {
+  const confirmed = await AdminUI.confirmAction('Bu model silinsin mi?');
+  if (!confirmed) return;
+  try {
+    const modelId = btn.dataset.modelId;
+    await api(`/api/models/${modelId}`, 'DELETE');
+    AdminUI.showToast('Model silindi', 'success');
+    location.reload();
+  } catch (e) { 
+    AdminUI.showToast(e.message || 'Model silinemedi', 'error');
+  }
+}
+
+async function createModel(ev) {
+  ev.preventDefault();
+  const f = ev.target;
+  const payload = {
+    model_name: f.model_name.value,
+    model_type: f.model_type.value,
+    provider_name: f.provider_name.value,
+    provider_type: f.provider_type.value,
+    api_key: f.api_key.value,
+    base_url: f.base_url.value,
+    is_active: document.getElementById('m_is_active').checked,
+  };
+  try {
+    await api('/api/models/', 'POST', payload);
+    AdminUI.showToast('Model oluşturuldu', 'success');
+    location.reload();
+  } catch (e) { 
+    AdminUI.showToast(e.message || 'Model oluşturulamadı', 'error');
+  }
+  return false;
+}
+
+
+// Edit Model modal logic
+async function openEditModelModal(modelId, modelName) {
+  document.getElementById('editModelId').value = modelId;
+  document.getElementById('editModalModelName').textContent = modelName || 'Model';
+
+  try {
+    // Load model details
+    const resDetail = await api(`/api/models/${modelId}`);
+    const detail = resDetail.data || resDetail || {};
+    document.getElementById('e_model_name').value = detail.model_name || '';
+    document.getElementById('e_model_type').value = detail.model_type || '';
+    document.getElementById('e_provider_name').value = detail.provider_name || '';
+    document.getElementById('e_provider_type').value = detail.provider_type || '';
+    document.getElementById('e_is_active').checked = !!detail.is_active;
+    document.getElementById('e_base_url').value = detail.base_url || '';
+    document.getElementById('e_api_key').value = '';
+
+    // Load categories
+    const result = await api(`/admin/api/models/${modelId}/categories`);
+    editModelCategories = result.data?.category_ids || [];
+    editUpdateCurrentCategoriesDisplay();
+    editUpdatePrimaryCategorySelect(result.data?.primary_category_id || null);
+
+    editModelModal.show();
+  } catch (e) {
+    AdminUI.showToast(e.message || 'Model bilgileri yüklenemedi', 'error');
+  }
+}
+
+function editGetCategoryName(categoryId) {
+  const option = document.querySelector(`#editAddCategorySelect option[value="${categoryId}"]`);
+  return option ? option.dataset.name : `Kategori ${categoryId}`;
+}
+
+function editUpdateCurrentCategoriesDisplay() {
+  const container = document.getElementById('editCurrentCategories');
+  container.innerHTML = '';
+  if (!editModelCategories || editModelCategories.length === 0) {
+    container.innerHTML = '<p class="text-muted">Henüz kategori atanmamış</p>';
+    return;
+  }
+  editModelCategories.forEach(catId => {
+    const categoryName = editGetCategoryName(catId);
+    const row = document.createElement('div');
+    row.className = 'd-flex align-items-center justify-content-between p-2 border rounded mb-2';
+    row.innerHTML = `
+      <span class="badge bg-info">${categoryName}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" onclick="editRemoveCategoryFromCurrent(${catId})">
+        <i class="fas fa-times"></i>
+      </button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function editUpdatePrimaryCategorySelect(primaryId) {
+  const select = document.getElementById('editPrimaryCategorySelect');
+  select.innerHTML = '<option value="">Birincil kategori yok</option>';
+  editModelCategories.forEach(catId => {
+    const option = document.createElement('option');
+    option.value = catId;
+    option.textContent = editGetCategoryName(catId);
+    if (primaryId && catId === primaryId) option.selected = true;
+    select.appendChild(option);
+  });
+}
+
+function editAddCategoryToModel() {
+  const select = document.getElementById('editAddCategorySelect');
+  const categoryId = parseInt(select.value);
+  if (!categoryId) {
+    AdminUI.showToast('Lütfen bir kategori seçin', 'warning');
+    return;
+  }
+  if (editModelCategories.includes(categoryId)) {
+    AdminUI.showToast('Bu kategori zaten eklenmiş', 'warning');
+    return;
+  }
+  editModelCategories.push(categoryId);
+  editUpdateCurrentCategoriesDisplay();
+  editUpdatePrimaryCategorySelect(document.getElementById('editPrimaryCategorySelect').value ? parseInt(document.getElementById('editPrimaryCategorySelect').value) : null);
+  select.value = '';
+}
+
+function editRemoveCategoryFromCurrent(categoryId) {
+  editModelCategories = editModelCategories.filter(id => id !== categoryId);
+  editUpdateCurrentCategoriesDisplay();
+  editUpdatePrimaryCategorySelect(document.getElementById('editPrimaryCategorySelect').value ? parseInt(document.getElementById('editPrimaryCategorySelect').value) : null);
+}
+
+async function autoDetermineCategories() {
+  const modelId = parseInt(document.getElementById('editModelId').value);
+  const lang = (document.getElementById('edit_language_input').value || '').trim();
+  const btn = document.getElementById('btnAutoCats');
+  const prevHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>AI çalışıyor...';
+  try {
+    const res = await api(`/admin/api/models/${modelId}/categories/auto`, 'POST', { language: lang || null });
+    const data = res.data || {};
+    const cats = Array.isArray(data.category_ids) ? data.category_ids.map(Number) : [];
+    editModelCategories = cats;
+    editUpdateCurrentCategoriesDisplay();
+    editUpdatePrimaryCategorySelect(data.primary_category_id ? Number(data.primary_category_id) : null);
+    // Visual feedback
+    const cur = document.getElementById('editCurrentCategories');
+    // Expand the list so all suggested categories are visible (avoid perceived cap of ~4 items)
+    cur.classList.add('expanded');
+    cur.classList.add('flash-highlight');
+    setTimeout(() => cur.classList.remove('flash-highlight'), 1500);
+    cur.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (data.reason) {
+      AdminUI.showToast(`AI: ${data.reason}`, 'info');
+    } else {
+      AdminUI.showToast('Kategoriler otomatik belirlendi', 'success');
+    }
+  } catch (e) {
+    AdminUI.showToast(e.message || 'Otomatik kategori belirlenemedi', 'error');
+  }
+  finally {
+    btn.disabled = false;
+    btn.innerHTML = prevHtml;
+  }
+}
+
+async function saveModelEdit(ev) {
+  ev.preventDefault();
+  const modelId = parseInt(document.getElementById('editModelId').value);
+  const f = document.getElementById('editModelForm');
+  const saveBtn = f.querySelector('button[type="submit"]');
+  const prevSaveHtml = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Kaydediliyor...';
+  const payload = {
+    model_name: f.e_model_name.value,
+    model_type: f.e_model_type.value,
+    provider_name: f.e_provider_name.value,
+    provider_type: f.e_provider_type.value,
+    base_url: f.e_base_url.value,
+    is_active: document.getElementById('e_is_active').checked,
+  };
+  const apiKeyVal = f.e_api_key.value;
+  if (apiKeyVal) payload.api_key = apiKeyVal;
+
+  try {
+    await api(`/api/models/${modelId}`, 'PUT', payload);
+    const primaryVal = document.getElementById('editPrimaryCategorySelect').value;
+    await api(`/admin/api/models/${modelId}/categories`, 'PUT', {
+      category_ids: editModelCategories,
+      primary_category_id: primaryVal ? parseInt(primaryVal) : null
+    });
+    AdminUI.showToast('Model güncellendi', 'success');
+    editModelModal.hide();
+    location.reload();
+  } catch (e) {
+    AdminUI.showToast(e.message || 'Model güncellenemedi', 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = prevSaveHtml;
+  }
+  return false;
+}
+
+// Delegated click handlers
+document.addEventListener('click', function(e) {
+  const openEditBtn = e.target.closest('.btn-open-edit-model-modal');
+  if (openEditBtn) {
+    const modelId = parseInt(openEditBtn.dataset.modelId);
+    const modelName = openEditBtn.dataset.modelName;
+    openEditModelModal(modelId, modelName);
+    return;
+  }
+});
+</script>
+
+<style>
+.provider-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.flash-highlight {
+  animation: flashBg 1.2s ease-in-out;
+}
+@keyframes flashBg {
+  0% { background-color: #fff3cd; }
+  50% { background-color: #ffe69c; }
+  100% { background-color: transparent; }
+}
+
+.btn-group-sm .btn {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.form-text {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+.text-danger {
+  color: var(--danger) !important;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.current-categories-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* When expanded, show all items without scroll to avoid the impression of a hard cap */
+.current-categories-list.expanded {
+  max-height: none;
+  overflow: visible;
+}
+</style>
+{% endblock %}

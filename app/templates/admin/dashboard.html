@@ -1,0 +1,267 @@
+{% extends 'admin/layout.html' %}
+{% block page_header_title %}<h1>Dashboard</h1>{% endblock %}
+{% block page_header_subtitle %}<p class="text-muted">Genel görünüm ve son aktiviteler</p>{% endblock %}
+{% block content %}
+<div class="page-container">
+  <!-- KPI Cards -->
+  <div class="row g-4">
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="admin-card kpi-card users">
+      <div class="kpi-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div>
+        <div class="kpi-title">Toplam Kullanıcı</div>
+        <div class="kpi-value">{{ user_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="admin-card kpi-card admins">
+      <div class="kpi-icon">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <div>
+        <div class="kpi-title">Admin Kullanıcı</div>
+        <div class="kpi-value">{{ admin_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="admin-card kpi-card models">
+      <div class="kpi-icon">
+        <i class="fas fa-robot"></i>
+      </div>
+      <div>
+        <div class="kpi-title">Toplam Model</div>
+        <div class="kpi-value">{{ model_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="admin-card kpi-card active">
+      <div class="kpi-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <div>
+        <div class="kpi-title">Aktif Model</div>
+        <div class="kpi-value">{{ active_model_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Main Content Grid -->
+  <div class="row g-4">
+    <!-- Recent Users Table -->
+    <div class="col-12 col-xl-8">
+      <div class="page-content-section">
+        <div class="standard-card-header">
+          <h5>
+            <i class="fas fa-users icon"></i>
+            Son Kullanıcılar
+          </h5>
+          <a href="/admin/users" class="standard-action-btn btn-outline-primary">
+            <i class="fas fa-eye"></i>
+            Tümünü Gör
+          </a>
+        </div>
+        <div class="standard-table-container">
+          <div class="table-responsive">
+            <table class="table standard-table">
+            <thead>
+              <tr>
+                <th>Kullanıcı</th>
+                <th>Durum</th>
+                <th>Rol</th>
+                <th>Son Giriş</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if recent_users and recent_users|length > 0 %}
+                {% for u in recent_users %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                        <i class="fas fa-user text-muted"></i>
+                      </div>
+                      <div>
+                        <div class="fw-medium">{{ (u.first_name or '') ~ ' ' ~ (u.last_name or '') or 'İsimsiz' }}</div>
+                        <div class="text-muted small">{{ u.email }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-{{ 'success' if u.is_active else 'secondary' }}">
+                      {{ 'Aktif' if u.is_active else 'Pasif' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge bg-{{ 'warning' if u.is_admin else 'info' }}">
+                      {{ 'Admin' if u.is_admin else 'Kullanıcı' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="text-muted small">
+                      {{ u.last_login or u.created_at or 'Hiç giriş yapmamış' }}
+                    </span>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4" class="standard-empty-state">
+                    <i class="fas fa-inbox icon"></i>
+                    <h6>Henüz kullanıcı bulunmuyor</h6>
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Statistics Sidebar -->
+    <div class="col-12 col-xl-4">
+      <!-- Provider Types -->
+      <div class="page-content-section mb-4">
+        <div class="standard-card-header">
+          <h5>
+            <i class="fas fa-chart-pie icon"></i>
+            Sağlayıcı Türleri
+          </h5>
+        </div>
+        <div class="p-4">
+        {% if provider_by_type %}
+          <div class="space-y-3">
+            {% for pt, cnt in provider_by_type.items() %}
+            <div class="d-flex justify-content-between align-items-center py-2">
+              <div class="d-flex align-items-center">
+                <div class="provider-icon me-3">
+                  {% if pt == 'gemini' %}
+                    <i class="fas fa-gem text-info"></i>
+                  {% elif pt == 'openai' %}
+                    <i class="fas fa-brain text-success"></i>
+                  {% elif pt == 'openrouter' %}
+                    <i class="fas fa-route text-warning"></i>
+                  {% elif pt == 'anthropic' %}
+                    <i class="fas fa-robot text-danger"></i>
+                  {% else %}
+                    <i class="fas fa-cube text-secondary"></i>
+                  {% endif %}
+                </div>
+                <span class="fw-medium text-capitalize">{{ pt }}</span>
+              </div>
+              <span class="badge bg-primary">{{ cnt }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="standard-empty-state">
+            <i class="fas fa-chart-pie icon"></i>
+            <h6>Veri bulunamadı</h6>
+          </div>
+        {% endif %}
+        </div>
+      </div>
+
+      <!-- Provider Names -->
+      <div class="page-content-section">
+        <div class="standard-card-header">
+          <h5>
+            <i class="fas fa-list icon"></i>
+            Sağlayıcı İsimleri
+          </h5>
+        </div>
+        <div class="p-4">
+        {% if provider_by_name %}
+          <div class="space-y-2">
+            {% for pn, cnt in provider_by_name.items() %}
+            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+              <span class="text-capitalize">{{ pn }}</span>
+              <span class="badge bg-secondary">{{ cnt }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="standard-empty-state">
+            <i class="fas fa-list icon"></i>
+            <h6>Veri bulunamadı</h6>
+          </div>
+        {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="page-content-section">
+    <div class="standard-card-header">
+      <h5>
+        <i class="fas fa-bolt icon"></i>
+        Hızlı İşlemler
+      </h5>
+    </div>
+    <div class="p-4">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <a href="/admin/users" class="standard-action-btn btn-outline-primary w-100">
+            <i class="fas fa-user-plus"></i>
+            Yeni Kullanıcı
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="/admin/models" class="standard-action-btn btn-outline-success w-100">
+            <i class="fas fa-robot"></i>
+            Model Ekle
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="/admin/categories" class="standard-action-btn btn-outline-warning w-100">
+            <i class="fas fa-tags"></i>
+            Kategori Yönet
+          </a>
+        </div>
+        <div class="col-md-3">
+          <a href="/chat" class="standard-action-btn btn-outline-info w-100">
+            <i class="fas fa-comments"></i>
+            Sohbete Git
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.avatar-sm {
+  width: 40px;
+  height: 40px;
+}
+
+.provider-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  border-radius: var(--border-radius);
+}
+
+.space-y-2 > * + * {
+  margin-top: var(--space-2);
+}
+
+.space-y-3 > * + * {
+  margin-top: var(--space-3);
+}
+
+.border-bottom:last-child {
+  border-bottom: none !important;
+}
+</style>
+{% endblock %}

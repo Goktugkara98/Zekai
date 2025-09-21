@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - Zekai</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Bruno Ace SC font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap" rel="stylesheet">
+    
+    <!-- Login Page Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <!-- Background Elements -->
+        <div class="bg-elements">
+            <div class="bg-circle bg-circle-1"></div>
+            <div class="bg-circle bg-circle-2"></div>
+            <div class="bg-circle bg-circle-3"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="login-content">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <h1 class="logo-text">Zekai</h1>
+                <p class="login-subtitle">Hesabınıza giriş yapın</p>
+            </div>
+            
+            <!-- Login Form -->
+            <div class="login-form-container">
+                <form class="login-form" id="login-form">
+                    <!-- Flash Messages -->
+                    <div class="flash-messages" id="flash-messages">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="flash-message flash-{{ category }}">
+                                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                                        <span>{{ message }}</span>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope"></i>
+                            <span>E-posta Adresi</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-input" 
+                            placeholder="ornek@email.com"
+                            required
+                            autocomplete="email"
+                        >
+                        <div class="form-error" id="email-error"></div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            <span>Şifre</span>
+                        </label>
+                        <div class="password-input-container">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class="form-input" 
+                                placeholder="Şifrenizi girin"
+                                required
+                                autocomplete="current-password"
+                            >
+                            <button type="button" class="password-toggle" id="password-toggle">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-error" id="password-error"></div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="remember-me" name="remember_me">
+                            <span class="checkbox-custom"></span>
+                            <span class="checkbox-text">Beni hatırla</span>
+                        </label>
+                        <a href="#" class="forgot-password" id="forgot-password">
+                            Şifremi unuttum
+                        </a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Giriş Yap</span>
+                    </button>
+
+                    <!-- Divider -->
+                    <div class="divider">
+                        <span>veya</span>
+                    </div>
+
+                    <!-- Register Link -->
+                    <div class="register-link">
+                        <p>Hesabınız yok mu?</p>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-full">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Kayıt Ol</span>
+                        </a>
+                    </div>
+
+                    <!-- Back to Home -->
+                    <div class="back-home">
+                        <a href="{{ url_for('main.index') }}" class="back-link">
+                            <i class="fas fa-arrow-left"></i>
+                            <span>Ana Sayfaya Dön</span>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Page Script -->
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

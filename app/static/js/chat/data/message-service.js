@@ -4,6 +4,7 @@
  */
 
 import { Helpers } from '../utils/helpers.js';
+import { i18n } from '../utils/i18n.js';
 
 export class MessageService {
     constructor(stateManager, eventManager) {
@@ -293,7 +294,7 @@ export class MessageService {
     exportToTXT(messages) {
         return messages.map(msg => {
             const timestamp = Helpers.formatDate(msg.timestamp, 'YYYY-MM-DD HH:mm:ss');
-            const sender = msg.isUser ? 'User' : 'Assistant';
+            const sender = msg.isUser ? i18n.t('user_label') : i18n.t('assistant_label');
             return `[${timestamp}] ${sender}: ${msg.content}`;
         }).join('\n');
     }

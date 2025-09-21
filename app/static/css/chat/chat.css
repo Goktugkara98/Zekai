@@ -1,8 +1,44 @@
+/* Design Tokens (Light Theme) */
+:root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface-alt: #f5f7fb;
+    --text: #0f172a;
+    --muted: #64748b;
+    --primary: #7c3aed; /* purple-600 */
+    --primary-weak: #8b5cf6; /* violet-500 */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --border: #e5e7eb;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 4px 10px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.10);
+    --transition-fast: 120ms;
+    --transition-normal: 180ms;
+}
+
+/* Dark Theme Overrides */
+body.dark-theme {
+    --bg: #0b1020;
+    --surface: #0f172a;
+    --surface-alt: #111827;
+    --text: #e5e7eb;
+    --muted: #9ca3af;
+    --border: #1f2937;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
 /* Main Chat Container Styles */
 .chat-container {
     display: flex;
     height: 100vh;
-    background: #f8fafc;
+    background: var(--bg);
     overflow: hidden;
 }
 
@@ -12,7 +48,7 @@
     display: flex;
     flex-direction: column;
     margin-left: 280px;
-    background: #ffffff;
+    background: var(--surface);
     height: calc(100vh - 80px); /* Input bar için yer bırak */
     position: relative;
     overflow: hidden;
@@ -27,7 +63,10 @@ body {
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    background: #f8fafc;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar Styles */
@@ -37,7 +76,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    background: var(--surface-alt);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -51,14 +90,14 @@ body {
 
 /* Selection Styles */
 ::selection {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(124, 58, 237, 0.18);
 }
 
 /* Focus Styles */
 button:focus,
 input:focus,
 textarea:focus {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
 
@@ -76,4 +115,83 @@ textarea:focus {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Modal Base Styles */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.modal-overlay.show {
+    opacity: 1;
+}
+
+.modal-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    width: min(920px, 92vw);
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text);
+}
+
+.modal-body {
+    padding: 16px;
+    overflow: auto;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+}
+
+.close-btn {
+    border: none;
+    background: transparent;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    background: var(--surface-alt);
+    color: var(--text);
 }

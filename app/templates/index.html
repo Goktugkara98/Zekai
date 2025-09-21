@@ -1,113 +1,44 @@
-{% extends "base.html" %}
-
-{% block title %}Zekai - AI Chat Platform{% endblock %}
-
-{% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 text-center">
-            <div class="hero-section mb-5">
-                <h1 class="display-4 fw-bold mb-3">
-                    <i class="fas fa-robot text-primary me-3"></i>Zekai
-                </h1>
-                <p class="lead text-muted mb-4">AI destekli sohbet platformu ile geleceğin teknolojisini deneyimleyin</p>
-                <a href="{{ url_for('main.chat') }}" class="btn btn-primary btn-lg px-4">
-                    <i class="fas fa-comments me-2"></i>Sohbete Başla
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zekai - AI Chat Platform</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Bruno Ace SC font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap" rel="stylesheet">
+    
+    <!-- Index Page Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+</head>
+<body>
+    <div class="index-container">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Logo Section -->
+            <div class="logo-section">
+                <h1 class="logo-text">Zekai</h1>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Giriş Yap</span>
                 </a>
+                <button class="btn btn-secondary" id="register-btn">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Kayıt Ol</span>
+                </button>
             </div>
         </div>
     </div>
-    
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card h-100 text-center border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-bolt text-primary" style="font-size: 2.5rem;"></i>
-                    </div>
-                    <h5 class="card-title fw-bold">Hızlı</h5>
-                    <p class="card-text text-muted">Anında yanıt alın ve kesintisiz sohbet deneyimi yaşayın</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card h-100 text-center border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-brain text-primary" style="font-size: 2.5rem;"></i>
-                    </div>
-                    <h5 class="card-title fw-bold">Akıllı</h5>
-                    <p class="card-text text-muted">Gelişmiş AI modelleri ile doğal ve akıllı konuşmalar</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card h-100 text-center border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-shield-alt text-primary" style="font-size: 2.5rem;"></i>
-                    </div>
-                    <h5 class="card-title fw-bold">Güvenli</h5>
-                    <p class="card-text text-muted">Verileriniz güvende, gizliliğiniz korunur</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-12">
-            <div class="text-center">
-                <h3 class="fw-bold mb-4">Neden Zekai?</h3>
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-start">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <div class="flex-grow-1 text-start">
-                                <h6 class="fw-bold mb-2">Kolay Kullanım</h6>
-                                <p class="text-muted mb-0">Sade ve kullanıcı dostu arayüz ile kolayca sohbet edin</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-start">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <div class="flex-grow-1 text-start">
-                                <h6 class="fw-bold mb-2">Çoklu Model Desteği</h6>
-                                <p class="text-muted mb-0">Farklı AI modelleri arasında seçim yapın</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-start">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <div class="flex-grow-1 text-start">
-                                <h6 class="fw-bold mb-2">7/24 Erişim</h6>
-                                <p class="text-muted mb-0">İstediğiniz zaman, istediğiniz yerde sohbet edin</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-start">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
-                            </div>
-                            <div class="flex-grow-1 text-start">
-                                <h6 class="fw-bold mb-2">Gelişmiş Özellikler</h6>
-                                <p class="text-muted mb-0">Sohbet geçmişi, favoriler ve daha fazlası</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
+
+    <!-- Index Page Script -->
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

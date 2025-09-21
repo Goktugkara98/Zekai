@@ -92,21 +92,13 @@ export class DOMUtils {
      * Element göster
      * @param {Element} element - Target element
      */
-    static show(element) {
-        if (element) {
-            element.style.display = '';
-        }
-    }
+    // removed unused method: show()
 
     /**
      * Element gizle
      * @param {Element} element - Target element
      */
-    static hide(element) {
-        if (element) {
-            element.style.display = 'none';
-        }
-    }
+    // removed unused method: hide()
 
     /**
      * Element'e event listener ekle
@@ -139,64 +131,32 @@ export class DOMUtils {
      * @param {string} selector - Parent selector
      * @returns {Element|null}
      */
-    static closest(element, selector) {
-        if (element) {
-            return element.closest(selector);
-        }
-        return null;
-    }
+    // removed unused method: closest()
 
     /**
      * Element'in child'larını temizle
      * @param {Element} element - Target element
      */
-    static clear(element) {
-        if (element) {
-            element.innerHTML = '';
-        }
-    }
+    // removed unused method: clear()
 
     /**
      * Element'e HTML ekle
      * @param {Element} element - Target element
      * @param {string} html - HTML content
      */
-    static appendHTML(element, html) {
-        if (element) {
-            element.insertAdjacentHTML('beforeend', html);
-        }
-    }
+    // removed unused method: appendHTML()
 
     /**
      * Element'in pozisyonunu al
      * @param {Element} element - Target element
      * @returns {Object} - {top, left, width, height}
      */
-    static getPosition(element) {
-        if (element) {
-            const rect = element.getBoundingClientRect();
-            return {
-                top: rect.top,
-                left: rect.left,
-                width: rect.width,
-                height: rect.height
-            };
-        }
-        return null;
-    }
+    // removed unused method: getPosition()
 
     /**
      * Scroll to element
      * @param {Element} element - Target element
      * @param {Object} options - Scroll options
      */
-    static scrollTo(element, options = {}) {
-        if (element) {
-            element.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                ...options
-            });
-        }
-    }
+    // removed unused method: scrollTo()
 }

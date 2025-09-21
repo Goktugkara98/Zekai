@@ -6,6 +6,7 @@
 import { DOMUtils } from '../utils/dom-utils.js';
 import { Helpers } from '../utils/helpers.js';
 import { ChatPane } from '../core/chat-pane.js';
+import { i18n } from '../utils/i18n.js';
 
 export class ChatPaneController {
     constructor(stateManager, eventManager) {
@@ -17,6 +18,8 @@ export class ChatPaneController {
         this.chatCounter = 1;
         this.maxPanes = 4; // Maksimum 4 pane
         this.currentLayout = 'single';
+        this.closedChatSnapshots = new Map(); // paneId -> { modelName, modelId, messages }
+        this.pendingVisibleAdds = 0; // eşzamanlı eklemeler için slot rezervasyonu
     }
 
     /**
@@ -66,6 +69,28 @@ export class ChatPaneController {
         this.eventManager.on('pane:close-requested', (event) => {
             this.handlePaneCloseRequest(event.data);
         });
+
+        // Pane restore request (from Active Chats)
+        this.eventManager.on('pane:restore-requested', (event) => {
+            const { paneId } = event.data || {};
+            if (!paneId) return;
+            this.restorePane(paneId);
+        });
+
+        // Minimize/restore -> layout'u güncelle
+        this.eventManager.on('pane:minimized', () => {
+            this.updateLayout();
+        });
+        this.eventManager.on('pane:restored', () => {
+            this.updateLayout();
+        });
+
+        // History item selected: open read-only pane
+        this.eventManager.on('history:selected', (event) => {
+            const { paneId, modelName } = event.data || {};
+            if (!paneId) return;
+            this.openHistoryPane(paneId, modelName);
+        });
     }
 
     /**
@@ -91,10 +116,30 @@ export class ChatPaneController {
      */
     handleModelSelection(data) {
         console.log('ChatPaneController handleModelSelection data:', data);
-        const { modelName, element } = data.data || data;
+        let { modelName, element, modelId: providedModelId, initialMessage } = data.data || data;
+        // Fallback: try reading initial message from assistant modal attribute
+        if (!initialMessage || !String(initialMessage).trim().length) {
+            try {
+                const contentEl = document.querySelector('.assistant-modal');
+                if (contentEl) {
+                    const q = contentEl.getAttribute('data-assist-query') || '';
+                    if (q && q.trim().length) initialMessage = q;
+                }
+            } catch (_) {}
+        }
         
-        // Model ID'sini dataset'ten al (integer olarak)
-        const modelId = parseInt(element?.dataset?.modelId?.replace('model-', '')) || 1;
+        // Model ID'sini öncelikle doğrudan datadan al, yoksa dataset'ten çöz
+        let modelId = 1;
+        if (providedModelId !== undefined && providedModelId !== null) {
+            if (typeof providedModelId === 'string') {
+                const parsed = parseInt(String(providedModelId).replace('model-', ''));
+                modelId = isNaN(parsed) ? 1 : parsed;
+            } else if (typeof providedModelId === 'number') {
+                modelId = providedModelId;
+            }
+        } else {
+            modelId = parseInt(element?.dataset?.modelId?.replace('model-', '')) || 1;
+        }
         const baseModelId = `model-${modelId}`;
         
         // Aynı model için benzersiz pane ID oluştur
@@ -103,7 +148,7 @@ export class ChatPaneController {
         console.log('Creating pane with modelName:', modelName, 'modelId:', modelId, 'paneId:', paneId);
         
         // Yeni pane oluştur
-        this.createChatPane(modelName, paneId, modelId);
+        this.createChatPane(modelName, paneId, modelId, initialMessage);
     }
 
     /**
@@ -171,25 +216,252 @@ export class ChatPaneController {
     }
 
     /**
+     * Minimize durumundan geri getir ve aktive et
+     * @param {string} paneId
+     */
+    restorePane(paneId) {
+        const pane = this.chatPanes.get(paneId);
+        if (!pane) {
+            console.warn('restorePane: Pane not found, loading from backend', paneId);
+            // Pane yoksa backend'den yükleyip oluştur
+            this.openExistingChatFromBackend(paneId);
+            return;
+        }
+        let reserved = false;
+        if (pane.element && pane.element.classList.contains('minimized')) {
+            if (!this.reserveVisibleSlot()) {
+                this.stateManager.addNotification?.({
+                    type: 'warning',
+                    message: i18n.t('max_panes_warning', { count: this.maxPanes })
+                });
+                return;
+            }
+            reserved = true;
+            pane.element.classList.remove('minimized');
+            try { pane.updateMinimizeIcon && pane.updateMinimizeIcon(); } catch (_) {}
+            this.eventManager.emit('pane:restored', { paneId, pane });
+        }
+        this.activatePane(paneId);
+        try {
+            pane.element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        } catch (_) {}
+        if (reserved) this.releaseVisibleSlot();
+        this.updateLayout();
+    }
+
+    /**
+     * Backend'de var olan bir chat'i yükleyip normal (interaktif) pane olarak aç
+     */
+    async openExistingChatFromBackend(chatId) {
+        if (!this.reserveVisibleSlot()) {
+            this.stateManager.addNotification?.({
+                type: 'warning',
+                message: i18n.t('max_panes_warning', { count: this.maxPanes })
+            });
+            return;
+        }
+        let reserved = true;
+
+        try {
+            const [chatRes, msgRes] = await Promise.all([
+                fetch(`/api/chats/${chatId}`),
+                fetch(`/api/chats/${chatId}/messages?limit=100`)
+            ]);
+            const chatJson = await chatRes.json();
+            const msgJson = await msgRes.json();
+
+            if (!chatJson || !chatJson.success || !chatJson.chat) {
+                throw new Error('Chat bulunamadı');
+            }
+
+            const modelName = chatJson.chat.model_name || 'Chat';
+            const modelId = chatJson.chat.model_id || 1;
+            const messages = (msgJson && msgJson.success && Array.isArray(msgJson.messages))
+                ? msgJson.messages.map(m => ({
+                    type: m.is_user ? 'user' : 'assistant',
+                    content: m.content,
+                    timestamp: m.timestamp ? Date.parse(m.timestamp) : Date.now()
+                }))
+                : [];
+
+            // İlk pane ise empty state'i temizle
+            if (this.chatPanes.size === 0) {
+                this.chatPanesContainer.innerHTML = '';
+            }
+
+            // Pane oluştur ve mesajları yükle
+            const chatPane = new ChatPane(chatId, modelName, modelId, this.eventManager);
+            this.chatPanesContainer.appendChild(chatPane.element);
+            this.chatPanes.set(chatId, chatPane);
+            chatPane.fromHistory = false;
+            chatPane.renderMessagesFromSnapshot(messages);
+
+            // Aktifleştir ve layout güncelle
+            this.activatePane(chatId);
+            this.updateLayout();
+
+            // Görünür > max ise minimize et
+            if (this.getVisiblePaneCount() > this.maxPanes) {
+                chatPane.element.classList.add('minimized');
+                try { chatPane.updateMinimizeIcon && chatPane.updateMinimizeIcon(); } catch(_) {}
+                this.updateLayout();
+                this.stateManager.addNotification?.({
+                    type: 'info',
+                    message: i18n.t('limit_auto_minimized', { count: this.maxPanes })
+                });
+            }
+        } catch (e) {
+            console.error('Existing chat load failed:', e);
+            this.stateManager.addNotification?.({ type: 'error', message: i18n.t('chat_load_failed') });
+        } finally {
+            if (reserved) this.releaseVisibleSlot();
+        }
+    }
+
+    /**
+     * History'den read-only pane aç
+     */
+    async openHistoryPane(paneId, fallbackModelName = 'Chat') {
+        if (this.chatPanes.has(paneId)) {
+            this.activatePane(paneId);
+            return;
+        }
+        let reserved = false;
+        if (!this.reserveVisibleSlot()) {
+            this.stateManager.addNotification?.({
+                type: 'warning',
+                message: i18n.t('max_panes_warning', { count: this.maxPanes })
+            });
+            return;
+        }
+        reserved = true;
+
+        const snapshot = this.closedChatSnapshots.get(paneId);
+        let modelName = fallbackModelName;
+        let modelId = 1;
+        let messages = [];
+        if (snapshot) {
+            modelName = snapshot.modelName || fallbackModelName;
+            modelId = snapshot.modelId || 1;
+            messages = Array.isArray(snapshot.messages) ? snapshot.messages : [];
+        } else {
+            // Sunucudan chat ve mesajları yükle
+            try {
+                const [chatRes, msgRes] = await Promise.all([
+                    fetch(`/api/chats/${paneId}`),
+                    fetch(`/api/chats/${paneId}/messages?limit=100`)
+                ]);
+                const chatJson = await chatRes.json();
+                const msgJson = await msgRes.json();
+                if (chatJson && chatJson.success && chatJson.chat) {
+                    modelName = chatJson.chat.model_name || fallbackModelName;
+                    modelId = chatJson.chat.model_id || 1;
+                }
+                if (msgJson && msgJson.success && Array.isArray(msgJson.messages)) {
+                    messages = msgJson.messages.map(m => ({
+                        type: m.is_user ? 'user' : 'assistant',
+                        content: m.content,
+                        timestamp: m.timestamp ? Date.parse(m.timestamp) : Date.now()
+                    }));
+                }
+            } catch (e) {
+                console.warn('Failed to load history from backend', e);
+            }
+        }
+
+        if (this.chatPanes.size === 0) {
+            this.chatPanesContainer.innerHTML = '';
+        }
+
+        if (this.getVisiblePaneCount() >= this.maxPanes) {
+            this.stateManager.addNotification?.({
+                type: 'warning',
+                message: i18n.t('max_panes_warning', { count: this.maxPanes })
+            });
+            if (reserved) this.releaseVisibleSlot();
+            return;
+        }
+
+        const chatPane = new ChatPane(paneId, modelName, modelId, this.eventManager);
+        this.chatPanesContainer.appendChild(chatPane.element);
+        this.chatPanes.set(paneId, chatPane);
+
+        chatPane.fromHistory = true;
+        chatPane.setReadOnly(true);
+        chatPane.renderMessagesFromSnapshot(messages);
+
+        this.activatePane(paneId);
+        this.updateLayout();
+
+        if (this.getVisiblePaneCount() > this.maxPanes) {
+            chatPane.element.classList.add('minimized');
+            try { chatPane.updateMinimizeIcon && chatPane.updateMinimizeIcon(); } catch(_) {}
+            this.updateLayout();
+            this.stateManager.addNotification?.({
+                type: 'info',
+                message: i18n.t('limit_auto_minimized', { count: this.maxPanes })
+            });
+        }
+
+        this.eventManager.emit('pane:created', {
+            modelName,
+            paneId,
+            modelId,
+            element: chatPane.element,
+            pane: chatPane,
+            totalPanes: this.chatPanes.size
+        });
+
+        console.log('History pane opened (read-only):', paneId);
+        if (reserved) this.releaseVisibleSlot();
+    }
+
+    /**
+     * Görünür (minimize olmayan) pane sayısını getir
+     */
+    getVisiblePaneCount() {
+        if (!this.chatPanesContainer) return 0;
+        const allEls = Array.from(this.chatPanesContainer.querySelectorAll('.chat-pane'));
+        return allEls.filter(el => !el.classList.contains('minimized')).length;
+    }
+
+    /**
+     * Görünür slot rezervasyonu (pending eklemeler)
+     */
+    reserveVisibleSlot() {
+        const current = this.getVisiblePaneCount() + this.pendingVisibleAdds;
+        if (current >= this.maxPanes) return false;
+        this.pendingVisibleAdds += 1;
+        return true;
+    }
+
+    /**
+     * Rezervasyonu bırak
+     */
+    releaseVisibleSlot() {
+        this.pendingVisibleAdds = Math.max(0, this.pendingVisibleAdds - 1);
+    }
+
+    /**
      * Chat pane oluştur
      * @param {string} modelName - Model adı
      * @param {string} paneId - Pane ID (benzersiz)
      * @param {number} modelId - Model ID (integer)
      */
-    async createChatPane(modelName, paneId, modelId = 1) {
-        // Maksimum pane sayısını kontrol et
-        if (this.chatPanes.size >= this.maxPanes) {
-            console.warn(`Maximum number of panes (${this.maxPanes}) reached`);
-            this.stateManager.addNotification({
+    async createChatPane(modelName, paneId, modelId = 1, initialMessage = '') {
+        // Slot rezervasyonu (eşzamanlı oluşturmalarda limiti koru)
+        if (!this.reserveVisibleSlot()) {
+            console.warn(`Maximum visible panes (${this.maxPanes}) reached`);
+            this.stateManager.addNotification?.({
                 type: 'warning',
-                message: `Maximum ${this.maxPanes} chat panes allowed`
+                message: i18n.t('max_panes_warning', { count: this.maxPanes })
             });
             return;
         }
 
         try {
             // Backend'de chat oluştur
-            const chatResponse = await fetch('/api/chat/create', {
+            const chatResponse = await fetch('/api/chats/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -209,6 +481,15 @@ export class ChatPaneController {
             // Backend'den gelen chat_id'yi kullan
             const backendChatId = chatResult.chat_id;
 
+            // Son kontrol: şu an görünür pane sayısı limitte mi?
+            if (this.getVisiblePaneCount() >= this.maxPanes) {
+                this.stateManager.addNotification?.({
+                    type: 'warning',
+                    message: i18n.t('max_panes_warning', { count: this.maxPanes })
+                });
+                return;
+            }
+
             // Yeni ChatPane nesnesi oluştur
             const chatPane = new ChatPane(backendChatId, modelName, modelId, this.eventManager);
 
@@ -216,21 +497,27 @@ export class ChatPaneController {
             if (this.chatPanes.size === 0) {
                 this.chatPanesContainer.innerHTML = '';
             }
-            
             // Pane'i container'a ekle
             this.chatPanesContainer.appendChild(chatPane.element);
-            
-            // Pane'i map'e ekle
-            this.chatPanes.set(backendChatId, chatPane);
-            
-            // Pane'i aktif et
-            this.activatePane(backendChatId);
 
+            // Map'e ekle
+            this.chatPanes.set(backendChatId, chatPane);
             // Chat counter'ı artır
             this.chatCounter++;
 
             // Layout'u güncelle
             this.updateLayout();
+
+            // Güvenlik: eğer görünür > max olduysa, yeni eklenen pane'i otomatik minimize et
+            if (this.getVisiblePaneCount() > this.maxPanes) {
+                chatPane.element.classList.add('minimized');
+                try { chatPane.updateMinimizeIcon && chatPane.updateMinimizeIcon(); } catch(_) {}
+                this.updateLayout();
+                this.stateManager.addNotification?.({
+                    type: 'info',
+                    message: i18n.t('limit_auto_minimized', { count: this.maxPanes })
+                });
+            }
 
             // Event emit et
             this.eventManager.emit('pane:created', {
@@ -244,12 +531,28 @@ export class ChatPaneController {
 
             console.log('Chat pane created:', chatPane.getInfo());
             
+            // Eğer assistant modalından geldi ve ilk mesaj varsa, hemen gönder
+            if (initialMessage && String(initialMessage).trim().length) {
+                try {
+                    // Pane'i aktive et
+                    this.activatePane(backendChatId);
+                    // Kullanıcı mesajını ekle ve AI yanıtını tetikle
+                    chatPane.addMessage({ type: 'user', content: initialMessage, timestamp: Date.now() });
+                    chatPane.getAIResponse(initialMessage);
+                } catch (e) {
+                    console.warn('Initial message send failed:', e);
+                }
+            }
+            
         } catch (error) {
             console.error('Chat oluşturma hatası:', error);
             this.stateManager.addNotification({
                 type: 'error',
-                message: `Chat oluşturulamadı: ${error.message}`
+                message: i18n.t('chat_create_failed', { error: error.message })
             });
+        } finally {
+            // Slot rezervasyonunu bırak (pane görünür olarak eklendiyse görünür sayaç artık DOM'da)
+            this.releaseVisibleSlot();
         }
     }
 
@@ -293,21 +596,70 @@ export class ChatPaneController {
      * Layout'u güncelle
      */
     updateLayout() {
-        const paneCount = this.chatPanes.size;
-        
+        if (!this.chatPanesContainer) return;
+        // Mevcut DOM sırasını al
+        const allEls = Array.from(this.chatPanesContainer.querySelectorAll('.chat-pane'));
+        const visibleEls = allEls.filter(el => !el.classList.contains('minimized'));
+        const minimizedEls = allEls.filter(el => el.classList.contains('minimized'));
+
+        // Görünürleri önce yerleştir, minimize olanları sona ata
+        [...visibleEls, ...minimizedEls].forEach(el => {
+            if (el.parentNode === this.chatPanesContainer) {
+                this.chatPanesContainer.appendChild(el);
+            }
+        });
+
+        let visibleCount = visibleEls.length;
+
+        // Güvenlik ağı: görünür > max ise fazlaları minimize et
+        if (visibleCount > this.maxPanes) {
+            const extras = visibleEls.slice(this.maxPanes);
+            extras.forEach(el => {
+                el.classList.add('minimized');
+                const paneId = el.getAttribute('data-pane-id');
+                const paneObj = this.chatPanes.get(paneId);
+                try { paneObj && paneObj.updateMinimizeIcon && paneObj.updateMinimizeIcon(); } catch(_) {}
+            });
+            // Yeniden hesapla görünürleri
+            const refreshed = Array.from(this.chatPanesContainer.querySelectorAll('.chat-pane'))
+                .filter(el => !el.classList.contains('minimized'));
+            visibleCount = refreshed.length;
+        }
+
         // Container class'larını temizle
         this.chatPanesContainer.className = 'chat-panes-container';
-        
-        // Layout class'ını ekle
-        if (paneCount === 1) {
+
+        // Layout class'ını ekle (görünür pane sayısına göre)
+        if (visibleCount === 1) {
             this.chatPanesContainer.classList.add('single-pane');
-        } else if (paneCount === 2) {
+        } else if (visibleCount === 2) {
             this.chatPanesContainer.classList.add('two-panes');
-        } else if (paneCount === 3) {
+        } else if (visibleCount === 3) {
             this.chatPanesContainer.classList.add('three-panes');
-        } else if (paneCount === 4) {
+        } else if (visibleCount >= 4) {
             this.chatPanesContainer.classList.add('four-panes');
         }
+
+        // Eğer görünür pane yoksa (hepsi minimize) karşılama ekranını göster; aksi halde kaldır
+        try {
+            const existingEmpty = this.chatPanesContainer.querySelector('.empty-chat-state');
+            if (visibleCount === 0) {
+                if (!existingEmpty) {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty-chat-state';
+                    empty.innerHTML = `
+                        <h2>zekai</h2>
+                        <p data-i18n="app_welcome_desc">${i18n.t('app_welcome_desc')}</p>
+                    `;
+                    // Karşılama içeriklerini en başa ekle
+                    this.chatPanesContainer.prepend(empty);
+                    // i18n uygula
+                    try { window.ZekaiI18n?.apply(empty); } catch (_) {}
+                }
+            } else {
+                if (existingEmpty) existingEmpty.remove();
+            }
+        } catch (_) {}
     }
 
 
@@ -319,6 +671,37 @@ export class ChatPaneController {
     closePane(paneId) {
         const pane = this.chatPanes.get(paneId);
         if (!pane) return;
+
+        // Backend: chat'i pasif (is_active = 0) yap (history'den açılan zaten pasif olabilir)
+        if (!pane.fromHistory) {
+            (async () => {
+                try {
+                    const res = await fetch(`/api/chats/${paneId}/delete`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        console.warn('Chat deactivate failed:', res.status);
+                    } else {
+                        // Optionally inspect response
+                        try { await res.json(); } catch (_) {}
+                    }
+                } catch (e) {
+                    console.warn('Chat deactivate request error', e);
+                }
+            })();
+        }
+
+        // Snapshot'ı sadece sohbet başlamışsa sakla (kapanan sohbeti read-only göstermek için)
+        // History'den açılan pane'i tekrar snapshot'lama
+        if (!pane.fromHistory && pane.hasUserMessage) {
+            try {
+                this.closedChatSnapshots.set(paneId, {
+                    modelName: pane.modelName,
+                    modelId: pane.modelId,
+                    messages: [...pane.messages]
+                });
+            } catch (e) {
+                console.warn('Snapshot save failed', e);
+            }
+        }
 
         // Pane'i map'den kaldır
         this.chatPanes.delete(paneId);
@@ -362,11 +745,8 @@ export class ChatPaneController {
         if (this.chatPanes.size === 0) {
         this.chatPanesContainer.innerHTML = `
             <div class="empty-chat-state">
-                <div class="empty-chat-icon">
-                    <i class="fas fa-comments"></i>
-                </div>
-                <h2>Welcome to Zekai.ai</h2>
-                <p>Select a model from the sidebar to start chatting</p>
+                <h2>zekai</h2>
+                <p data-i18n="app_welcome_desc">${i18n.t('app_welcome_desc')}</p>
             </div>
         `;
     }
@@ -464,7 +844,7 @@ export class ChatPaneController {
                         <div class="empty-icon">
                             <i class="fas fa-comments"></i>
                         </div>
-                        <p>Start a conversation with ${this.activePane.modelName}</p>
+                        <p>${i18n.t('start_with_model', { model: this.activePane.modelName })}</p>
                     </div>
                 `;
             }

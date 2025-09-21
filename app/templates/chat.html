@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sohbet - Zekai</title>
+    <title>Zekai</title>
     
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bruno Ace SC Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&display=swap" rel="stylesheet">
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base/base.css') }}">
+    <!-- Chat Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/chat.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/sidebar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/chat-panes.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/input-bar.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/chat.css') }}">
 </head>
 <body>
 <div class="chat-container">
@@ -22,84 +24,66 @@
     <aside class="chat-sidebar">
         <!-- Logo Section -->
         <div class="sidebar-logo">
-            <div class="logo-icon">
-                <i class="fas fa-comments"></i>
-            </div>
-            <span class="logo-text">sex</span>
+            <span class="logo-text">zekai</span>
         </div>
 
         <!-- Scrollable Content -->
         <div class="sidebar-content">
             <!-- Primary Section -->
             <div class="sidebar-section">
-                <div class="section-title">PRIMARY</div>
+                <div class="section-title" data-i18n="primary">PRIMARY</div>
                 <div class="sidebar-item active">
-                    <i class="fas fa-play-circle"></i>
-                    <span>Playground</span>
+                    <i class="fas fa-comments"></i>
+                    <span data-i18n="chat_mode">Sohbet Modu</span>
                 </div>
-                <div class="sidebar-item">
-                    <i class="fas fa-microphone"></i>
-                    <span>VoiceType (New)</span>
+                <div class="sidebar-item locked" title="Yakında" data-i18n="coming_soon" data-i18n-attr="title">
+                    <i class="fas fa-robot"></i>
+                    <span data-i18n="agent_mode">Agent Modu</span>
+                    <span class="item-meta locked"><i class="fas fa-lock"></i> <span data-i18n="locked">Kilitli</span></span>
                 </div>
             </div>
 
-        <!-- AI Models Section -->
+        <!-- Favorite Models Section -->
         <div class="sidebar-section">
-            <div class="section-header" data-target="ai-models">
-                <div class="section-title">AI MODELS</div>
+            <div class="section-header" data-target="favorite-models">
+                <div class="section-title" data-i18n="favorite_models">FAVORİ MODELLER</div>
                 <i class="fas fa-chevron-down collapse-icon"></i>
             </div>
-            <div class="collapsible-content" id="ai-models">
-                <div class="model-list" id="model-list">
-                    <!-- Models will be loaded dynamically from database -->
+            <div class="collapsible-content" id="favorite-models">
+                <div class="model-list" id="favorite-model-list">
+                    <!-- Favorite models will be listed here -->
                 </div>
-                <button class="pin-more-btn">
-                    <i class="fas fa-plus"></i>
-                    Pin More Models
-                </button>
+            </div>
+        </div>
+
+        <!-- All Models Section -->
+        <div class="sidebar-section">
+            <div class="section-header" data-target="all-models">
+                <div class="section-title" data-i18n="all_models">TÜM MODELLER</div>
+                <i class="fas fa-chevron-down collapse-icon"></i>
+            </div>
+            <div class="collapsible-content" id="all-models">
+                <div class="model-list" id="all-model-list">
+                    <!-- All models will be loaded dynamically from database -->
+                </div>
             </div>
         </div>
 
         <!-- Categories Section -->
         <div class="sidebar-section">
             <div class="section-header" data-target="categories">
-                <div class="section-title">CATEGORIES</div>
+                <div class="section-title" data-i18n="categories">CATEGORIES</div>
                 <i class="fas fa-chevron-down collapse-icon"></i>
             </div>
             <div class="collapsible-content" id="categories">
-                <div class="category-list">
-                    <div class="category-item">
-                        <i class="fas fa-code"></i>
-                        <span>Programming</span>
-                    </div>
-                    <div class="category-item">
-                        <i class="fas fa-palette"></i>
-                        <span>Creative Writing</span>
-                    </div>
-                    <div class="category-item">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Business</span>
-                    </div>
-                    <div class="category-item">
-                        <i class="fas fa-graduation-cap"></i>
-                        <span>Education</span>
-                    </div>
-                    <div class="category-item">
-                        <i class="fas fa-heart"></i>
-                        <span>Health & Wellness</span>
-                    </div>
-                    <div class="category-item">
-                        <i class="fas fa-gamepad"></i>
-                        <span>Gaming</span>
-                    </div>
-                </div>
+                <div class="category-list"></div>
             </div>
         </div>
 
         <!-- Active Chats Section -->
         <div class="sidebar-section">
             <div class="section-header" data-target="active-chats">
-                <div class="section-title">ACTIVE CHATS</div>
+                <div class="section-title" data-i18n="active_chats">ACTIVE CHATS</div>
                 <i class="fas fa-chevron-down collapse-icon"></i>
             </div>
             <div class="collapsible-content" id="active-chats">
@@ -112,7 +96,7 @@
         <!-- Chat History Section -->
         <div class="sidebar-section">
             <div class="section-header" data-target="chat-history">
-                <div class="section-title">CHAT HISTORY</div>
+                <div class="section-title" data-i18n="chat_history">CHAT HISTORY</div>
                 <i class="fas fa-chevron-down collapse-icon"></i>
             </div>
             <div class="collapsible-content" id="chat-history">
@@ -124,19 +108,43 @@
 
         </div>
 
-        <!-- Bottom Links -->
+        <!-- Profile Card (replaces bottom links) -->
         <div class="sidebar-bottom">
-            <div class="bottom-link">
-                <i class="fas fa-handshake"></i>
-                <span>Affiliates</span>
-            </div>
-            <div class="bottom-link">
-                <i class="fas fa-life-ring"></i>
-                <span>Support</span>
-            </div>
-            <div class="bottom-link">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
+            <div class="profile-card">
+                <div class="profile-header" role="button" title="Profil ve Ayarlar" data-i18n="profile_settings" data-i18n-attr="title">
+                    <div class="profile-avatar" id="profile-avatar">ZU</div>
+                    <div class="profile-info">
+                        <div class="profile-name" id="profile-name">{{ user_name or 'Zekai User' }}</div>
+                        <div class="profile-email" id="profile-email">{{ user_email or 'user@example.com' }}</div>
+                    </div>
+                    <div class="profile-toggle">
+                        <i class="fas fa-chevron-up"></i>
+                    </div>
+                </div>
+                <div class="profile-settings">
+                    <div class="setting-item">
+                        <div class="setting-label"><i class="fas fa-moon"></i><span data-i18n="label_dark_mode">Karanlık Mod</span></div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-darkmode">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label"><i class="fas fa-bell"></i><span data-i18n="label_notifications">Bildirimler</span></div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-notifications">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-label"><i class="fas fa-language"></i><span data-i18n="label_language">Dil</span></div>
+                        <select id="select-language" class="setting-select">
+                            <option value="tr">Türkçe</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <button class="logout-btn" id="btn-logout"><i class="fas fa-sign-out-alt"></i><span data-i18n="logout">Çıkış Yap</span></button>
+                </div>
             </div>
         </div>
     </aside>
@@ -147,62 +155,40 @@
         <div class="chat-panes-container">
             <!-- Empty State -->
             <div class="empty-chat-state">
-                <div class="empty-chat-icon">
-                    <i class="fas fa-comments"></i>
-                </div>
-                <h2>Welcome to Zekai.ai</h2>
-                <p>Select a model from the sidebar to start chatting</p>
+                <h2>zekai</h2>
+                <p data-i18n="app_welcome_desc">Select a model from the sidebar to start chatting</p>
             </div>
         </div>
     </main>
 
     <!-- Input Bar -->
     <div class="input-bar">
-        <div class="layout-controls">
-            <button class="layout-btn active" data-layout="single">
-                <i class="fas fa-square"></i>
-            </button>
-            <button class="layout-btn" data-layout="vertical">
-                <i class="fas fa-columns"></i>
-            </button>
-            <button class="layout-btn" data-layout="horizontal">
-                <i class="fas fa-grip-lines"></i>
-            </button>
-            <button class="layout-btn" data-layout="grid">
-                <i class="fas fa-th"></i>
-            </button>
-            <button class="layout-btn" data-layout="image">
-                <i class="fas fa-image"></i>
-            </button>
-        </div>
-
         <div class="input-container">
             <textarea 
                 class="message-input" 
-                placeholder="Use Shift+Enter to add new line."
+                data-i18n="message_placeholder" data-i18n-attr="placeholder" placeholder="Sorunuzu ya da isteğinizi buraya yazın; gönderdiğinizde uygun model önerileri gelir veya seçtiğiniz modelle sohbet başlar."
                 rows="1"
             ></textarea>
-            <button class="attachment-btn">
-                <i class="fas fa-paperclip"></i>
-            </button>
         </div>
 
         <div class="input-actions">
             <button class="action-btn prompts-btn">
                 <i class="fas fa-lightbulb"></i>
-                Prompts
+                <span data-i18n="prompts">Prompts</span>
             </button>
             <button class="action-btn send-btn">
                 <i class="fas fa-paper-plane"></i>
-                Send
+                <span data-i18n="send">Send</span>
             </button>
         </div>
     </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Custom JS -->
+<!-- Markdown Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@2.5.4/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!-- Chat App -->
 <script type="module" src="{{ url_for('static', filename='js/chat/chat-new.js') }}"></script>
 </body>
 </html>

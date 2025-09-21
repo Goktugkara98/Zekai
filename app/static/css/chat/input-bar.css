@@ -4,14 +4,15 @@
     bottom: 0;
     left: 280px;
     right: 0;
-    background: #ffffff;
-    border-top: 1px solid #e5e7eb;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
     padding: 16px 20px;
     display: flex;
     align-items: flex-end;
     gap: 16px;
     z-index: 1001;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap; /* quick actions için satır desteği */
 }
 
 /* Layout Controls */
@@ -25,28 +26,28 @@
 .layout-btn {
     width: 36px;
     height: 36px;
-    border: 1px solid #d1d5db;
-    background: #ffffff;
+    border: 1px solid var(--border);
+    background: var(--surface);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    color: #6b7280;
+    transition: background var(--transition-normal), color var(--transition-fast), border-color var(--transition-normal);
+    color: var(--muted);
     font-size: 14px;
 }
 
 .layout-btn:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
-    color: #374151;
+    background: var(--surface-alt);
+    border-color: var(--primary);
+    color: var(--text);
 }
 
 .layout-btn.active {
-    background: #3b82f6;
-    border-color: #3b82f6;
-    color: white;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
 
 /* Input Container */
@@ -55,16 +56,28 @@
     position: relative;
     display: flex;
     align-items: flex-end;
-    background: #f9fafb;
-    border: 1px solid #d1d5db;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 12px 16px;
-    transition: all 0.2s ease;
+    transition: border-color var(--transition-normal), box-shadow var(--transition-normal), background var(--transition-normal);
 }
 
 .input-container:focus-within {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--primary);
+    box-shadow: none;
+    background: var(--surface);
+}
+
+/* Remove inner outlines; we rely on container border color */
+.input-container .message-input:focus {
+    outline: none;
+}
+
+.input-actions .send-btn:focus,
+.input-actions .attachment-btn:focus,
+.layout-controls .layout-btn:focus {
+    outline: none;
 }
 
 .message-input {
@@ -75,7 +88,7 @@
     resize: none;
     font-size: 14px;
     line-height: 1.5;
-    color: #374151;
+    color: var(--text);
     font-family: inherit;
     min-height: 20px;
     max-height: 120px;
@@ -83,7 +96,7 @@
 }
 
 .message-input::placeholder {
-    color: #9ca3af;
+    color: var(--muted);
 }
 
 .attachment-btn {
@@ -96,14 +109,14 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    color: #6b7280;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    color: var(--muted);
     margin-left: 8px;
 }
 
 .attachment-btn:hover {
-    background: #e5e7eb;
-    color: #374151;
+    background: var(--surface-alt);
+    color: var(--text);
 }
 
 /* Input Actions */
@@ -113,44 +126,46 @@
     gap: 12px;
 }
 
+/* Quick Actions (Input Bar) */
+/* Quick Actions removed from input bar */
+
 .action-btn {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 16px;
-    border: 1px solid #d1d5db;
-    background: #ffffff;
+    border: 1px solid var(--border);
+    background: var(--surface);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background var(--transition-normal), color var(--transition-fast), border-color var(--transition-normal);
     font-size: 14px;
     font-weight: 500;
-    color: #374151;
+    color: var(--text);
 }
 
 .action-btn:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
+    background: var(--surface-alt);
+    border-color: var(--primary);
 }
 
 .prompts-btn {
-    color: #6b7280;
+    color: var(--muted);
 }
 
 .send-btn {
-    background: #3b82f6;
-    border-color: #3b82f6;
-    color: white;
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
 
 .send-btn:hover {
-    background: #2563eb;
-    border-color: #2563eb;
+    filter: brightness(0.95);
 }
 
 .send-btn:disabled {
-    background: #9ca3af;
-    border-color: #9ca3af;
+    background: #cbd5e1;
+    border-color: #cbd5e1;
     cursor: not-allowed;
 }
 
@@ -166,17 +181,17 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(59, 130, 246, 0.1);
-    border: 2px dashed #3b82f6;
+    background: rgba(124, 58, 237, 0.08);
+    border: 2px dashed var(--primary);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #3b82f6;
+    color: var(--primary);
     font-weight: 500;
     opacity: 0;
     pointer-events: none;
-    transition: all 0.2s ease;
+    transition: opacity var(--transition-normal);
 }
 
 .file-upload-overlay.active {

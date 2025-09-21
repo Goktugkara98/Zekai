@@ -6,6 +6,7 @@
 import { DOMUtils } from '../utils/dom-utils.js';
 import { Validation } from '../utils/validation.js';
 import { Helpers } from '../utils/helpers.js';
+import { i18n } from '../utils/i18n.js';
 
 export class InputController {
     constructor(stateManager, eventManager) {
@@ -16,6 +17,9 @@ export class InputController {
         this.attachmentBtn = null;
         this.promptsBtn = null;
         this.layoutBtns = [];
+        // Assistant typing debounce & state (disabled: suggestions only on Send)
+        this.assistantDebounceTimer = null;
+        this.lastAssistantQuery = '';
     }
 
     /**
@@ -100,6 +104,7 @@ export class InputController {
                 this.handleLayoutButtonClick(e, btn);
             });
         });
+
     }
 
     /**
@@ -127,7 +132,7 @@ export class InputController {
             {
                 required: false,
                 maxLength: 2000,
-                message: 'Mesaj çok uzun (maksimum 2000 karakter)'
+                message: i18n.t('msg_too_long', { max: 2000 })
             }
         ];
 
@@ -145,10 +150,12 @@ export class InputController {
         
         const message = this.messageInput.value.trim();
         if (!message) return;
-
-        // Mesaj gönder
-        this.sendMessage(message);
+        // Alt input sadece asistan önerisi için kullanılacak
+        this.handleAssistantRecommend(message);
+        return;
     }
+
+    
 
     /**
      * Key down işle
@@ -171,6 +178,8 @@ export class InputController {
         
         // Send button durumunu güncelle
         this.updateSendButtonState();
+
+        // Note: No auto suggestions while typing. Suggestions open only after Send.
     }
 
     /**
@@ -195,19 +204,14 @@ export class InputController {
      */
     handleAttachmentClick(e) {
         e.preventDefault();
-        
-        // File input oluştur
-        const fileInput = DOMUtils.createElement('input', {
-            type: 'file',
-            accept: 'image/*,video/*,audio/*,.pdf,.doc,.docx,.txt',
-            multiple: true
-        });
-
-        DOMUtils.on(fileInput, 'change', (e) => {
-            this.handleFileSelection(e);
-        });
-
-        fileInput.click();
+        // Coming soon bildirimini göster ve ilerideki geliştirme için yeri koru
+        try {
+            this.stateManager.addNotification?.({
+                type: 'info',
+                message: i18n.t('attachments_coming_soon')
+            });
+        } catch (_) {}
+        return;
     }
 
     /**
@@ -282,7 +286,7 @@ export class InputController {
         // Notification göster
         this.stateManager.addNotification({
             type: 'success',
-            message: `File "${file.name}" uploaded successfully!`
+            message: i18n.t('file_uploaded', { name: file.name })
         });
     }
 
@@ -306,7 +310,7 @@ export class InputController {
         if (file.size > maxSize) {
             this.stateManager.addNotification({
                 type: 'error',
-                message: 'File çok büyük (maksimum 10MB)'
+                message: i18n.t('file_too_large')
             });
             return false;
         }
@@ -314,7 +318,7 @@ export class InputController {
         if (!allowedTypes.includes(file.type)) {
             this.stateManager.addNotification({
                 type: 'error',
-                message: 'Desteklenmeyen file türü'
+                message: i18n.t('file_type_not_supported')
             });
             return false;
         }
@@ -357,11 +361,11 @@ export class InputController {
      */
     simulateAIResponse() {
         const responses = [
-            "Bu çok ilginç bir soru! Size nasıl yardımcı olabilirim?",
-            "Anladım. Bu konuda size daha detaylı bilgi verebilirim.",
-            "Harika bir nokta! Bu konuyu daha derinlemesine inceleyelim.",
-            "Evet, bu konuda size yardımcı olabilirim. Hangi açıdan bakmak istersiniz?",
-            "Bu sorunuzu yanıtlamak için biraz daha bilgiye ihtiyacım var."
+            i18n.t('mock_response_1'),
+            i18n.t('mock_response_2'),
+            i18n.t('mock_response_3'),
+            i18n.t('mock_response_4'),
+            i18n.t('mock_response_5')
         ];
 
         // Typing indicator göster
@@ -407,9 +411,9 @@ export class InputController {
         if (!this.messageInput) return;
 
         if (modelName) {
-            this.messageInput.placeholder = `Message ${modelName}...`;
+            this.messageInput.placeholder = i18n.t('message_with_model', { model: modelName });
         } else {
-            this.messageInput.placeholder = 'Select a model to start chatting...';
+            this.messageInput.placeholder = i18n.t('message_placeholder');
         }
     }
 
@@ -419,17 +423,58 @@ export class InputController {
      */
     updateSendButtonState(messages = null) {
         if (!this.sendBtn) return;
-
-        const currentMessages = messages || this.stateManager.getState('messages');
-        const hasMessages = currentMessages && currentMessages.length > 0;
-        const hasActiveModel = this.stateManager.getState('activeModel');
-
-        if (hasActiveModel) {
-            DOMUtils.removeClass(this.sendBtn, 'disabled');
-            this.sendBtn.disabled = false;
-        } else {
+        // Active model olmasa da asistan kullanılabilsin; butonu yalnızca input boşsa kapat
+        const hasText = !!(this.messageInput && this.messageInput.value && this.messageInput.value.trim().length);
+        this.sendBtn.disabled = !hasText;
+        if (this.sendBtn.disabled) {
             DOMUtils.addClass(this.sendBtn, 'disabled');
-            this.sendBtn.disabled = true;
+        } else {
+            DOMUtils.removeClass(this.sendBtn, 'disabled');
+        }
+    }
+
+    /**
+     * Assistant öneri akışı: aktif model yokken çalışır
+     * @param {string} query
+     */
+    async handleAssistantRecommend(query) {
+        try {
+            const assistant = window.ZekaiApp?.services?.assistantService;
+            if (!assistant) {
+                this.stateManager.addNotification?.({ type: 'error', message: i18n.t('assistant_service_missing') });
+                return;
+            }
+            // Modal'ı hemen loading ile aç
+            this.eventManager.emit('modal:show', {
+                type: 'assistant-suggestions',
+                title: i18n.t('assistant_title'),
+                options: { query, suggestions: [], loading: true }
+            });
+
+            // Input'u temizle (kullanıcı yeni arama yazabilsin)
+            this.clearInput();
+
+            // UI: loading durumu
+            this.stateManager.setTyping?.(true);
+
+            // Asenkron öneri isteği
+            const result = await assistant.recommend(query);
+            this.stateManager.setTyping?.(false);
+
+            if (!result.success) {
+                this.stateManager.addNotification?.({ type: 'error', message: result.error || i18n.t('suggestions_failed') });
+                // Loading'i kaldırmak için boş liste ile güncelle
+                this.eventManager.emit('assistant:suggestions:update', { suggestions: [] });
+                return;
+            }
+
+            const suggestions = Array.isArray(result.suggestions) ? result.suggestions : [];
+            // Mevcut modal'ı önerilerle güncelle
+            this.eventManager.emit('assistant:suggestions:update', { suggestions });
+        } catch (err) {
+            this.stateManager.setTyping?.(false);
+            this.stateManager.addNotification?.({ type: 'error', message: i18n.t('assistant_error') });
+            console.error('handleAssistantRecommend error', err);
         }
     }
 

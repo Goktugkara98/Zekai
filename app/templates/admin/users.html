@@ -1,0 +1,248 @@
+{% extends 'admin/layout.html' %}
+{% block page_header_title %}<h1>Kullanıcılar</h1>{% endblock %}
+{% block page_header_subtitle %}<p class="text-muted">Kullanıcı yönetimi ve yetkilendirme</p>{% endblock %}
+{% block page_header_actions %}
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+    <i class="fas fa-user-plus me-1"></i>
+    Yeni Kullanıcı
+  </button>
+{% endblock %}
+{% block content %}
+<div class="page-container">
+  <!-- Users Table -->
+  <div class="page-content-section">
+    <div class="standard-card-header">
+      <h5>
+        <i class="fas fa-users icon"></i>
+        Kullanıcılar
+        <span class="standard-stats-badge">{{ users|length }} kullanıcı</span>
+      </h5>
+    </div>
+    <div class="standard-table-container">
+      <div class="table-responsive">
+        <table class="table standard-table">
+            <thead>
+              <tr>
+                <th>Kullanıcı</th>
+                <th>Durum</th>
+                <th>Yetki</th>
+                <th>Son Giriş</th>
+                <th style="width: 200px;">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                      <i class="fas fa-user text-muted"></i>
+                    </div>
+                    <div>
+                      <div class="fw-medium">
+                        {{ (u.first_name or '') ~ ' ' ~ (u.last_name or '') or 'İsimsiz' }}
+                      </div>
+                      <div class="text-muted small">{{ u.email }}</div>
+                      <div class="text-muted small">ID: {{ u.user_id }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex flex-column gap-1">
+                    <span class="standard-badge bg-{{ 'success' if u.is_active else 'secondary' }}">
+                      <i class="fas fa-{{ 'check-circle' if u.is_active else 'times-circle' }} me-1"></i>
+                      {{ 'Aktif' if u.is_active else 'Pasif' }}
+                    </span>
+                    <span class="standard-badge bg-{{ 'info' if u.is_verified else 'secondary' }}">
+                      <i class="fas fa-{{ 'shield-check' if u.is_verified else 'shield-exclamation' }} me-1"></i>
+                      {{ 'Doğrulandı' if u.is_verified else 'Doğrulanmadı' }}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <span class="standard-badge bg-{{ 'warning' if u.is_admin else 'info' }}">
+                    <i class="fas fa-{{ 'crown' if u.is_admin else 'user' }} me-1"></i>
+                    {{ 'Admin' if u.is_admin else 'Kullanıcı' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="text-muted small">
+                    {{ u.last_login or 'Hiç giriş yapmamış' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="standard-btn-group">
+                    <button class="btn btn-outline-{{ 'warning' if not u.is_admin else 'secondary' }}" 
+                            data-user-id="{{ u.user_id }}" 
+                            data-next-admin="{{ 'false' if u.is_admin else 'true' }}" 
+                            onclick="toggleAdmin(this)"
+                            title="{{ 'Admin Yap' if not u.is_admin else 'Admin Kaldır' }}">
+                      <i class="fas fa-{{ 'crown' if not u.is_admin else 'user' }}"></i>
+                    </button>
+                    <button class="btn btn-outline-{{ 'success' if not u.is_active else 'secondary' }}" 
+                            data-user-id="{{ u.user_id }}" 
+                            data-next-active="{{ 'false' if u.is_active else 'true' }}" 
+                            onclick="toggleActive(this)"
+                            title="{{ 'Aktif Yap' if not u.is_active else 'Deaktif Et' }}">
+                      <i class="fas fa-{{ 'play' if not u.is_active else 'pause' }}"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" 
+                            data-user-id="{{ u.user_id }}" 
+                            onclick="deleteUser(this)"
+                            title="Kullanıcıyı Sil">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user-plus text-primary me-2"></i>
+          Yeni Kullanıcı Ekle
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createUserForm" onsubmit="return createUser(event)">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">E-posta <span class="text-danger">*</span></label>
+              <input class="form-control" name="email" type="email" placeholder="kullanici@example.com" required />
+              <div class="form-text">Kullanıcının giriş yapacağı e-posta adresi</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Şifre <span class="text-danger">*</span></label>
+              <input class="form-control" name="password" type="password" placeholder="En az 6 karakter" minlength="6" required />
+              <div class="form-text">Güçlü bir şifre belirleyin</div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Ad</label>
+              <input class="form-control" name="first_name" type="text" placeholder="Kullanıcının adı" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Soyad</label>
+              <input class="form-control" name="last_name" type="text" placeholder="Kullanıcının soyadı" />
+            </div>
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="is_admin" />
+                <label class="form-check-label fw-medium" for="is_admin">
+                  <i class="fas fa-crown text-warning me-1"></i>
+                  Admin yetkisi ver
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-user-plus me-1"></i>
+              Kullanıcı Oluştur
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function api(path, method='GET', body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'İstek başarısız');
+  return data;
+}
+
+async function toggleAdmin(btn) {
+  try {
+    const userId = btn.dataset.userId;
+    const val = btn.dataset.nextAdmin === 'true';
+    await api(`/admin/api/users/${userId}`, 'PUT', { is_admin: val });
+    location.reload();
+  } catch (e) { alert(e.message); }
+}
+
+async function toggleActive(btn) {
+  try {
+    const userId = btn.dataset.userId;
+    const val = btn.dataset.nextActive === 'true';
+    await api(`/admin/api/users/${userId}`, 'PUT', { is_active: val });
+    location.reload();
+  } catch (e) { alert(e.message); }
+}
+
+async function deleteUser(btn) {
+  if (!confirm('Bu kullanıcı silinsin mi?')) return;
+  try {
+    const userId = btn.dataset.userId;
+    await api(`/admin/api/users/${userId}`, 'DELETE');
+    location.reload();
+  } catch (e) { alert(e.message); }
+}
+
+async function createUser(ev) {
+  ev.preventDefault();
+  const form = ev.target;
+  const payload = {
+    email: form.email.value,
+    password: form.password.value,
+    first_name: form.first_name.value,
+    last_name: form.last_name.value,
+    is_admin: document.getElementById('is_admin').checked,
+  };
+  try {
+    await api('/admin/api/users', 'POST', payload);
+    location.reload();
+  } catch (e) { alert(e.message); }
+  return false;
+}
+</script>
+
+<style>
+.avatar-sm {
+  width: 40px;
+  height: 40px;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+.text-danger {
+  color: var(--danger) !important;
+}
+
+.btn-group-sm .btn {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.form-text {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+</style>
+{% endblock %}

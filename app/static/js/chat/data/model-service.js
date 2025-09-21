@@ -4,6 +4,7 @@
  */
 
 import { Helpers } from '../utils/helpers.js';
+import { i18n } from '../utils/i18n.js';
 
 export class ModelService {
     constructor(stateManager, eventManager) {
@@ -92,9 +93,12 @@ export class ModelService {
             model_name: dbModel.model_name, // Backend ile uyumluluk için
             provider: dbModel.provider_name || 'Unknown',
             type: dbModel.model_type || 'text',
-            description: `AI model by ${dbModel.provider_name || 'Unknown'}`,
+            description: i18n.t('model_by_provider', { provider: dbModel.provider_name || i18n.t('unknown_provider') }),
             icon: providerConfig.icon,
             color: providerConfig.color,
+            logoUrl: dbModel.logo_path || null,
+            categories: Array.isArray(dbModel.categories) ? dbModel.categories : [],
+            primaryCategory: dbModel.primary_category || null,
             capabilities: this.getModelCapabilities(dbModel.model_type),
             maxTokens: 32000, // Default value
             isAvailable: Boolean(dbModel.is_active),

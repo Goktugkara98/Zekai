@@ -23,7 +23,7 @@ class ModelService:
             Dict[str, Any]: Başarı durumu ve model listesi
         """
         try:
-            models = ModelRepository.get_all_models()
+            models = ModelRepository.get_all_models_with_categories()
             return {
                 'success': True,
                 'data': models,
