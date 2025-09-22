@@ -25,22 +25,28 @@ app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
 # Blueprint'leri merkezi kayıt fonksiyonu ile kaydet
 register_blueprints(app)
 
+if __name__ != "__main__":
+    # Gunicorn altında çalışıyorsak
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
 if __name__ == '__main__':
-    # Logging'i yapılandır
+    # Standalone çalışırken temel logging yapılandırması
     logging.basicConfig(level=logging.INFO, 
                         format='%(asctime)s - %(levelname)s - %(message)s',
                         force=True)
 
     # Veritabanı migration'larını çalıştır
-    logging.info("Starting database migrations...")
+    app.logger.info("Starting database migrations...")
     run_all_migrations()
-    logging.info("Database migrations completed.")
+    app.logger.info("Database migrations completed.")
 
     # Migration sonrası başlangıç verilerini (seed) yükle
-    logging.info("Running database seeders...")
+    app.logger.info("Running database seeders...")
     run_all_seeders()
-    logging.info("Database seeders completed.")
+    app.logger.info("Database seeders completed.")
 
     # Programı çalıştır
-    logging.info("Starting Flask application...")
+    app.logger.info("Starting Flask application in debug mode...")
     app.run(debug=True)
