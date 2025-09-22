@@ -22,11 +22,11 @@ def get_db_config():
         dict: Veritabanı konfigürasyonu
     """
     return {
-        'host': os.getenv('DB_HOST', 'localhost'),
-        'user': os.getenv('DB_USER', 'root'),
-        'password': os.getenv('DB_PASSWORD', ''),
-        'database': os.getenv('DB_NAME', 'zekai_db'),
-        'port': int(os.getenv('DB_PORT', '3306')),
+        'host': os.getenv('DB_HOST'),
+        'user': os.getenv('DB_USER'),
+        'password': os.getenv('DB_PASSWORD'),
+        'database': os.getenv('DB_NAME'),
+        'port': int(os.getenv('DB_PORT')),
         'charset': 'utf8mb4',
         'collation': 'utf8mb4_unicode_ci',
         'autocommit': True
@@ -41,12 +41,12 @@ def get_connection():
     """
     try:
         config = get_db_config()
-        print(f"DEBUG: Veritabanına bağlanılıyor... Host: {config.get('host')}, Veritabanı: {config.get('database')}")
+        print(f"DEBUG: Connecting to database... Host: {config.get('host')}, Database: {config.get('database')}")
         connection = mysql.connector.connect(**config)
-        print("DEBUG: Veritabanı bağlantısı başarılı.")
+        print("DEBUG: Database connection successful.")
         return connection
     except Exception as e:
-        print(f"HATA: Veritabanı bağlantısı kurulamadı: {e}")
+        print(f"ERROR: Database connection failed: {e}")
         raise
 
 def get_cursor(connection, dictionary=True):
@@ -107,7 +107,8 @@ def test_connection():
     try:
         result = execute_query("SELECT 1", fetch=True)
         return result is not None and len(result) > 0
-    except Exception:
+    except Exception as e:
+        print(f"\033[91mDEBUG: test_connection failed with exception: {e}\033[0m")
         return False
 
 def get_database_info():
