@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 from flask import Flask
 from dotenv import load_dotenv
 
@@ -25,16 +26,21 @@ app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
 register_blueprints(app)
 
 if __name__ == '__main__':
+    # Logging'i yapılandır
+    logging.basicConfig(level=logging.INFO, 
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        force=True)
+
     # Veritabanı migration'larını çalıştır
-    print("DEBUG: Veritabanı migration'ları çalıştırılıyor...")
+    logging.info("Starting database migrations...")
     run_all_migrations()
-    print("DEBUG: Veritabanı migration'ları tamamlandı.")
+    logging.info("Database migrations completed.")
 
     # Migration sonrası başlangıç verilerini (seed) yükle
-    print("DEBUG: Veritabanı seeder'ları çalıştırılıyor...")
+    logging.info("Running database seeders...")
     run_all_seeders()
-    print("DEBUG: Veritabanı seeder'ları tamamlandı.")
+    logging.info("Database seeders completed.")
 
     # Programı çalıştır
-    print("DEBUG: Flask uygulaması başlatılıyor...")
+    logging.info("Starting Flask application...")
     app.run(debug=True)

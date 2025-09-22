@@ -4,26 +4,27 @@
 # Bu dosya, veritabanı seed (başlangıç verileri) işlemlerini çalıştırır.
 # =============================================================================
 
+import logging
 from app.database.seeders import seed_categories, seed_admin_user
 
 
 def run_all_seeders() -> bool:
     try:
-        print("DEBUG: Seeder (categories) çalıştırılıyor...")
+        logging.info("Running seeder (categories)...")
         if not seed_categories():
-            print("HATA: Seeder (categories) başarısız.")
+            logging.error("Seeder (categories) failed.")
             return False
-        print("DEBUG: Seeder (categories) tamamlandı.")
+        logging.info("Seeder (categories) completed.")
 
-        print("DEBUG: Seeder (admin_user) çalıştırılıyor...")
+        logging.info("Running seeder (admin_user)...")
         if not seed_admin_user():
-            print("HATA: Seeder (admin_user) başarısız.")
+            logging.error("Seeder (admin_user) failed.")
             return False
-        print("DEBUG: Seeder (admin_user) tamamlandı.")
+        logging.info("Seeder (admin_user) completed.")
 
         return True
     except Exception as e:
-        print(f"HATA: Seeder'lar çalıştırılırken beklenmedik bir hata oluştu: {e}")
+        logging.error(f"An unexpected error occurred during seeding: {e}")
         return False
 
 

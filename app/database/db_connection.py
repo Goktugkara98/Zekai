@@ -6,6 +6,7 @@
 # =============================================================================
 
 import os
+import logging
 import mysql.connector
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
@@ -41,12 +42,12 @@ def get_connection():
     """
     try:
         config = get_db_config()
-        print(f"DEBUG: Connecting to database... Host: {config.get('host')}, Database: {config.get('database')}")
+        logging.info(f"Connecting to database... Host: {config.get('host')}, Database: {config.get('database')}")
         connection = mysql.connector.connect(**config)
-        print("DEBUG: Database connection successful.")
+        logging.info("Database connection successful.")
         return connection
     except Exception as e:
-        print(f"ERROR: Database connection failed: {e}")
+        logging.error(f"Database connection failed: {e}")
         raise
 
 def get_cursor(connection, dictionary=True):
@@ -108,7 +109,7 @@ def test_connection():
         result = execute_query("SELECT 1", fetch=True)
         return result is not None and len(result) > 0
     except Exception as e:
-        print(f"\033[91mDEBUG: test_connection failed with exception: {e}\033[0m")
+        logging.error(f"test_connection failed with exception: {e}")
         return False
 
 def get_database_info():
