@@ -25,28 +25,33 @@ app.config['DEBUG'] = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
 # Blueprint'leri merkezi kayıt fonksiyonu ile kaydet
 register_blueprints(app)
 
+def initialize_database():
+    """Runs database migrations and seeders."""
+    app.logger.debug("Starting database migrations...")
+    run_all_migrations()
+    app.logger.debug("Database migrations completed.")
+
+    app.logger.debug("Running database seeders...")
+    run_all_seeders()
+    app.logger.debug("Database seeders completed.")
+
 if __name__ != "__main__":
-    # Gunicorn altında çalışıyorsak
+    # Production environment (Gunicorn)
     gunicorn_logger = logging.getLogger('gunicorn.error')
     app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
+    app.logger.setLevel(logging.DEBUG) # Set to DEBUG as requested
+    app.logger.info('Starting Zekai application under Gunicorn...')
+
+@app.cli.command('init-db')
+def init_db_command():
+    """Command to initialize the database."""
+    initialize_database()
+    print("Database has been initialized.")
 
 if __name__ == '__main__':
-    # Standalone çalışırken temel logging yapılandırması
-    logging.basicConfig(level=logging.INFO, 
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        force=True)
-
-    # Veritabanı migration'larını çalıştır
-    app.logger.info("Starting database migrations...")
-    run_all_migrations()
-    app.logger.info("Database migrations completed.")
-
-    # Migration sonrası başlangıç verilerini (seed) yükle
-    app.logger.info("Running database seeders...")
-    run_all_seeders()
-    app.logger.info("Database seeders completed.")
-
-    # Programı çalıştır
+    # Development environment
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+    initialize_database()
     app.logger.info("Starting Flask application in debug mode...")
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False) # use_reloader=False to prevent running init twice
+

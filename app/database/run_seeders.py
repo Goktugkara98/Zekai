@@ -10,17 +10,17 @@ from app.database.seeders import seed_categories, seed_admin_user
 
 def run_all_seeders() -> bool:
     try:
-        logging.info("Running seeder (categories)...")
+        logging.debug("Running seeder (categories)...")
         if not seed_categories():
             logging.error("Seeder (categories) failed.")
             return False
-        logging.info("Seeder (categories) completed.")
+        logging.debug("Seeder (categories) completed.")
 
-        logging.info("Running seeder (admin_user)...")
+        logging.debug("Running seeder (admin_user)...")
         if not seed_admin_user():
             logging.error("Seeder (admin_user) failed.")
             return False
-        logging.info("Seeder (admin_user) completed.")
+        logging.debug("Seeder (admin_user) completed.")
 
         return True
     except Exception as e:

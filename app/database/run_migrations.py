@@ -18,35 +18,35 @@ def run_all_migrations():
     Tüm migration'ları çalıştır
     """
     try:
-        logging.info("Running migration 0000 (models)...")
+        logging.debug("Running migration 0000 (models)...")
         if not migration_0000_models.create_models_table():
             logging.error("Migration 0000 (models) failed.")
             return False
-        logging.info("Migration 0000 (models) completed.")
+        logging.debug("Migration 0000 (models) completed.")
 
-        logging.info("Running migration 0001 (users)...")
+        logging.debug("Running migration 0001 (users)...")
         if not migration_0001_users.run_migration():
             logging.error("Migration 0001 (users) failed.")
             return False
-        logging.info("Migration 0001 (users) completed.")
+        logging.debug("Migration 0001 (users) completed.")
 
-        logging.info("Running migration 0002 (categories)...")
+        logging.debug("Running migration 0002 (categories)...")
         if not migration_0002_categories.run_migration():
             logging.error("Migration 0002 (categories) failed.")
             return False
-        logging.info("Migration 0002 (categories) completed.")
+        logging.debug("Migration 0002 (categories) completed.")
 
-        logging.info("Running migration 0003 (chats)...")
+        logging.debug("Running migration 0003 (chats)...")
         if not migration_0003_chats.run_migration():
             logging.error("Migration 0003 (chats) failed.")
             return False
-        logging.info("Migration 0003 (chats) completed.")
+        logging.debug("Migration 0003 (chats) completed.")
 
-        logging.info("Running migration 0004 (messages)...")
+        logging.debug("Running migration 0004 (messages)...")
         if not migration_0004_messages.run_migration():
             logging.error("Migration 0004 (messages) failed.")
             return False
-        logging.info("Migration 0004 (messages) completed.")
+        logging.debug("Migration 0004 (messages) completed.")
 
         return True
     except Exception as e:
