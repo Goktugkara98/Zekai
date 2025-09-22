@@ -27,10 +27,15 @@ register_blueprints(app)
 
 if __name__ == '__main__':
     # Veritabanı migration'larını çalıştır
+    print("DEBUG: Veritabanı migration'ları çalıştırılıyor...")
     run_all_migrations()
-    
+    print("DEBUG: Veritabanı migration'ları tamamlandı.")
+
     # Migration sonrası başlangıç verilerini (seed) yükle
+    print("DEBUG: Veritabanı seeder'ları çalıştırılıyor...")
     run_all_seeders()
-    
+    print("DEBUG: Veritabanı seeder'ları tamamlandı.")
+
     # Programı çalıştır
+    print("DEBUG: Flask uygulaması başlatılıyor...")
     app.run(debug=True)

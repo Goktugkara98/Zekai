@@ -17,38 +17,39 @@ def run_all_migrations():
     Tüm migration'ları çalıştır
     """
     try:
-        # 0000 - Models tablosu
-        if migration_0000_models.create_models_table():
-            pass
-        else:
+        print("DEBUG: Migration 0000 (models) çalıştırılıyor...")
+        if not migration_0000_models.create_models_table():
+            print("HATA: Migration 0000 (models) başarısız.")
             return False
-        
-        # 0001 - Users tablosu (is_admin dahil)
-        if migration_0001_users.run_migration():
-            pass
-        else:
-            return False
+        print("DEBUG: Migration 0000 (models) tamamlandı.")
 
-        # 0002 - Categories ve model_categories tabloları ve ilişkiler
-        if migration_0002_categories.run_migration():
-            pass
-        else:
+        print("DEBUG: Migration 0001 (users) çalıştırılıyor...")
+        if not migration_0001_users.run_migration():
+            print("HATA: Migration 0001 (users) başarısız.")
             return False
+        print("DEBUG: Migration 0001 (users) tamamlandı.")
 
-        # 0003 - Chats tablosu
-        if migration_0003_chats.run_migration():
-            pass
-        else:
+        print("DEBUG: Migration 0002 (categories) çalıştırılıyor...")
+        if not migration_0002_categories.run_migration():
+            print("HATA: Migration 0002 (categories) başarısız.")
             return False
+        print("DEBUG: Migration 0002 (categories) tamamlandı.")
 
-        # 0004 - Messages tablosu (FK -> chats)
-        if migration_0004_messages.run_migration():
-            pass
-        else:
+        print("DEBUG: Migration 0003 (chats) çalıştırılıyor...")
+        if not migration_0003_chats.run_migration():
+            print("HATA: Migration 0003 (chats) başarısız.")
             return False
+        print("DEBUG: Migration 0003 (chats) tamamlandı.")
+
+        print("DEBUG: Migration 0004 (messages) çalıştırılıyor...")
+        if not migration_0004_messages.run_migration():
+            print("HATA: Migration 0004 (messages) başarısız.")
+            return False
+        print("DEBUG: Migration 0004 (messages) tamamlandı.")
+
         return True
-        
     except Exception as e:
+        print(f"HATA: Migration'lar çalıştırılırken beklenmedik bir hata oluştu: {e}")
         return False
 
 if __name__ == "__main__":

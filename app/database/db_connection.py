@@ -41,9 +41,12 @@ def get_connection():
     """
     try:
         config = get_db_config()
+        print(f"DEBUG: Veritabanına bağlanılıyor... Host: {config.get('host')}, Veritabanı: {config.get('database')}")
         connection = mysql.connector.connect(**config)
+        print("DEBUG: Veritabanı bağlantısı başarılı.")
         return connection
     except Exception as e:
+        print(f"HATA: Veritabanı bağlantısı kurulamadı: {e}")
         raise
 
 def get_cursor(connection, dictionary=True):
