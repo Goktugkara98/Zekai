@@ -85,10 +85,8 @@ class IndexPage {
         
         // Simulate API call delay
         setTimeout(() => {
-            // TODO: Implement actual registration logic
-            // For now, show alert
-            alert('Kayıt olma özelliği yakında eklenecek!');
-            this.setButtonLoading(this.registerBtn, false);
+            // Redirect to register page
+            window.location.href = '/auth/register';
         }, 500);
     }
 

@@ -108,10 +108,8 @@ export class InputController {
      * State listener'ları kur
      */
     setupStateListeners() {
-        // Active model değişikliği
-        this.stateManager.subscribe('activeModel', (newModel) => {
-            this.updateInputPlaceholder(newModel);
-        });
+        // Placeholder artık aktif modele bağlı değil; sabit bir yayın mesajı kullanıyoruz
+        this.updateInputPlaceholder();
 
         // Messages değişikliği
         this.stateManager.subscribe('messages', (messages) => {
@@ -147,8 +145,10 @@ export class InputController {
         
         const message = this.messageInput.value.trim();
         if (!message) return;
-        // Alt input sadece asistan önerisi için kullanılacak
-        this.handleAssistantRecommend(message);
+        // Broadcast message to all visible chat panes
+        this.eventManager.emit('message:broadcast', { message });
+        // Clear input and resize
+        this.clearInput();
         return;
     }
 
@@ -404,14 +404,10 @@ export class InputController {
      * Input placeholder'ı güncelle
      * @param {string} modelName - Model adı
      */
-    updateInputPlaceholder(modelName) {
+    updateInputPlaceholder() {
         if (!this.messageInput) return;
-
-        if (modelName) {
-            this.messageInput.placeholder = i18n.t('message_with_model', { model: modelName });
-        } else {
-            this.messageInput.placeholder = i18n.t('message_placeholder');
-        }
+        // Türkçe sabit yayın placeholder'ı
+        this.messageInput.placeholder = 'Bu alana yazdığınız mesaj, ekranda açık olan tüm sohbetlere gönderilir (karşılaştırma için).';
     }
 
     /**

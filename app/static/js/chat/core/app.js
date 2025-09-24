@@ -56,6 +56,9 @@ export class App {
             // Apply translations to the whole document once initialized
             try { i18n.apply(document); } catch (_) {}
             
+            // Auto-open 4 panes on first load (pinned models preferred)
+            try { await this.autoOpenInitialPanes(); } catch (_) {}
+            
         } catch (error) {
             this.stateManager.setError(i18n.t('app_init_failed'));
         }
@@ -363,6 +366,39 @@ export class App {
             App.instance = new App();
         }
         return App.instance;
+    }
+
+    /**
+     * Auto-open up to 4 chat panes on initial load using pinned models if any.
+     */
+    async autoOpenInitialPanes() {
+        try {
+            const chatPaneCtrl = this.controllers?.chatPane;
+            const modelService = this.services?.modelService;
+            if (!chatPaneCtrl || !modelService) return;
+            if ((chatPaneCtrl.chatPanes?.size || 0) > 0) return; // already opened by user
+
+            const allModels = Array.isArray(modelService.models) ? modelService.models : [];
+            if (!allModels.length) return;
+
+            // Read pinned IDs from localStorage
+            let favIds = [];
+            try { favIds = Helpers.getStorage('favorite_models') || []; } catch (_) { favIds = []; }
+            const favSet = new Set(favIds.map(String));
+
+            const pinned = allModels.filter(m => m.isAvailable && favSet.has(String(m.id)));
+            const others = allModels.filter(m => m.isAvailable && !favSet.has(String(m.id)));
+            const selection = [...pinned, ...others].slice(0, 4);
+
+            // Emit selection in sequence to create panes
+            for (const m of selection) {
+                this.eventManager.emit('model:selected', { modelName: m.name, modelId: m.modelId });
+                // Small delay to avoid race on layout updates
+                await new Promise(r => setTimeout(r, 50));
+            }
+            // Notify UI that auto-open is complete (for preloader coordination)
+            this.eventManager.emit('panes:auto-opened', { count: selection.length });
+        } catch (_) {}
     }
 }
 

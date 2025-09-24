@@ -66,7 +66,9 @@ class ChatRepository:
     def list_user_chats(user_id: int, active: Optional[bool] = True, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
         base_sql = (
             "SELECT c.*, m.model_name, m.provider_name, "
-            "(SELECT COUNT(*) FROM messages WHERE chat_id = c.chat_id) AS message_count "
+            "(SELECT COUNT(*) FROM messages WHERE chat_id = c.chat_id) AS message_count, "
+            "(SELECT content FROM messages WHERE chat_id = c.chat_id ORDER BY created_at DESC LIMIT 1) AS last_message_content, "
+            "(SELECT is_user FROM messages WHERE chat_id = c.chat_id ORDER BY created_at DESC LIMIT 1) AS last_message_is_user "
             "FROM chats c LEFT JOIN models m ON c.model_id = m.model_id "
             "WHERE c.user_id = %s"
         )

@@ -215,6 +215,24 @@ export class SidebarController {
 
         // Bottom links removed (Affiliates/Support/Settings)
 
+        // Open Active Chats modal
+        const openActiveBtn = DOMUtils.$('.open-active-chats');
+        if (openActiveBtn) {
+            DOMUtils.on(openActiveBtn, 'click', (e) => {
+                e.preventDefault();
+                this.eventManager.emit('modal:show', { type: 'active-chats' });
+            });
+        }
+
+        // Open Chat History modal
+        const openHistoryBtn = DOMUtils.$('.open-chat-history');
+        if (openHistoryBtn) {
+            DOMUtils.on(openHistoryBtn, 'click', (e) => {
+                e.preventDefault();
+                this.eventManager.emit('modal:show', { type: 'chat-history' });
+            });
+        }
+
         // Active chats click (restore)
         if (this.activeChatListEl) {
             DOMUtils.on(this.activeChatListEl, 'click', (e) => {
@@ -420,6 +438,8 @@ export class SidebarController {
      */
     handlePinMoreModels(e) {
         e.preventDefault();
+        // Prevent collapsing the section when clicking the pin-more button
+        if (e.stopPropagation) e.stopPropagation();
         
         // Event emit et
         this.eventManager.emit('models:pin-more', {
@@ -512,11 +532,13 @@ export class SidebarController {
             // Model service'den modelleri al
             const modelService = window.ZekaiApp?.services?.modelService;
             if (!modelService) {
+                this.updateModelList([], false);
                 return;
             }
 
             const models = modelService.getModels({ available: true });
-            this.updateModelList(models);
+            const isLoaded = Boolean(modelService.isLoaded);
+            this.updateModelList(models, isLoaded);
         } catch (error) {}
     }
 
@@ -524,51 +546,47 @@ export class SidebarController {
      * Model listesini güncelle
      * @param {Array} models - Model listesi
      */
-    updateModelList(models) {
-
+    updateModelList(models, isLoaded = false) {
         const favList = DOMUtils.$('#favorite-model-list');
-        const allList = DOMUtils.$('#all-model-list');
-        if (!favList || !allList) {
+        if (!favList) {
             return;
         }
 
         // Temizle
         favList.innerHTML = '';
-        allList.innerHTML = '';
 
-        if (!models || models.length === 0) {
-            favList.innerHTML = `<div class="no-models">${i18n.t('no_favorite_models')}</div>`;
-            allList.innerHTML = `<div class="no-models">${i18n.t('no_models_found')}</div>`;
+        if (!isLoaded) {
+            favList.innerHTML = `<div class="no-models">${i18n.t('loading_models')}</div>`;
             return;
         }
 
         const favoriteIds = new Set(this.getFavoriteModelIds());
 
-        // Modelleri alfabetik sıraya koy (performans maliyeti minimal)
-        const sorted = [...models].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        // Sadece favori modelleri alfabetik sırada göster
+        const sortedFavs = models
+            .filter(m => favoriteIds.has(String(m.id)))
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-        // Her model için HTML oluştur
-        sorted.forEach(model => {
-            const isFav = favoriteIds.has(String(model.id));
-            const allItem = this.createModelItem(model, isFav);
-            allList.appendChild(allItem);
-
-            if (isFav) {
-                const favItem = this.createModelItem(model, true);
-                favList.appendChild(favItem);
-            }
+        sortedFavs.forEach(model => {
+            const favItem = this.createModelItem(model);
+            favList.appendChild(favItem);
         });
 
-        // Model item'ları güncelle (hem favoriler hem tüm listede)
-        this.modelItems = DOMUtils.$$('.model-item');
+        // Model item'ları güncelle (sadece favoriler listesinde)
+        this.modelItems = DOMUtils.$$('#favorite-model-list .model-item');
+
+        if (!this.modelItems.length) {
+            favList.innerHTML = `
+                <div class="no-models">
+                    <div>${i18n.t('no_ai_models')}</div>
+                    <div class="no-models-hint">${i18n.t('ai_models_hint')}</div>
+                </div>
+            `;
+            return;
+        }
 
         // Event listener'ları yeniden kur
         this.setupModelEventListeners();
-
-        // Favoriler bölümü boşsa küçük bir bilgi göster
-        if (!favList.children.length) {
-            favList.innerHTML = `<div class="no-models">${i18n.t('fav_hint')}</div>`;
-        }
     }
 
     /**
@@ -576,7 +594,7 @@ export class SidebarController {
      * @param {Object} model - Model objesi
      * @returns {Element} Model item elementi
      */
-    createModelItem(model, isFavorite = false) {
+    createModelItem(model) {
         const hasLogo = !!model.logoUrl;
         const iconHtml = hasLogo
             ? `<img class="model-logo" src="${model.logoUrl}" alt="${(model.name || 'model')} logo" />`
@@ -591,9 +609,6 @@ export class SidebarController {
                     ${iconHtml}
                 </div>
                 <span>${model.name}</span>
-                <button class="fav-toggle${isFavorite ? ' is-fav' : ''}" aria-label="${i18n.t('favorite')}" title="${i18n.t('favorite')}" data-model-id="${model.id}">
-                    <i class="fas fa-star"></i>
-                </button>
             `
         });
 
@@ -714,24 +729,9 @@ export class SidebarController {
      */
     setupModelEventListeners() {
         this.modelItems.forEach(item => {
-            // Model seçimi
             DOMUtils.on(item, 'click', (e) => {
-                // Favori toggle'a tıklanırsa seçim yapma
-                const target = e.target;
-                if (target && (target.closest && target.closest('.fav-toggle'))) return;
                 this.handleModelSelection(e, item);
             });
-
-            // Favori toggle
-            const favBtn = item.querySelector('.fav-toggle');
-            if (favBtn) {
-                DOMUtils.on(favBtn, 'click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const id = String(favBtn.getAttribute('data-model-id'));
-                    this.toggleFavorite(id);
-                });
-            }
         });
     }
 

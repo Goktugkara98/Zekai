@@ -13,6 +13,7 @@ export class ModelService {
         this.models = [];
         this.activeModel = null;
         this.modelConfigs = new Map();
+        this.isLoaded = false;
     }
 
     /**
@@ -48,23 +49,26 @@ export class ModelService {
      * Model'leri yükle
      */
     async loadModels() {
+        this.isLoaded = false;
         try {
             const response = await fetch('/api/models');
             const result = await response.json();
             
             if (result.success) {
                 this.models = result.data.map(model => this.transformModelData(model));
-                
-                // Event emit et
-                this.eventManager.emit('models:loaded', {
-                    models: this.models,
-                    count: this.models.length
-                });
             } else {
                 this.models = [];
             }
         } catch (error) {
             this.models = [];
+        } finally {
+            this.isLoaded = true;
+            try {
+                this.eventManager.emit('models:loaded', {
+                    models: this.models,
+                    count: this.models.length
+                });
+            } catch (_) {}
         }
     }
 

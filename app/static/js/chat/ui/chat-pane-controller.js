@@ -23,6 +23,40 @@ export class ChatPaneController {
     }
 
     /**
+     * Broadcast a user message to all visible, non-readonly panes for side-by-side comparison
+     * @param {string} message
+     */
+    broadcastToVisiblePanes(message) {
+        const container = this.chatPanesContainer;
+        if (!container) return;
+        const visiblePaneEls = Array.from(container.querySelectorAll('.chat-pane'))
+            .filter(el => !el.classList.contains('minimized'));
+        if (!visiblePaneEls.length) return;
+
+        // Use a shared timestamp across panes to align messages
+        const timestamp = Date.now();
+
+        visiblePaneEls.forEach(el => {
+            const paneId = el.getAttribute('data-pane-id');
+            const pane = this.chatPanes.get(paneId);
+            if (!pane || pane.readOnly) return;
+
+            // Add user message
+            pane.addMessage({ type: 'user', content: message, timestamp });
+
+            // Notify sidebar active chats list
+            this.eventManager.emit('pane:message-sent', {
+                paneId: pane.id,
+                message,
+                pane
+            });
+
+            // Trigger AI response per pane
+            pane.getAIResponse(message);
+        });
+    }
+
+    /**
      * Controller'ı başlat
      */
     async init() {
@@ -88,6 +122,13 @@ export class ChatPaneController {
             const { paneId, modelName } = event.data || {};
             if (!paneId) return;
             this.openHistoryPane(paneId, modelName);
+        });
+
+        // Broadcast message to all visible panes
+        this.eventManager.on('message:broadcast', (event) => {
+            const { message } = event.data || {};
+            if (!message || !String(message).trim().length) return;
+            this.broadcastToVisiblePanes(String(message));
         });
     }
 

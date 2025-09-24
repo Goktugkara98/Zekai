@@ -17,8 +17,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/sidebar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/chat-panes.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/input-bar.css') }}">
+<!-- Preloader styles are in chat.css -->
+<!-- Preloader styles are in chat.css -->
 </head>
-<body>
+<body class="preloading">
+<div id="preloader" class="preloader">
+    <div class="preloader-inner">
+        <div class="logo">zekai</div>
+        <div class="spinner"></div>
+    </div>
+    <div class="preloader-bg"></div>
+</div>
 <div class="chat-container">
     <!-- Sidebar -->
     <aside class="chat-sidebar">
@@ -29,84 +38,28 @@
 
         <!-- Scrollable Content -->
         <div class="sidebar-content">
-            <!-- Primary Section -->
+            <!-- Pinned Models Only -->
             <div class="sidebar-section">
-                <div class="section-title" data-i18n="primary">PRIMARY</div>
-                <div class="sidebar-item active">
-                    <i class="fas fa-comments"></i>
-                    <span data-i18n="chat_mode">Sohbet Modu</span>
+                <div class="section-header" data-target="favorite-models">
+                    <div class="section-title" data-i18n="ai_models">YAPAY ZEKA MODELLERİ</div>
+                    <i class="fas fa-chevron-down collapse-icon"></i>
                 </div>
-                <div class="sidebar-item locked" title="Yakında" data-i18n="coming_soon" data-i18n-attr="title">
-                    <i class="fas fa-robot"></i>
-                    <span data-i18n="agent_mode">Agent Modu</span>
-                    <span class="item-meta locked"><i class="fas fa-lock"></i> <span data-i18n="locked">Kilitli</span></span>
+                <div class="collapsible-content open" id="favorite-models">
+                    <div class="model-list" id="favorite-model-list">
+                        <!-- Pinned models will be listed here -->
+                    </div>
                 </div>
-            </div>
-
-        <!-- Favorite Models Section -->
-        <div class="sidebar-section">
-            <div class="section-header" data-target="favorite-models">
-                <div class="section-title" data-i18n="favorite_models">FAVORİ MODELLER</div>
-                <i class="fas fa-chevron-down collapse-icon"></i>
-            </div>
-            <div class="collapsible-content" id="favorite-models">
-                <div class="model-list" id="favorite-model-list">
-                    <!-- Favorite models will be listed here -->
+                <!-- Inline Manage Models under the models list -->
+                <div class="models-inline-action">
+                    <button class="pin-more-btn" title="Modelleri Yönet" aria-label="Modelleri Yönet">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Modelleri Yönet</span>
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- All Models Section -->
-        <div class="sidebar-section">
-            <div class="section-header" data-target="all-models">
-                <div class="section-title" data-i18n="all_models">TÜM MODELLER</div>
-                <i class="fas fa-chevron-down collapse-icon"></i>
-            </div>
-            <div class="collapsible-content" id="all-models">
-                <div class="model-list" id="all-model-list">
-                    <!-- All models will be loaded dynamically from database -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Categories Section -->
-        <div class="sidebar-section">
-            <div class="section-header" data-target="categories">
-                <div class="section-title" data-i18n="categories">CATEGORIES</div>
-                <i class="fas fa-chevron-down collapse-icon"></i>
-            </div>
-            <div class="collapsible-content" id="categories">
-                <div class="category-list"></div>
-            </div>
-        </div>
-
-        <!-- Active Chats Section -->
-        <div class="sidebar-section">
-            <div class="section-header" data-target="active-chats">
-                <div class="section-title" data-i18n="active_chats">ACTIVE CHATS</div>
-                <i class="fas fa-chevron-down collapse-icon"></i>
-            </div>
-            <div class="collapsible-content" id="active-chats">
-                <div class="chat-list" id="active-chat-list">
-                    <!-- Active chats will be loaded dynamically -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Chat History Section -->
-        <div class="sidebar-section">
-            <div class="section-header" data-target="chat-history">
-                <div class="section-title" data-i18n="chat_history">CHAT HISTORY</div>
-                <i class="fas fa-chevron-down collapse-icon"></i>
-            </div>
-            <div class="collapsible-content" id="chat-history">
-                <div class="history-list" id="history-list">
-                    <!-- Chat history will be loaded dynamically -->
-                </div>
-            </div>
-        </div>
-
-        </div>
+        <!-- models manage moved under models list -->
 
         <!-- Profile Card (replaces bottom links) -->
         <div class="sidebar-bottom">
@@ -143,6 +96,18 @@
                             <option value="en">English</option>
                         </select>
                     </div>
+                    <!-- Minimal quick links for chats -->
+                    <div class="profile-quick-links">
+                        <button class="profile-link open-active-chats" type="button">
+                            <i class="fas fa-bolt"></i>
+                            <span data-i18n="sidebar_active_chats">Aktif Sohbetler</span>
+                        </button>
+                        <button class="profile-link open-chat-history" type="button">
+                            <i class="fas fa-clock"></i>
+                            <span data-i18n="sidebar_history">Sohbet Geçmişi</span>
+                        </button>
+                    </div>
+
                     <button class="logout-btn" id="btn-logout"><i class="fas fa-sign-out-alt"></i><span data-i18n="logout">Çıkış Yap</span></button>
                 </div>
             </div>
@@ -166,7 +131,7 @@
         <div class="input-container">
             <textarea 
                 class="message-input" 
-                data-i18n="message_placeholder" data-i18n-attr="placeholder" placeholder="Sorunuzu ya da isteğinizi buraya yazın; gönderdiğinizde uygun model önerileri gelir veya seçtiğiniz modelle sohbet başlar."
+                placeholder="Bu alana yazdığınız mesaj, ekranda açık olan tüm sohbetlere gönderilir (karşılaştırma için)."
                 rows="1"
             ></textarea>
         </div>
@@ -174,11 +139,11 @@
         <div class="input-actions">
             <button class="action-btn prompts-btn">
                 <i class="fas fa-lightbulb"></i>
-                <span data-i18n="prompts">Prompts</span>
+                <span>Öneriler</span>
             </button>
             <button class="action-btn send-btn">
                 <i class="fas fa-paper-plane"></i>
-                <span data-i18n="send">Send</span>
+                <span>Gönder</span>
             </button>
         </div>
     </div>

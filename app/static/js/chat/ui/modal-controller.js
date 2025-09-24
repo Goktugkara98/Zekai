@@ -135,6 +135,354 @@ export class ModalController {
         return modal;
     }
 
+    /** Active chats modal */
+    createActiveChatsModal(options = {}) {
+        const modal = DOMUtils.createElement('div', { className: 'modal-overlay' }, '');
+        modal.innerHTML = `
+            <div class="modal-content list-modal">
+                <div class="modal-header">
+                    <h3>${i18n.t?.('active_chats') || 'Aktif Sohbetler'}</h3>
+                    <button class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <style>
+                        .list-modal { transform: translateY(8px) scale(0.98); opacity: 0; transition: transform 160ms ease, opacity 160ms ease; }
+                        .list-modal.appear { transform: translateY(0) scale(1); opacity: 1; }
+                        .chat-list-modal { display: flex; flex-direction: column; gap: 8px; }
+                        .chat-row-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background: var(--surface); cursor:pointer; }
+                        .chat-row-item:hover { background: var(--surface-alt); border-color: var(--primary); }
+                        .chat-row-item .model-icon { width: 28px; height: 28px; border-radius: 8px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+                        .chat-row-item .model-icon img.model-logo { width:100%; height:100%; object-fit: contain; border-radius: 8px; }
+                        .chat-row-item .info { display:flex; flex-direction:column; min-width:0; flex:1; }
+                        .chat-row-item .name { font-weight:600; color: var(--text); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        .chat-row-item .preview { font-size:12px; color: var(--muted); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        .no-models { color: var(--muted); font-size: 12px; padding: 8px 12px; }
+                    </style>
+                    <div class="chat-list-modal"></div>
+                </div>
+            </div>
+        `;
+        setTimeout(() => { DOMUtils.$('.list-modal', modal)?.classList.add('appear'); }, 10);
+        const closeBtn = DOMUtils.$('.close-btn', modal);
+        if (closeBtn) DOMUtils.on(closeBtn, 'click', () => this.closeModal(modal));
+        DOMUtils.on(modal, 'click', (e) => { if (e.target === modal) this.closeModal(modal); });
+
+        (async () => {
+            const container = DOMUtils.$('.chat-list-modal', modal);
+            if (!container) return;
+            try {
+                const res = await fetch('/api/chats/list?active=true');
+                const json = await res.json();
+                const list = (json && json.success && Array.isArray(json.chats)) ? json.chats : [];
+                if (!list.length) {
+                    container.innerHTML = `<div class="no-models">${i18n.t?.('no_active_chats') || 'Aktif sohbet yok'}</div>`;
+                    return;
+                }
+                container.innerHTML = list.map(c => {
+                    const code = String(c.chat_id || c.id || '').toString().split('-').pop();
+                    const name = c.model_name || c.title || 'Chat';
+                    return `
+                        <div class="chat-row-item" data-pane-id="${c.chat_id || c.id}">
+                            <div class="model-icon"><i class="fas fa-robot"></i></div>
+                            <div class="info">
+                                <div class="name">${name} <span class="chat-code">#${code}</span></div>
+                                <div class="preview"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                // Bind clicks -> restore existing chat pane
+                DOMUtils.$$('.chat-row-item', container).forEach(item => {
+                    DOMUtils.on(item, 'click', (e) => {
+                        const pid = item.getAttribute('data-pane-id');
+                        if (!pid) return;
+                        this.eventManager.emit('pane:restore-requested', { paneId: pid });
+                        this.closeModal(modal);
+                    });
+                });
+            } catch (_) {
+                if (container) container.innerHTML = `<div class=\"no-models\">${i18n.t?.('load_failed') || 'Yüklenemedi'}</div>`;
+            }
+        })();
+        return modal;
+    }
+
+    /** Chat history modal */
+    createChatHistoryModal(options = {}) {
+        const modal = DOMUtils.createElement('div', { className: 'modal-overlay' }, '');
+        modal.innerHTML = `
+            <div class="modal-content list-modal">
+                <div class="modal-header">
+                    <h3>${i18n.t?.('chat_history') || 'Sohbet Geçmişi'}</h3>
+                    <button class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <style>
+                        .list-modal { transform: translateY(8px) scale(0.98); opacity: 0; transition: transform 160ms ease, opacity 160ms ease; }
+                        .list-modal.appear { transform: translateY(0) scale(1); opacity: 1; }
+                        .chat-list-modal { display: flex; flex-direction: column; gap: 8px; }
+                        .chat-row-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background: var(--surface); cursor:pointer; }
+                        .chat-row-item:hover { background: var(--surface-alt); border-color: var(--primary); }
+                        .chat-row-item .model-icon { width: 28px; height: 28px; border-radius: 8px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+                        .chat-row-item .model-icon img.model-logo { width:100%; height:100%; object-fit: contain; border-radius: 8px; }
+                        .chat-row-item .info { display:flex; flex-direction:column; min-width:0; flex:1; }
+                        .chat-row-item .name { font-weight:600; color: var(--text); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        .chat-row-item .preview { font-size:12px; color: var(--muted); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        .no-models { color: var(--muted); font-size: 12px; padding: 8px 12px; }
+                    </style>
+                    <div class="chat-list-modal"></div>
+                </div>
+            </div>
+        `;
+        setTimeout(() => { DOMUtils.$('.list-modal', modal)?.classList.add('appear'); }, 10);
+        const closeBtn = DOMUtils.$('.close-btn', modal);
+        if (closeBtn) DOMUtils.on(closeBtn, 'click', () => this.closeModal(modal));
+        DOMUtils.on(modal, 'click', (e) => { if (e.target === modal) this.closeModal(modal); });
+
+        (async () => {
+            const container = DOMUtils.$('.chat-list-modal', modal);
+            if (!container) return;
+            try {
+                const res = await fetch('/api/chats/list?active=false');
+                const json = await res.json();
+                const list = (json && json.success && Array.isArray(json.chats)) ? json.chats : [];
+                if (!list.length) {
+                    container.innerHTML = `<div class="no-models">${i18n.t?.('no_chat_history') || 'Geçmiş sohbet yok'}</div>`;
+                    return;
+                }
+                container.innerHTML = list.map(c => {
+                    const code = String(c.chat_id || c.id || '').toString().split('-').pop();
+                    const name = c.model_name || c.title || 'Chat';
+                    return `
+                        <div class="chat-row-item" data-pane-id="${c.chat_id || c.id}" data-model-name="${name}">
+                            <div class="model-icon"><i class="fas fa-robot"></i></div>
+                            <div class="info">
+                                <div class="name">${name} <span class="chat-code">#${code}</span></div>
+                                <div class="preview"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                // Bind clicks -> open read-only history pane
+                DOMUtils.$$('.chat-row-item', container).forEach(item => {
+                    DOMUtils.on(item, 'click', (e) => {
+                        const pid = item.getAttribute('data-pane-id');
+                        const modelName = item.getAttribute('data-model-name');
+                        if (!pid) return;
+                        this.eventManager.emit('history:selected', { paneId: pid, modelName });
+                        this.closeModal(modal);
+                    });
+                });
+            } catch (_) {
+                if (container) container.innerHTML = `<div class=\"no-models\">${i18n.t?.('load_failed') || 'Yüklenemedi'}</div>`;
+            }
+        })();
+        return modal;
+    }
+
+    /**
+     * Modelleri yönet modalı (favori toggle ile)
+     */
+    createModelsBrowserModal(options = {}) {
+        const modal = DOMUtils.createElement('div', { className: 'modal-overlay' }, '');
+
+        const state = {
+            models: [],
+            query: '',
+            loading: true
+        };
+
+        const getTitle = () => {
+            try { return i18n.t('models_manage_title'); } catch (_) { return 'Modelleri Yönet'; }
+        };
+
+        const getFavoriteSet = () => new Set(Helpers.getStorage('favorite_models') || []);
+
+        const filterModels = () => {
+            const q = (state.query || '').toLowerCase();
+            let list = [...state.models];
+            if (q) {
+                list = list.filter(m => {
+                    const name = (m.name || m.model_name || '').toLowerCase();
+                    const desc = (m.description || '').toLowerCase();
+                    const provider = (m.provider || m.provider_name || '').toLowerCase();
+                    const type = (m.type || m.model_type || '').toLowerCase();
+                    return name.includes(q) || desc.includes(q) || provider.includes(q) || type.includes(q);
+                });
+            }
+            return list.sort((a, b) => (a.name || a.model_name || '').localeCompare(b.name || b.model_name || ''));
+        };
+
+        const renderList = () => {
+            const listEl = DOMUtils.$('.models-grid', modal);
+            if (!listEl) return;
+
+            const favorites = getFavoriteSet();
+
+            if (state.loading) {
+                listEl.innerHTML = `
+                    ${Array.from({ length: 8 }).map(() => `
+                        <div class="model-card skeleton">
+                            <div class="card-header">
+                                <div class="card-icon shimmer"></div>
+                                <div class="fav-toggle shimmer"></div>
+                            </div>
+                            <div class="card-body">
+                                <div class="sk-line shimmer" style="width: 60%; height: 14px; border-radius: 6px;"></div>
+                                <div class="sk-line shimmer" style="width: 40%; height: 12px; margin-top: 8px; border-radius: 6px;"></div>
+                                <div class="sk-line shimmer" style="width: 100%; height: 10px; margin-top: 10px; border-radius: 6px;"></div>
+                                <div class="sk-line shimmer" style="width: 90%; height: 10px; margin-top: 6px; border-radius: 6px;"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+                return;
+            }
+
+            const list = filterModels();
+
+            if (!list.length) {
+                let emptyMsg; try { emptyMsg = i18n.t('no_models_found'); } catch (_) { emptyMsg = 'Model bulunamadı'; }
+                listEl.innerHTML = `<div class="no-models">${emptyMsg}</div>`;
+                return;
+            }
+
+            listEl.innerHTML = list.map(m => {
+                const displayName = m.name || m.model_name;
+                const provider = m.provider_name || m.provider || '';
+                const type = (m.model_type || m.type || '').toString().toUpperCase();
+                const description = m.description || '';
+                const logo = m.logo_path || m.logoUrl || null;
+                const iconHtml = logo
+                    ? `<img class="model-logo" src="${logo}" alt="${(displayName || 'model')} logo" loading="lazy" />`
+                    : `<i class="${m.icon || 'fas fa-robot'}"></i>`;
+                const key = m.model_id ? `model-${m.model_id}` : (m.id || '');
+                const checked = favorites.has(String(key)) ? 'checked' : '';
+
+                return `
+                    <div class="model-card" data-model-key="${key}">
+                        <div class="card-header">
+                            <div class="card-icon">${iconHtml}</div>
+                            <label class="fav-toggle" title="${checked ? (i18n.t?.('model_active') || 'Aktif') : (i18n.t?.('model_inactive') || 'Pasif')}">
+                                <input type="checkbox" class="model-enable-toggle" data-model-key="${key}" ${checked}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="card-body">
+                            <div class="model-name">${displayName}</div>
+                            <div class="model-meta">${provider}${type ? ' • ' + type : ''}</div>
+                            <div class="model-desc">${description}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            DOMUtils.$$('.model-enable-toggle', listEl).forEach(toggle => {
+                DOMUtils.on(toggle, 'change', () => {
+                    const key = String(toggle.getAttribute('data-model-key'));
+                    const current = getFavoriteSet();
+                    if (toggle.checked) {
+                        current.add(key);
+                    } else {
+                        current.delete(key);
+                    }
+                    Helpers.setStorage('favorite_models', [...current]);
+                    this.eventManager.emit('models:favorite-updated', { ids: [...current] });
+                });
+            });
+
+            DOMUtils.$$('img.model-logo', listEl).forEach(img => {
+                if (img.complete) img.classList.add('img-loaded');
+                else {
+                    img.addEventListener('load', () => img.classList.add('img-loaded'));
+                    img.addEventListener('error', () => img.classList.add('img-loaded'));
+                }
+            });
+        };
+
+        modal.innerHTML = `
+            <div class="modal-content models-manage-modal">
+                <div class="modal-header">
+                    <h3>${getTitle()}</h3>
+                    <button class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <style>
+                        .models-manage-modal { width: min(1100px, 96vw); margin: 14px; transform: translateY(8px) scale(0.98); opacity: 0; transition: transform 160ms ease, opacity 160ms ease; }
+                        .models-manage-modal .modal-body { padding-top: 16px; padding-bottom: 16px; }
+                        .models-manage-modal.appear { transform: translateY(0) scale(1); opacity: 1; }
+                        .models-manage-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+                        .models-manage-search { flex: 1; min-width: 220px; }
+                        .models-manage-search input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+                        .models-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; max-height: 60vh; overflow-y: auto; padding: 8px; }
+                        .model-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+                        .model-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+                        .model-card .card-header { display: flex; align-items: center; justify-content: space-between; }
+                        .model-card .card-icon { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; background: var(--surface-alt); color: var(--primary); overflow: hidden; }
+                        .model-card .card-icon img.model-logo { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; opacity: 0; transition: opacity 240ms ease; }
+                        .model-card .card-icon img.model-logo.img-loaded { opacity: 1; }
+                        .model-card .card-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+                        .model-card .model-name { font-weight: 700; font-size: 15px; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        .model-card .model-meta { font-size: 12px; color: var(--muted); }
+                        .model-card .model-desc { font-size: 12px; color: var(--text); opacity: 0.9; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+                        .fav-toggle { position: relative; width: 46px; height: 24px; display: inline-flex; align-items: center; cursor: pointer; }
+                        .fav-toggle input { display: none; }
+                        .toggle-slider { position: relative; width: 100%; height: 100%; background: var(--border); border-radius: 999px; transition: background 160ms ease; }
+                        .toggle-slider::after { content: ''; position: absolute; top: 3px; left: 4px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.14); transition: transform 160ms ease; }
+                        .fav-toggle input:checked + .toggle-slider { background: var(--primary); }
+                        .fav-toggle input:checked + .toggle-slider::after { transform: translateX(20px); }
+                        .no-models { color: var(--muted); font-size: 12px; padding: 8px 0; text-align: center; }
+                        /* Skeleton */
+                        @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+                        .shimmer { background: linear-gradient(90deg, rgba(148,163,184,0.18) 25%, rgba(148,163,184,0.28) 37%, rgba(148,163,184,0.18) 63%); background-size: 400px 100%; animation: shimmer 1.2s infinite; }
+                        .model-card.skeleton .card-icon { background: var(--surface-alt); }
+                    </style>
+                    <div class="models-manage-toolbar">
+                        <div class="models-manage-search"><input type="text" class="models-manage-search-input" placeholder="Model ara..." /></div>
+                    </div>
+                    <div class="models-grid"></div>
+                </div>
+            </div>
+        `;
+
+        setTimeout(() => {
+            const content = DOMUtils.$('.models-manage-modal', modal);
+            if (content) DOMUtils.addClass(content, 'appear');
+        }, 10);
+
+        const closeBtn = DOMUtils.$('.close-btn', modal);
+        if (closeBtn) DOMUtils.on(closeBtn, 'click', () => this.closeModal(modal));
+        DOMUtils.on(modal, 'click', (e) => { if (e.target === modal) this.closeModal(modal); });
+
+        const searchInput = DOMUtils.$('.models-manage-search-input', modal);
+        if (searchInput) {
+            DOMUtils.on(searchInput, 'input', () => {
+                state.query = searchInput.value || '';
+                renderList();
+            });
+        }
+
+        (async () => {
+            state.loading = true;
+            renderList();
+            try {
+                const res = await fetch('/api/models');
+                const json = await res.json();
+                if (json && json.success && Array.isArray(json.data)) {
+                    state.models = json.data;
+                } else {
+                    state.models = [];
+                }
+            } catch (_) {
+                state.models = [];
+            }
+            state.loading = false;
+            renderList();
+        })();
+
+        return modal;
+    }
+
     bindAssistantStartButtons(modal) {
         const startBtns = DOMUtils.$$('.start-chat', modal);
         startBtns.forEach(btn => {
@@ -520,6 +868,11 @@ export class ModalController {
             const { suggestions = [] } = event.data || {};
             this.updateAssistantSuggestions(suggestions);
         });
+
+        // Open models browser when user clicks "Pin more" in sidebar
+        this.eventManager.on('models:pin-more', () => {
+            this.showModal({ type: 'models-browser' });
+        });
     }
 
     /**
@@ -553,6 +906,15 @@ export class ModalController {
                 break;
             case 'assistant-suggestions':
                 modal = this.createAssistantSuggestionsModal(options);
+                break;
+            case 'models-browser':
+                modal = this.createModelsBrowserModal(options);
+                break;
+            case 'active-chats':
+                modal = this.createActiveChatsModal(options);
+                break;
+            case 'chat-history':
+                modal = this.createChatHistoryModal(options);
                 break;
             default:
                 modal = this.createGenericModal(title, content, options);

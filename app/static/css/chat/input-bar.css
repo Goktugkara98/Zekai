@@ -2,7 +2,7 @@
 .input-bar {
     position: fixed;
     bottom: 0;
-    left: 280px;
+    left: 260px;
     right: 0;
     background: var(--surface);
     border-top: 1px solid var(--border);
@@ -11,7 +11,6 @@
     align-items: flex-end;
     gap: 16px;
     z-index: 1001;
-    box-shadow: var(--shadow-sm);
     flex-wrap: wrap; /* quick actions için satır desteği */
 }
 

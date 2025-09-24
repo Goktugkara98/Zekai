@@ -1,6 +1,6 @@
 /* Sidebar Styles */
 .chat-sidebar {
-    width: 280px;
+    width: 260px;
     height: 100vh;
     background: var(--surface);
     border-right: 1px solid var(--border);
@@ -64,7 +64,8 @@
 .section-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start; /* allow right-aligned chevron with margin-left:auto */
+    gap: 8px;
     padding: 8px 12px;
     cursor: pointer;
     border-radius: 8px;
@@ -89,6 +90,7 @@
     font-size: 10px;
     color: var(--muted);
     transition: transform 0.2s ease;
+    margin-left: auto; /* keep chevron at far right */
 }
 
 .section-header.active .collapse-icon {
@@ -173,20 +175,28 @@
 .no-models {
     color: var(--muted);
     font-size: 12px;
-    padding: 8px 12px;
+    padding: 10px 12px;
+    line-height: 1.4;
+}
+
+.no-models .no-models-hint {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--muted);
 }
 
 .model-item {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
-    margin-bottom: 4px;
-    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 2px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background var(--transition-normal), color var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast);
     color: var(--text);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
+    line-height: 1.3;
 }
 
 .model-item:hover {
@@ -194,21 +204,30 @@
 }
 
 .model-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 12px;
-    font-size: 12px;
+    margin-right: 8px;
+    font-size: 11px;
 }
 
 /* Ensure sidebar model icons never inherit gradient backgrounds */
 .chat-sidebar .model-icon {
+    width: 20px !important;
+    height: 20px !important;
+    margin-right: 8px !important;
     background: transparent !important;
-    color: inherit;
-    box-shadow: none;
+    color: inherit !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+}
+
+.chat-sidebar .model-icon img.model-logo {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Image logo inside model icon */
@@ -219,34 +238,15 @@
     border-radius: 4px;
 }
 
-/* Favorite toggle */
-.model-item .fav-toggle {
-    margin-left: auto;
-    width: 28px;
-    height: 28px;
-    border: none;
-    background: transparent;
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--muted);
-    cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
+.chat-sidebar .model-item {
+    justify-content: flex-start !important;
 }
 
-.model-item .fav-toggle:hover {
-    background: var(--surface-alt);
-    color: var(--warning);
+.chat-sidebar .model-item span {
+    font-size: 13px !important;
 }
 
-.model-item .fav-toggle.is-fav {
-    color: var(--warning);
-}
-
-.model-item .fav-toggle i {
-    pointer-events: none;
-}
+/* Favorite toggle removed for minimal layout */
 
 /* Model Icon Colors */
 /* Provider-specific icon classes (kept for compatibility) */
@@ -261,6 +261,24 @@
 }
 
 /* Pin More Button removed */
+/* Pin More button (re-introduced for models browser) */
+.pin-more-btn {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pin-more-btn:hover {
+    background: var(--surface-alt);
+    border-color: var(--primary);
+}
 
 /* Categories */
 .category-list {
@@ -359,17 +377,20 @@
 
 .chat-name {
     font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
     margin-bottom: 2px;
 }
 
 .chat-preview {
     font-size: 12px;
     color: var(--muted);
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: -webkit-box;
+    line-clamp: 2; /* standard property for compatibility */
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    line-height: 1.35;
 }
 
 .chat-time {
@@ -377,7 +398,6 @@
     color: var(--muted);
     margin-left: 8px;
 }
-
 /* Chat History */
 .history-list {
     margin-bottom: 8px;
@@ -422,7 +442,189 @@
     background: var(--surface);
 }
 
-/* Profile Card */
+/* Full-width action region above profile */
+.sidebar-action {
+    padding: 8px 0 0;
+    margin: 4px 0 8px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.sidebar-action .pin-more-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    justify-content: flex-start;
+    transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+    box-shadow: inset 3px 0 0 var(--border);
+}
+
+.sidebar-action .pin-more-btn:hover {
+    background: var(--surface-alt);
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.sidebar-action .pin-more-btn i {
+    color: var(--muted);
+}
+
+.sidebar-action .pin-more-btn:hover i {
+    color: var(--primary);
+}
+
+/* Conversation shortcuts */
+
+.sidebar-conversations {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--surface-alt);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sidebar-conversations .conversations-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.sidebar-conversations .conversations-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(45, 212, 191, 0.18));
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.sidebar-conversations .conversations-texts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-conversations .conversations-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.3px;
+}
+
+.sidebar-conversations .conversations-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.sidebar-conversations .conversations-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sidebar-conversations .conversation-card {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 14px;
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+    text-align: left;
+}
+
+.sidebar-conversations .conversation-card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--primary);
+    background: var(--surface-alt);
+}
+
+.sidebar-conversations .conversation-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-conversations .conversation-texts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.sidebar-conversations .conversation-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: rgba(124, 58, 237, 0.2);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.sidebar-conversations .conversation-icon.history {
+    background: rgba(14, 165, 233, 0.2);
+    color: #0ea5e9;
+}
+
+.sidebar-conversations .conversation-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.sidebar-conversations .conversation-desc {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.sidebar-conversations .conversation-card > i {
+    color: var(--muted);
+    font-size: 12px;
+    transition: transform 180ms ease, color 180ms ease;
+}
+
+.sidebar-conversations .conversation-card:hover > i {
+    transform: translate(2px, -2px);
+    color: var(--primary);
+}
+
+.sidebar-conversations .conversation-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+    .sidebar-conversations {
+        grid-template-columns: 1fr;
+    }
+    .sidebar-conversations .conversations-content {
+        gap: 10px;
+    }
+}
+
 .profile-card {
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -586,5 +788,57 @@
 
 .logout-btn:hover {
     background: var(--surface-alt);
+}
+
+/* Inline manage models action under models list */
+.models-inline-action {
+    padding: 0 16px 12px;
+}
+
+.models-inline-action .pin-more-btn {
+    width: 100%;
+    height: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+}
+
+.models-inline-action .pin-more-btn:hover {
+    background: var(--surface-alt);
+    border-color: var(--primary);
+}
+
+/* Minimal quick links inside profile settings */
+.profile-quick-links {
+    display: flex;
+    gap: 8px;
+    margin: 8px 6px 0;
+}
+
+.profile-link {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.profile-link:hover {
+    background: var(--surface-alt);
+    border-color: var(--primary);
 }
 
