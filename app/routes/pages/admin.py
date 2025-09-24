@@ -9,6 +9,7 @@ from app.routes.auth_decorators import admin_required
 from app.services.user_service import UserService
 from app.services.model_service import ModelService
 from app.services.category_service import CategoryService
+from app.services.branding_service import BrandingService
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -101,3 +102,13 @@ def categories_page():
         return render_template('admin/categories.html', categories=categories)
     except Exception as e:
         return "Kategori listesi yüklenirken hata oluştu", 500
+
+
+@admin_bp.route('/branding')
+@admin_required
+def branding_page():
+    try:
+        settings = BrandingService.get_settings()
+        return render_template('admin/branding.html', branding=settings)
+    except Exception:
+        return "Branding sayfası yüklenirken hata oluştu", 500

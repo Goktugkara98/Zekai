@@ -9,6 +9,7 @@ from app.routes.auth_decorators import admin_required
 from app.services.user_service import UserService
 from app.services.model_category_service import ModelCategoryService
 from app.services.category_service import CategoryService
+from app.services.branding_service import BrandingService
 
 
 admin_api_bp = Blueprint('admin_api', __name__, url_prefix='/admin/api')
@@ -248,3 +249,40 @@ def api_model_categories_auto(model_id: int):
         return jsonify({ 'success': True, 'data': payload }), 200
     except Exception as e:
         return jsonify({ 'success': False, 'error': 'AI auto-categorization error' }), 500
+
+
+# -----------------------------
+# Branding (Site Logo & Text)
+# -----------------------------
+@admin_api_bp.route('/branding', methods=['GET'])
+@admin_required
+def api_get_branding():
+    try:
+        data = BrandingService.get_settings()
+        return jsonify({ 'success': True, 'data': data }), 200
+    except Exception:
+        return jsonify({ 'success': False, 'error': 'Branding settings could not be loaded' }), 500
+
+
+@admin_api_bp.route('/branding', methods=['POST'])
+@admin_required
+def api_set_branding():
+    try:
+        payload = request.get_json(silent=True) or {}
+        result = BrandingService.set_settings(payload)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception:
+        return jsonify({ 'success': False, 'error': 'Branding settings could not be saved' }), 500
+
+
+@admin_api_bp.route('/branding/logo', methods=['POST'])
+@admin_required
+def api_upload_branding_logo():
+    try:
+        file = request.files.get('logo') or request.files.get('file') or None
+        result = BrandingService.save_logo(file)
+        status = 200 if result.get('success') else 400
+        return jsonify(result), status
+    except Exception:
+        return jsonify({ 'success': False, 'error': 'Logo upload failed' }), 500

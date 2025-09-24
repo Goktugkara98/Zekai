@@ -18,10 +18,40 @@
 .sidebar-logo {
     display: block;
     padding: 28px 24px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--brand-border-color, var(--border));
     flex-shrink: 0;
     width: 100%;
     text-align: center; /* Center relative to full sidebar width */
+}
+
+/* Branding variants */
+.sidebar-logo .logo-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.sidebar-logo .logo-img {
+    height: 40px;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.sidebar-logo .logo-fallback {
+    font-size: 28px;
+    color: var(--muted);
+}
+
+/* Text sizing per variant (override generic .logo-text rule below) */
+.sidebar-logo .logo-row.with-text .logo-text {
+    font-size: 28px;
+}
+.sidebar-logo .logo-row.only-text .logo-text {
+    font-size: 36px;
 }
 
 /* Sidebar Content */
@@ -43,7 +73,7 @@
 .logo-text {
     font-size: 40px;
     font-weight: 700;
-    color: var(--text);
+    color: var(--brand-text-color, var(--text));
     font-family: 'Bruno Ace SC', cursive;
     letter-spacing: 0.5px;
     line-height: 1;

@@ -6,6 +6,7 @@
 
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from app.services.auth_service import AuthService
+from app.services.branding_service import BrandingService
 
 # Main Blueprint (name 'main' kalıyor, URL'ler değişmiyor)
 main_bp = Blueprint('main', __name__)
@@ -35,7 +36,8 @@ def chat():
         user_name = (first + ' ' + last).strip() if (first or last) else user.get('email')
         user_email = user.get('email')
 
-        return render_template('chat.html', user_name=user_name, user_email=user_email)
+        branding = BrandingService.get_settings()
+        return render_template('chat.html', user_name=user_name, user_email=user_email, branding=branding)
     except Exception as e:
         return "Chat sayfası yüklenirken hata oluştu", 500
 

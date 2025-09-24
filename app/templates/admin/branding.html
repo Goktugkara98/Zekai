@@ -1,0 +1,110 @@
+{% extends 'admin/layout.html' %}
+{% block page_header_title %}<h1>Marka / Logo</h1>{% endblock %}
+{% block page_header_subtitle %}<p class="text-muted">Sidebar logosu ve başlık metni ayarları</p>{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-12 col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0"><i class="fas fa-swatchbook me-2 text-primary"></i>Marka Ayarları</h5>
+        <button id="btnSaveBranding" type="button" class="btn btn-primary btn-sm" onclick="saveBranding(event)">
+          <i class="fas fa-save me-1"></i> Kaydet
+        </button>
+      </div>
+      <div class="card-body">
+        <form id="brandingForm" onsubmit="return saveBranding(event)">
+          <div class="mb-3">
+            <label class="form-label">Görünüm</label>
+            <div class="d-flex flex-wrap gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="variant" id="variant_logo" value="logo" onchange="onVariantChange()">
+                <label class="form-check-label" for="variant_logo">
+                  Sadece Logo
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="variant" id="variant_logo_text" value="logo+text" onchange="onVariantChange()">
+                <label class="form-check-label" for="variant_logo_text">
+                  Logo + Yazı
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="variant" id="variant_text" value="text" onchange="onVariantChange()" checked>
+                <label class="form-check-label" for="variant_text">
+                  Sadece Yazı
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3" id="brandTextRow">
+            <label class="form-label">Başlık Metni</label>
+            <input type="text" class="form-control" id="brand_text" placeholder="Örn: zekai" oninput="applyLivePreview()" />
+            <div class="form-text">Logo yanında veya tek başına gösterilecek yazı</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Açık Tema Yazı Rengi</label>
+              <input type="color" class="form-control form-control-color" id="text_color_light" value="#0f172a" title="Açık tema yazı rengi" onchange="applyLivePreview()" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Koyu Tema Yazı Rengi</label>
+              <input type="color" class="form-control form-control-color" id="text_color_dark" value="#e8eaf0" title="Koyu tema yazı rengi" onchange="applyLivePreview()" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Açık Tema Kenarlık Rengi</label>
+              <input type="color" class="form-control form-control-color" id="border_color_light" value="#e5e7eb" title="Açık tema kenarlık rengi" onchange="applyLivePreview()" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Koyu Tema Kenarlık Rengi</label>
+              <input type="color" class="form-control form-control-color" id="border_color_dark" value="#243049" title="Koyu tema kenarlık rengi" onchange="applyLivePreview()" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Logo Yükle</label>
+            <div class="d-flex align-items-center gap-3">
+              <img id="logoPreview" src="" alt="Logo" style="width:48px;height:48px;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;display:none;" />
+              <input class="form-control" type="file" id="logo_file" accept=".png,.jpg,.jpeg,.svg,.webp,.gif" style="max-width:360px;" />
+              <button type="button" class="btn btn-outline-primary" onclick="uploadLogo()">
+                <i class="fas fa-upload me-1"></i> Yükle
+              </button>
+            </div>
+            <div class="form-text">Desteklenen türler: PNG, JPG, SVG, WEBP, GIF</div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h6 class="mb-0"><i class="fas fa-eye me-2 text-secondary"></i>Önizleme</h6>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="preview_dark_toggle" onchange="updatePreviewTheme()">
+          <label class="form-check-label" for="preview_dark_toggle">Karanlık Mod</label>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="previewWrap" class="rounded p-3" style="border:1px solid #e5e7eb;background:#ffffff;">
+          <div id="previewSidebarLogo" class="d-flex align-items-center gap-2" style="border-bottom:1px solid #e5e7eb;padding:14px 12px;">
+            <div class="rounded d-flex align-items-center justify-content-center" style="width:48px;height:48px;border:1px solid #e5e7eb;background:#f5f7fb;">
+              <img id="previewLogoImg" src="" alt="" style="max-width:40px;max-height:40px;object-fit:contain;display:none;" />
+              <i id="previewLogoIcon" class="fas fa-robot text-muted" style="display:none;"></i>
+            </div>
+            <div id="previewBrandText" class="logo-text" style="font-family:'Bruno Ace SC', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;font-size:28px;line-height:1;">zekai</div>
+          </div>
+          <div class="small text-muted mt-2">Sidebar alanındaki tahmini görünüm</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{{ url_for('static', filename='js/admin-branding.js') }}"></script>
+{% endblock %}
