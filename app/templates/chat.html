@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/sidebar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/chat-panes.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chat/input-bar.css') }}">
+    <script src="{{ url_for('static', filename='js/shared/logo-fit.js') }}" defer></script>
     {% if branding %}
     <style>
       :root {
@@ -43,33 +44,18 @@
 <div class="chat-container">
     <!-- Sidebar -->
     <aside class="chat-sidebar">
-        <!-- Logo Section -->
+        <!-- Logo Section (logo only) -->
         <div class="sidebar-logo">
-            {% set variant = (branding.variant or 'text') if branding else 'text' %}
-            {% set brand_text = (branding.brand_text or 'zekai') if branding else 'zekai' %}
             {% set logo_path = branding.logo_path if branding else None %}
-            {% if variant == 'logo' %}
             <div class="logo-row only-logo">
-                {% if logo_path %}
-                <img class="logo-img" src="{{ url_for('static', filename=logo_path) }}" alt="Logo">
-                {% else %}
-                <i class="fas fa-robot logo-fallback"></i>
-                {% endif %}
+                <div id="sidebarLogoBox" class="logo-box-horizontal">
+                  {% if logo_path %}
+                  <img id="sidebarLogoImg" class="logo-img" src="{{ url_for('static', filename=logo_path) }}" alt="Logo">
+                  {% else %}
+                  <i class="fas fa-robot logo-fallback"></i>
+                  {% endif %}
+                </div>
             </div>
-            {% elif variant == 'logo+text' %}
-            <div class="logo-row with-text">
-                {% if logo_path %}
-                <img class="logo-img" src="{{ url_for('static', filename=logo_path) }}" alt="Logo">
-                {% else %}
-                <i class="fas fa-robot logo-fallback"></i>
-                {% endif %}
-                <span class="logo-text">{{ brand_text }}</span>
-            </div>
-            {% else %}
-            <div class="logo-row only-text">
-                <span class="logo-text">{{ brand_text }}</span>
-            </div>
-            {% endif %}
         </div>
 
         <!-- Scrollable Content -->
@@ -191,5 +177,24 @@
 
 <!-- Chat App -->
 <script type="module" src="{{ url_for('static', filename='js/chat/chat-new.js') }}"></script>
+<script>
+  (function(){
+    function initLogoFit(){
+      try {
+        if (window.LogoFit) {
+          const box = document.getElementById('sidebarLogoBox');
+          const img = document.getElementById('sidebarLogoImg');
+          window.LogoFit.fitLogoBox(box, img, 180, 56);
+        }
+      } catch(_) {}
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initLogoFit);
+    } else {
+      initLogoFit();
+    }
+    window.addEventListener('load', initLogoFit);
+  })();
+</script>
 </body>
 </html>

@@ -82,6 +82,12 @@
                             title="{{ 'Aktif Yap' if not m.is_active else 'Deaktif Et' }}">
                       <i class="fas fa-{{ 'play' if not m.is_active else 'pause' }}"></i>
                     </button>
+                    <button class="btn btn-outline-secondary" 
+                            data-model-id="{{ m.model_id }}" 
+                            onclick="duplicateModel(this)"
+                            title="Çoğalt">
+                      <i class="fas fa-copy"></i>
+                    </button>
                     <button class="btn btn-outline-primary btn-open-edit-model-modal" 
                             data-model-id="{{ m.model_id }}" 
                             data-model-name="{{ m.model_name }}"
@@ -327,6 +333,8 @@
 // Global variables
 let editModelCategories = [];
 let editModelModal;
+let duplicateSource = null; // { categories: number[], primary_category_id: number|null }
+let duplicateLogoPath = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -337,6 +345,7 @@ async function api(path, method='GET', body) {
   const res = await fetch(path, {
     method,
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     body: body ? JSON.stringify(body) : undefined
   });
   const data = await res.json().catch(() => ({}));
@@ -396,8 +405,22 @@ async function createModel(ev) {
     base_url: f.base_url.value,
     is_active: document.getElementById('m_is_active').checked,
   };
+  if (duplicateLogoPath) {
+    payload.logo_path = duplicateLogoPath;
+  }
   try {
-    await api('/api/models/', 'POST', payload);
+    const result = await api('/api/models/', 'POST', payload);
+    const newId = (result && result.data && result.data.model_id) ? parseInt(result.data.model_id) : null;
+    // If this creation was triggered via duplicate, copy categories too
+    if (newId && duplicateSource && Array.isArray(duplicateSource.categories)) {
+      try {
+        await api(`/admin/api/models/${newId}/categories`, 'PUT', {
+          category_ids: duplicateSource.categories,
+          primary_category_id: duplicateSource.primary_category_id ? parseInt(duplicateSource.primary_category_id) : null
+        });
+      } catch (_) {}
+    }
+    duplicateSource = null;
     AdminUI.showToast('Model oluşturuldu', 'success');
     location.reload();
   } catch (e) { 
@@ -595,6 +618,46 @@ document.addEventListener('click', function(e) {
     return;
   }
 });
+
+// Duplicate model -> prefill create modal with copied settings
+async function duplicateModel(btn) {
+  try {
+    const modelId = parseInt(btn.dataset.modelId);
+    // Fetch model detail
+    const detailRes = await api(`/api/models/${modelId}`);
+    const d = detailRes.data || {};
+    // Prefill create form
+    const modalEl = document.getElementById('createModelModal');
+    const modal = new bootstrap.Modal(modalEl);
+    const f = document.getElementById('createModelForm');
+    f.model_name.value = (d.model_name || '') + ' - Kopya';
+    f.request_model_name.value = d.request_model_name || '';
+    f.model_type.value = d.model_type || '';
+    f.description.value = d.description || '';
+    f.provider_name.value = d.provider_name || '';
+    f.provider_type.value = d.provider_type || '';
+    f.api_key.value = d.api_key || '';
+    f.base_url.value = d.base_url || '';
+    document.getElementById('m_is_active').checked = !!d.is_active;
+    // Fetch categories and remember for post-create copy
+    try {
+      const catsRes = await api(`/admin/api/models/${modelId}/categories`);
+      const data = catsRes.data || {};
+      duplicateSource = {
+        categories: Array.isArray(data.category_ids) ? data.category_ids.map(Number) : [],
+        primary_category_id: data.primary_category_id ? Number(data.primary_category_id) : null
+      };
+    } catch (_) {
+      duplicateSource = null;
+    }
+    duplicateLogoPath = d.logo_path || null;
+    // Show create modal
+    modal.show();
+    AdminUI.showToast('Model bilgileri çoğaltıldı. Düzenleyip kaydedebilirsiniz.', 'info');
+  } catch (e) {
+    AdminUI.showToast(e.message || 'Model çoğaltılamadı', 'error');
+  }
+}
 
 async function uploadModelIcon() {
   try {
